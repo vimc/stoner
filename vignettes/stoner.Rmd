@@ -1,0 +1,135 @@
+---
+title: "stoner"
+author: "Wes Hinsley"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+## Introduction
+
+`stoner` is a package to help with a common administrative task for Montagu: creation or development of a touchstone. A touchstone
+links together the coverage, demography, responsibilities and outputs for a particularly set of runs that VIMC modellers are asked
+to perform. Once a touchstone is opened, it is designed to be fixed, so having downloaded input data from a particular touchstone,
+if a modelling group chooses to download the input data again, they will always get the same result. This ensures reproducibility,
+but as a side effect, it means that if there is even a minor error that we discover in a touchstone, we will open a new version 
+of that touchstone, so that any results made using the erroneous touchstone are still well audited and reproducible.
+
+This comes at a cost of creating new touchstones, or new versions quite often, including a significant period of development
+to create the touchstone, and more repetitive adjustments. Historically, this has been difficult to review, since the code to
+perform CSV reading and SQL updates has often been tangled. [dettl](https://github.com/vimc/dettl) helps here to encourage
+separation of such imports into cleanly bounded extract, transform and load stages, with unit testing of each stage; this is
+our state of the art we use for the [montagu-imports](https://github.com/vimc/montagu-imports) repository. This
+clarifies things greatly, but at times, at the cost of brevity, where writing a single SQL query in the three stages with tests can
+feel somewhat strenuous, compared to the simplicity of the actual task. 
+
+`stoner` is in principle very similar to a [dettl](https://github.com/vimc/dettl) import; it has extract, transform and load
+phases, and tests on the extract and load phases. But it is specifically designed for a particular set of tasks, and relying 
+on specific metadata, in order to do the specific tasks of incrementally building a touchstone. The aim is that the montagu-import 
+for creating a new touchstone (or making edits to a touchstone that is in preparation), will consist of single-line functions for 
+extract, transform and load, which stoner will take care of. The tests in the import will consist of a single-line call to stoner's 
+tests, followed by tests that are specific to the metadata in the import.
+
+The review of a montagu-import that uses stoner, will therefore be a case of looking at the metadata, and the tests that are
+specific to the metadata, and all of the reproducible work will be separately reviewed, once for all, in the stoner package.
+
+## Creating a montagu-import that uses stoner
+
+## What stoner does
+
+### extract
+
+The extract phase is called as `stoner::extract(path, con)`; the arguments are the path to the particular montagu-import, and a
+database connection. Within `path`, stoner expects a folder called `meta` to exist, containing the metadata for the import. 
+Various CSV files are expected to be read from there, as part of the extraction. and stoner will then query the database to 
+find table data, in order to distinguish between existing rows (perhaps to be edited) and new rows to be added.
+
+#### touchstone and touchstone_name
+
+  * If present within `path`, read `meta/touchstone.csv` as `touchstone_csv`.
+  * If present within `path`, read `meta/touchstone_name.csv` as `touchstone_name_csv`.
+  * Fetch `touchstone` rows from database for any matching `id` in `touchstone_csv`.
+  * Fetch `touchstone_name` rows from database for any matching `id` in `touchstone_name_csv`, and
+    also matching `touchstone_name` in `touchstone_csv`.
+
+### test-extract
+
+`stoner` first tests that all the items in the `extracted_data` are recognised by
+`stoner`. Not all have to be present, but every present item `stoner` must recpognise
+in order to process it. Some of the items will be provided by the user, others will
+have been added by `stoner` with database queries. The supported items are:
+
+  * touchstone (stoner)
+  * touchstone_csv (user)
+  * touchstone_name (stoner)
+  * touchstone_name_csv (user)
+
+After this, tests are carried out for each part of the touchstone, as follows. All items 
+referred to will be in the `extracted_data` list, unless otherwise specified.
+
+#### touchstone and touchstone_name
+
+  * `touchstone` and `touchstone_csv` must be either both present, or both absent.
+  * `touchstone_name` and `touchstone_name_csv` must be either both present, or both absent.
+  * If they are present, then both files must columns matching the \code{touchstone} database table.
+  * All `touchstone_csv`$`touchstone_name` values must match a `touchstone_name_csv`$`id`.
+
+### transform
+
+The transform stage involves processing the `extracted_data` and returning a list of data.frames
+that are have the right names, and correct columns to be appended to tables in the Montagu database.
+During the transform, some tables will have an extra column `already_exists_db` added, to indicate 
+that the entire row matches exactly with one in the database. At the end of the transform, any rows 
+that have this column set will be dropped if the rows are exactly the same
+as the database content, or kept for potential editing, which we'll discuss in the load section.
+
+#### touchstone and touchstone_name
+
+Having noted whether any of the rows in `touchstone_csv` and `touchstone_name_csv` are entirely
+new, or have matching ids but differ in some other column to the database:
+
+  * Use new/differing rows in `touchstone_csv` as the transformed `touchstone` table rows.
+  * Use new/differing rows in `touchstone_name_csv` as the transformed `touchstone_name` table.
+
+### test-transform
+
+`stoner::test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
+and it will perform the following standard tests on all transformed data - if they exist, since stoner
+does not require them all to exist.
+
+#### touchstone and touchstone_name
+  
+  * Test that in `touchstone`, `id` is in the format `touchstone_name`-`version`
+  * Test that all touchstones have valid status. (open, in-preparation, finished)
+
+### load
+
+The montagu-import using stoner msut use a custom load, not an automatic one, since the first line of the
+load should be `stoner::load(transformed_data, con)`. 
+
+#### touchstone_name
+  
+  * `touchstone_name` is uploaded first, since `touchstone` may refer to it. 
+  * Rows with new ids are trivially appended.
+  * Rows with the same id but differing other columns will be edited in-place, provided that 
+    if any touchstone refers to the touchstone_name id, that touchstone must have status `in-preparation`.
+
+#### touchstone
+
+  * Rows with new ids are trivially appended.
+  * Rows with the same id but differing other columns will be edited in-place, provided that 
+    the status of that touchstone is `in-preparation`.
+
+### test-load
+
+There are no generic tests for load; these must be implemented specifically for the metadata
+in the montagu-import.

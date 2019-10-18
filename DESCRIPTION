@@ -1,0 +1,24 @@
+Package: stoner
+Title: Support for building VIMC Montagu Touchstones, using dettl.
+Version: 0.0.1
+Authors@R:
+    person(given = "Wes",
+           family = "Hinsley",
+           role = c("aut", "cre"),
+           email = "w.hinsley@imperial.ac.uk")
+Description: For montagu-imports that create touchstones, or augment existing
+    touchstones, allow the import to be as minimal as possible, towards  single
+    line extract and transform calls, in order that the review for that import
+    can be focussed on the metadata being correct, rather than on code.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    DBI
+Language: en-GB
+RoxygenNote: 6.1.1
+Roxygen: list(markdown = TRUE)
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
