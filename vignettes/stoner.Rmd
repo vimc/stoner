@@ -61,19 +61,15 @@ find table data, in order to distinguish between existing rows (perhaps to be ed
   * Fetch `touchstone_name` rows from database for any matching `id` in `touchstone_name_csv`, and
     also matching `touchstone_name` in `touchstone_csv`.
 
+#### scenario_description
+
+  * If present within `path`, read `meta/scenario_description.csv` as `scenario_description_csv`.
+  * Fetch `scenario_description` rows from database for any matching `id` in `scenario_description_csv`.
+  * Also lookup Montagu's `disease` table for ids that match `scenario_description_csv`$disease.
+
 ### test-extract
 
-`stoner` first tests that all the items in the `extracted_data` are recognised by
-`stoner`. Not all have to be present, but every present item `stoner` must recpognise
-in order to process it. Some of the items will be provided by the user, others will
-have been added by `stoner` with database queries. The supported items are:
-
-  * touchstone (stoner)
-  * touchstone_csv (user)
-  * touchstone_name (stoner)
-  * touchstone_name_csv (user)
-
-After this, tests are carried out for each part of the touchstone, as follows. All items 
+Tests are carried out for each part of the touchstone, as follows. All items 
 referred to will be in the `extracted_data` list, unless otherwise specified.
 
 #### touchstone and touchstone_name
@@ -82,6 +78,12 @@ referred to will be in the `extracted_data` list, unless otherwise specified.
   * `touchstone_name` and `touchstone_name_csv` must be either both present, or both absent.
   * If they are present, then both files must columns matching the \code{touchstone} database table.
   * All `touchstone_csv`$`touchstone_name` values must match a `touchstone_name_csv`$`id`.
+
+#### scenario_description
+
+  * Test that all diseases in `scenario_description_csv`$disease are valid.
+  * Test that all descriptions are non-empty. (Cannot check for duplicates here, since duplicates
+    are permitted in the table; "No vaccination" is duplicated for all diseases.)
 
 ### transform
 
@@ -100,6 +102,10 @@ new, or have matching ids but differ in some other column to the database:
   * Use new/differing rows in `touchstone_csv` as the transformed `touchstone` table rows.
   * Use new/differing rows in `touchstone_name_csv` as the transformed `touchstone_name` table.
 
+#### scenario_description
+
+  * Use new/differing rows in `scenario_description_csv` as the transformed `scenario_description` table rows.
+
 ### test-transform
 
 `stoner::test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
@@ -110,6 +116,10 @@ does not require them all to exist.
   
   * Test that in `touchstone`, `id` is in the format `touchstone_name`-`version`
   * Test that all touchstones have valid status. (open, in-preparation, finished)
+
+#### scenario_description
+
+All the useful tests are already done in the extract stage here.
 
 ### load
 

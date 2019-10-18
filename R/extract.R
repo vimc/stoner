@@ -12,6 +12,7 @@
 ##' @return A list of named data frames and/or named values representing the extracted data.
 extract <- function(path, con) {
   c(
-    extract_touchstone(path, con)
+    extract_touchstone(path, con),
+    extract_scenario_description(path, con)
   )
 }

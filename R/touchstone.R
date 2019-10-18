@@ -54,9 +54,7 @@ test_transform_touchstone <- function(transformed_data) {
 
 load_touchstone_name <- function(transformed_data, con) {
   tnames <- transformed_data[['touchstone_name']]
-  ids <- sql_in(tnames$id)
-  ids_found <- DBI::dbGetQuery(con, sprintf("
-    SELECT id FROM touchstone_name WHERE id IN %s", ids))$id
+  ids_found <- db_get(con, "touchstone_name", "id", tnames$id, "id")$id
 
   to_add <- tnames[!tnames$id %in% ids_found, ]
   to_edit <- tnames[tnames$id %in% ids_found, ]
@@ -100,9 +98,7 @@ load_touchstone_name <- function(transformed_data, con) {
 
 load_touchstone <- function(transformed_data, con) {
   touchstone <- transformed_data[['touchstone']]
-  ids <- sql_in(touchstone$id)
-  ids_found <- DBI::dbGetQuery(con, sprintf("
-    SELECT id FROM touchstone WHERE id IN %s", ids))$id
+  ids_found <- db_get(con, "touchstone", "id", touchstone$id, "id")$id
 
   to_add <- touchstone[!touchstone$id %in% ids_found, ]
   to_edit <- touchstone[touchstone$id %in% ids_found, ]

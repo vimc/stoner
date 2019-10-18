@@ -10,6 +10,7 @@
 #'
 
 load <- function(transformed_data, con) {
-  load_touchstone_name (transformed_data, con)
-  load_touchstone      (transformed_data, con)
+  load_touchstone_name      (transformed_data, con)
+  load_touchstone           (transformed_data, con)
+  load_scenario_description (transformed_data, con)
 }

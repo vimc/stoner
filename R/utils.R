@@ -77,16 +77,15 @@ extract_table <- function(path, con, table, id_field = NULL) {
 line_occurs_in <- function(table1, table2) {
 
   mash <- function(tab) {
-    tab <- tab[, order(names(tab))]
-    for (r in seq_len(nrow(tab))) {
-      tab$all_fields_mashed <- paste(as.character(tab[r, ]), collapse = '#')
-    }
-    tab
+    fields <- sort(names(tab))
+    df_args <- c(tab, sep = "#")
+    do.call(paste, df_args)
   }
+
   if (nrow(table2) == 0) {
     FALSE
   } else {
-    !is.na(match(mash(table1)$all_fields_mashed, mash(table2)$all_fields_mashed))
+    mash(table1) %in% mash(table2)
   }
 
 }
