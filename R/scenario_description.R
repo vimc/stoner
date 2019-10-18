@@ -23,7 +23,6 @@ test_extract_scenario_description <- function(extracted_data) {
 
 transform_scenario_description <- function(e) {
   copy_unique_flag(e, "scenario_description")
-  browser()
 }
 
 test_transform_scenario_description <- function(transformed_data) {

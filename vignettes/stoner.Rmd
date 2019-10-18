@@ -119,7 +119,7 @@ does not require them all to exist.
 
 #### scenario_description
 
-All the useful tests are already done in the extract stage here.
+All the useful tests are already done in the test_extract stage.
 
 ### load
 
