@@ -1,10 +1,27 @@
 ###############################################################################
 
 extract_touchstone <- function(path, con) {
-  c(
-    extract_table(path, con, "touchstone", "id"),
-    extract_table(path, con, "touchstone_name", "id")
-  )
+  # Get touchstone.csv as touchstone_csv, and
+  # touchstone database (for touchstone.csv$id) as touchstone
+
+  e <- extract_table(path, con, "touchstone", "id")
+
+  # Also load touchstone_name.csv as touchstone_name_csv, and
+  # touchstone_name database (for touchstone.csv$touchstone_name
+  #                           and touchstone_name_csv.id)
+  #                                as touchstone_name
+
+  e[['touchstone_name_csv']] <- read_meta(path, "touchstone_name.csv")
+
+  ids <- DBI::dbGetQuery(con, sprintf("
+    SELECT DISTINCT id FROM touchstone_name
+     WHERE id IN %s", sql_in(unique(
+                        c(e[['touchstone_name_csv']]$id,
+                          e[['touchstone_csv']]$touchstone_name)))))$id
+
+  e[['touchstone_name']] <- db_get(con, "touchstone_name", "id", ids)
+
+  e
 }
 
 test_extract_touchstone <- function(extracted_data) {
@@ -25,8 +42,16 @@ test_extract_touchstone <- function(extracted_data) {
                sort(names(extracted_data[['touchstone_name_csv']])),
                label = "touchstone_name csv columns match database")
 
-  expect_true(all(extracted_data[['touchstone_csv']]$touchstone_version %in%
-                  extracted_data[['touchstone_name_csv']]$id))
+  expect_true(all(extracted_data[['touchstone_csv']]$touchstone_name %in%
+                  extracted_data[['touchstone_name_csv']]$id),
+              label = "All touchston$touchstone_name in touchstone_name_csv")
+
+  expect_false(any(duplicated(extracted_data[['touchstone_csv']]$id)),
+               label = "No duplicate ids in touchstone_csv")
+
+  expect_false(any(duplicated(extracted_data[['touchstone_names_csv']]$id)),
+               label = "No duplicate ids in touchstone_names_csv")
+
 }
 
 ###############################################################################
@@ -78,7 +103,7 @@ load_touchstone_name <- function(transformed_data, con) {
       status = 'in-preparation'
     }
 
-    status = as.character(status)
+    status = unlist(as.character(status))
 
     if ((length(status) == 1) && (status == 'in-preparation')) {
 
