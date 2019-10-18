@@ -38,22 +38,6 @@ next_id<- function(con, table, id_field) {
     sprintf("SELECT max(%s) FROM %s", table, id_field)))
 }
 
-# Return a vector of logicals, of whether each row in table1
-# occurs somewhere in table 2.
-
-non_unique <- function(table1, table2) {
-
-  mash <- function(tab) {
-    tab <- tab[, order(names(tab))]
-    for (r in seq_len(nrow(tab))) {
-      tab$all_fields_mashed <- paste(as.character(tab[r, ]), collapse = '#')
-    }
-    tab
-  }
-
-  is.na(match(mash(table1)$all_fields_mashed, mash(table2)$all_fields_mashed))
-
-}
 
 
 fill_in_keys <- function(csv, db_table, csv_field, db_field) {
@@ -87,6 +71,27 @@ extract_table <- function(path, con, table, id_field = NULL) {
   ret
 }
 
+# Return a vector of logicals, of whether each row in table1
+# occurs somewhere in table 2.
+
+line_occurs_in <- function(table1, table2) {
+
+  mash <- function(tab) {
+    tab <- tab[, order(names(tab))]
+    for (r in seq_len(nrow(tab))) {
+      tab$all_fields_mashed <- paste(as.character(tab[r, ]), collapse = '#')
+    }
+    tab
+  }
+  if (nrow(table2) == 0) {
+    FALSE
+  } else {
+    is.na(match(mash(table1)$all_fields_mashed, mash(table2)$all_fields_mashed))
+  }
+
+}
+
+
 # If the given table is in the extracted_data,
 # create a copy of it, and set the already_exists_db
 # to indicate whether the row is already present in
@@ -96,7 +101,7 @@ copy_unique_flag <- function(extracted_data, tab) {
   t <- list()
   if (tab %in% names(extracted_data)) {
     t[[tab]] <- extracted_data[[paste0(tab, "_csv")]]
-    t[[tab]]$already_exists_db <- non_unique(t[[tab]], extracted_data[[tab]])
+    t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]], extracted_data[[tab]])
   }
   t
 }
