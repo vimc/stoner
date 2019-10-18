@@ -143,3 +143,18 @@ load should be `stoner::load(transformed_data, con)`.
 
 There are no generic tests for load; these must be implemented specifically for the metadata
 in the montagu-import.
+
+## Advanced Use
+
+### Overwriting scenario_description
+
+The `scenario_description` table provides human-readable scenario information for the ids. Scenarios,
+however, are shared between touchstones. On occasion, it has been desirable to update the human-readable
+descriptions to make them more clear for a particular scenario, thus changing the way the text appears,
+for both future and historic touchstones.
+
+Usually, this would not be permitted, but since this is purely for the purpose of readability and clarity,
+and because it causes no data changes, the default behaviour of forbidding such changes on open or finished
+touchstones can be relaxed by using this longer form of `stoner::load` :- 
+
+`stoner::load(transformed_data, con, allow_overwrite_scenario_description = TRUE)`
