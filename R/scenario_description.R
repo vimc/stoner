@@ -2,7 +2,8 @@
 
 extract_scenario_description <- function(path, con) {
   e <- extract_table(path, con, "scenario_description", "id")
-  disease <- db_get(con, "disease", "id", unique(e$scenario_description_csv$disease), "id")
+  disease <- db_get(con, "disease", "id",
+                    unique(e$scenario_description_csv$disease), "id")
   c(e, list(disease = disease))
 }
 
@@ -31,7 +32,9 @@ test_transform_scenario_description <- function(transformed_data) {
 
 ###############################################################################
 
-load_scenario_description <- function(transformed_data, con) {
+load_scenario_description <- function(transformed_data, con,
+                    allow_overwrite_scenario_description = FALSE) {
+
   sds <- transformed_data[['scenario_description']]
   ids_found <- db_get(con, "scenario_description", "id", sds$id, "id")$id
 
@@ -42,28 +45,41 @@ load_scenario_description <- function(transformed_data, con) {
 
   # For each row in to_edit, do an SQL update, as long as there is no
   # non in-preparation touchstone that refers to this scenario description.
-  # This is quite unlikely - both that we'll ever edit a scenario description
-  # like this, or that we'll be able to do so without changing live things.
-  # But this is written here to fulfil the template of how all the tables
-  # can be added/edited.
+
+  # Note that scenario_descriptions are not touchstone specific, so when
+  # they get edited, it will affect everywhere where that scenario is
+  # noted. But it is a human-readable description, so as long as this is
+  # only used to clarify things for modellers, and change the meaning,
+  # we can allow updates I suppose.
+
+  # By default, stoner will refuse to edit the scenario_description for
+  # a scenario that is part of a non in-preparation touchstone. Force
+  # this by calling load with allow_overwrite_scenario_description = TRUE.
 
   for (r in seq_len(nrow(to_edit))) {
 
-    status <- DBI::dbGetQuery(con, "
-      SELECT DISTINCT status
-        FROM touchstone
-        JOIN scenario
-          ON scenario.touchstone = touchstone.id
-       WHERE scenario.scenario_description = $1",
-        to_edit$id[r])
+    # If the overide is set, then
+    # it's ok to edit, so don't bother with SQL look up.
 
-    # If there are no versions whatsoever, it's safe to edit.
+    if (allow_overwrite_scenario_description) {
+      status <- 'in-preparation'
 
-    if (length(status) == 0) {
-      status = 'in-preparation'
+    } else {
+
+      status <- DBI::dbGetQuery(con, "
+        SELECT DISTINCT status
+          FROM touchstone
+          JOIN scenario
+            ON scenario.touchstone = touchstone.id
+         WHERE scenario.scenario_description = $1",
+          to_edit$id[r])$status
+
+      # If no results at all, then it's also ok to edit.
+
+      if (length(status == 0)) {
+        status <- "in-preparation"
+      }
     }
-
-    status = as.character(status)
 
     if ((length(status) == 1) && (status == 'in-preparation')) {
 
