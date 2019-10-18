@@ -1,6 +1,6 @@
 Package: stoner
 Title: Support for building VIMC Montagu Touchstones, using dettl.
-Version: 0.0.1
+Version: 0.0.2
 Authors@R:
     person(given = "Wes",
            family = "Hinsley",
