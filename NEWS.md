@@ -1,3 +1,3 @@
 ## 0.0.1
 
-Touchstone and touchstone description
+Support for touchstone.csv and touchstone_name.csv metadata
