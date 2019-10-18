@@ -67,7 +67,7 @@ fill_in_keys <- function(csv, db_table, csv_field, db_field) {
 #
 # Result: a list of <table>, <table>_csv and potentially <table>_next_id
 
-extract_table <- function(table, id_field = NULL) {
+extract_table <- function(path, con, table, id_field = NULL) {
 
   ret <- list()
   if (meta_exists(path, paste0(table, ".csv"))) {
@@ -95,8 +95,8 @@ extract_table <- function(table, id_field = NULL) {
 copy_unique_flag <- function(extracted_data, tab) {
   t <- list()
   if (tab %in% names(extracted_data)) {
-    t[[tab]] <- e[[paste0(tab, "_csv")]]
-    t[[tab]]$already_exists_db <- non_unique(t[[tab]], e[[tab]])
+    t[[tab]] <- extracted_data[[paste0(tab, "_csv")]]
+    t[[tab]]$already_exists_db <- non_unique(t[[tab]], extracted_data[[tab]])
   }
   t
 }

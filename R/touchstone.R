@@ -2,8 +2,8 @@
 
 extract_touchstone <- function(path, con) {
   c(
-    extract_table("touchstone", "id"),
-    extract_table("touchstone_name", "id")
+    extract_table(path, con, "touchstone", "id"),
+    extract_table(path, con, "touchstone_name", "id")
   )
 }
 
@@ -41,8 +41,10 @@ transform_touchstone <- function(e) {
 test_transform_touchstone <- function(transformed_data) {
   ts <- transformed_data[['touchstone']]
   if (!is.null(ts)) {
-    expect_equal(ts$id, paste0(ts$touchstone_name, "-", ts$version))
-    expect_true(all(ts$status %in% c("in-preparation", "open", "finished")))
+    expect_equal(ts$id, paste0(ts$touchstone_name, "-", ts$version),
+                 label = "touchstone id correctly formatted with version")
+    expect_true(all(ts$status %in% c("in-preparation", "open", "finished")),
+                 label = "touchstone status is valid")
   }
 }
 

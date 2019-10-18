@@ -15,5 +15,5 @@
 ##'        columns matching the columns of those tables.
 
 test_transform <- function(transformed_data) {
-  test_transformed_touchstone(extracted_data)
+  test_transform_touchstone(transformed_data)
 }
