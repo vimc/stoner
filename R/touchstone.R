@@ -50,8 +50,8 @@ test_transform_touchstone <- function(transformed_data) {
 
 ###############################################################################
 
-load_touchstone_name <- function(con, t) {
-  tnames <- t[['touchstone_name']]
+load_touchstone_name <- function(transformed_data, con) {
+  tnames <- transformed_data[['touchstone_name']]
   ids <- sql_in(tnames$id)
   ids_found <- DBI::dbGetQuery(con, sprintf("
     SELECT id FROM touchstone_name WHERE id IN %s", ids))$id
@@ -88,7 +88,6 @@ load_touchstone_name <- function(con, t) {
          list(to_edit$description[r],
               to_edit$comment[r],
               to_edit$id[r]))
-
     } else {
 
       stop(paste0("Can't edit touchstone_name id ", to_edit$id[r], ". ",
@@ -97,14 +96,14 @@ load_touchstone_name <- function(con, t) {
   }
 }
 
-load_touchstone <- function(con, t) {
-  ts <- t[['touchstone']]
-  ids <- sql_in(ts$id)
+load_touchstone <- function(transformed_data, con) {
+  touchstone <- transformed_data[['touchstone']]
+  ids <- sql_in(touchstone$id)
   ids_found <- DBI::dbGetQuery(con, sprintf("
     SELECT id FROM touchstone WHERE id IN %s", ids))$id
 
-  to_add <- tnames[!ts$id %in% ids_found, ]
-  to_edit <- tnames[ts$id %in% ids_found, ]
+  to_add <- touchstone[!touchstone$id %in% ids_found, ]
+  to_edit <- touchstone[touchstone$id %in% ids_found, ]
 
   DBI::dbWriteTable(con, "touchstone", to_add, append = TRUE)
 
@@ -112,7 +111,7 @@ load_touchstone <- function(con, t) {
   # is in-preparation.
 
   for (r in seq_len(nrow(to_edit))) {
-    touch <- ts[r, ]
+    touch <- to_edit[r, ]
 
     if (touch$status == 'in_preparation') {
 
@@ -124,16 +123,10 @@ load_touchstone <- function(con, t) {
                      list(touch$touchstone_name, touch$version,
                           touch$description, touch$status,
                           touch$comment, touch$id))
-
     } else {
 
       stop(paste0("Can't edit touchstone id ", touch$id, ". ",
                   "Already exists with open/finished status."))
     }
   }
-
 }
-
-
-
-
