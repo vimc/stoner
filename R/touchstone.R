@@ -41,10 +41,12 @@ transform_touchstone <- function(e) {
 test_transform_touchstone <- function(transformed_data) {
   ts <- transformed_data[['touchstone']]
   if (!is.null(ts)) {
-    expect_equal(ts$id, paste0(ts$touchstone_name, "-", ts$version),
-                 label = "touchstone id correctly formatted with version")
-    expect_true(all(ts$status %in% c("in-preparation", "open", "finished")),
-                 label = "touchstone status is valid")
+    if (nrow(ts) > 0) {
+      expect_equal(ts$id, paste0(ts$touchstone_name, "-", ts$version),
+                   label = "touchstone id version correctly formatted")
+      expect_true(all(ts$status %in% c("in-preparation", "open", "finished")),
+                   label = "touchstone status is valid")
+    }
   }
 }
 

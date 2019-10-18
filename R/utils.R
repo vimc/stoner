@@ -86,7 +86,7 @@ line_occurs_in <- function(table1, table2) {
   if (nrow(table2) == 0) {
     FALSE
   } else {
-    is.na(match(mash(table1)$all_fields_mashed, mash(table2)$all_fields_mashed))
+    !is.na(match(mash(table1)$all_fields_mashed, mash(table2)$all_fields_mashed))
   }
 
 }
