@@ -13,13 +13,15 @@
 
 transform <- function(extracted_data) {
   t <- c(transform_touchstone(extracted_data),
-         transform_scenario_description(extracted_data))
+         transform_scenario_description(extracted_data),
+         transform_touchstone_demographic_dataset(extacted_data)
+  )
 
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).
 
   for (table in c('touchstone', 'touchstone_name',
-                  'scenario_description')) {
+                  'scenario_description', 'touchstone_demographic_dataset')) {
     if (table %in% names(t)) {
       t[[table]] <- t[[table]][!t[[table]]$already_exists_db, ]
       t[[table]]$already_exists_db <- NULL

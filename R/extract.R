@@ -13,6 +13,7 @@
 extract <- function(path, con) {
   c(
     extract_touchstone(path, con),
-    extract_scenario_description(path, con)
+    extract_scenario_description(path, con),
+    extract_touchstone_demographic_dataset(path, con)
   )
 }

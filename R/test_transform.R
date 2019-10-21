@@ -17,4 +17,5 @@
 test_transform <- function(transformed_data) {
   test_transform_touchstone(transformed_data)
   test_transform_scenario_description(transformed_data)
+  test_transform_touchstone_demographic_dataset(transformed_data)
 }

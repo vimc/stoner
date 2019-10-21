@@ -67,6 +67,14 @@ find table data, in order to distinguish between existing rows (perhaps to be ed
   * Fetch `scenario_description` rows from database for any matching `id` in `scenario_description_csv`.
   * Also lookup Montagu's `disease` table for ids that match `scenario_description_csv`$disease.
 
+#### touchstone_demographic_dataset
+
+  * Load the CSV, and query the database for all the demographic_datasets in touchstones that
+    are reported in the CSV.
+  * Lookup the next serial id for new entries in the touchstone_demographic_dataset table.
+  * Lookup `demographic_statistic_type` and `demographic_source` information for all
+    demographic datasets referred to.
+
 ### test-extract
 
 Tests are carried out for each part of the touchstone, as follows. All items 
@@ -84,6 +92,16 @@ referred to will be in the `extracted_data` list, unless otherwise specified.
   * Test that all diseases in `scenario_description_csv`$disease are valid.
   * Test that all descriptions are non-empty. (Cannot check for duplicates here, since duplicates
     are permitted in the table; "No vaccination" is duplicated for all diseases.)
+
+#### touchstone_demographic_dataset
+
+  * Test for correct columns in the incoming CSV.
+  * Expect that the `touchstone`, `demographic_source` and `demographic_statistic_type` in the CSVS
+    will be strings, not numerical ids, and check that all strings are recognised in the appropriate
+    tables
+  * Check that for each `demographic_source` `demographic_statistic_type` pair in the CSV file, a
+    `demographic_dataset` already exists linking the two.
+  * Check there are no effective duplicate `(Touchstone, demographic_dataset)` pairs in the CSV.
 
 ### transform
 
@@ -106,6 +124,22 @@ new, or have matching ids but differ in some other column to the database:
 
   * Use new/differing rows in `scenario_description_csv` as the transformed `scenario_description` table rows.
 
+#### touchstone_demographic_dataset
+
+  * Flag any entries in `touchstone_demographic_dataset_csv` that have an exact match of 
+    (touchstone, demographic_dataset) in the database; these will be removed after the end of
+    the transform stage.
+  * Lookup existing `id` from the `touchstone_demographic_dataset` database table, for any
+    exact matches.
+  * For those that did not match, find the `id` of an existing row in `touchstone_demographic_dataset`
+    whose `demographic_statistic_type` matches the row in question for that touchstone (in which case,
+    the underlying `demographic_source` will differ). This handles the case where we fix a particular
+    `demographic_statistic_type`, and put the new version in an updated `demographic_source`. So here,
+    we use the old id, and attempt to update the `demographic_dataset` id in place.
+  * If no existing `demographic_statistic_type` matched the row for that touchstone, then we appear
+    to be adding a new demographic_dataset to the `touchstone_demographic_dataset`, so set the `id`
+    to the `next_id` in the sequence
+
 ### test-transform
 
 `stoner::test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
@@ -120,6 +154,11 @@ does not require them all to exist.
 #### scenario_description
 
 All the useful tests are already done in the test_extract stage.
+
+#### touchstone_demographic_dataset
+
+  * Test that there is no duplicate `id` and no duplicate `demographic_dataset` in the final
+    `touchstone_demographic_dataset` updates.
 
 ### load
 
@@ -138,6 +177,22 @@ load should be `stoner::load(transformed_data, con)`.
   * Rows with new ids are trivially appended.
   * Rows with the same id but differing other columns will be edited in-place, provided that 
     the status of that touchstone is `in-preparation`.
+
+#### scenario_description
+
+  * Scenario descriptions with new ids are appended.
+  * Existing ids are edited if every touchstone that refers to that `scenario_description` is in the
+    `in-preparation` stage. However, we do want to improve scenario_descriptions (without changing
+    their meaning, or any data connected to them), or touchstones that are more recent. See the
+    Advanced Use section later.
+
+#### touchstone_demographic_dataset
+
+  * For all `touchstone_demographic_dataset` rows with an `id` that doesn't match an existing `id` in
+    the database table, append the rows to the table.
+  * Where `id` is not in the table, check whether the `touchstone` for that row in the proposed
+    `touchstone_demographic_dataset` is of status `in-preparation`. If not, then abort. If it is,
+    then update the `demographic_dataset` for that `(id, touchstone)` entry to the new value.
 
 ### test-load
 

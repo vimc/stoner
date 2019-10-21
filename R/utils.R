@@ -33,15 +33,9 @@ db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") 
   DBI::dbGetQuery(con, sql)
 }
 
-next_id<- function(con, table, id_field) {
+next_id <- function(con, table, id_field) {
   1L + as.numeric(DBI::dbGetQuery(con,
-    sprintf("SELECT max(%s) FROM %s", table, id_field)))
-}
-
-
-
-fill_in_keys <- function(csv, db_table, csv_field, db_field) {
-
+    sprintf("SELECT max(%s) FROM %s", id_field, table)))
 }
 
 # If a .csv file has been provided, then load that csv file,
@@ -71,17 +65,20 @@ extract_table <- function(path, con, table, id_field = NULL) {
   ret
 }
 
+
+# Return a vector of characters for a table, each entry being all the fields
+# of that table mashed together, separated by '#'
+
+mash <- function(tab) {
+  fields <- sort(names(tab))
+  df_args <- c(tab, sep = "#")
+  do.call(paste, df_args)
+}
+
 # Return a vector of logicals, of whether each row in table1
 # occurs somewhere in table 2.
 
 line_occurs_in <- function(table1, table2) {
-
-  mash <- function(tab) {
-    fields <- sort(names(tab))
-    df_args <- c(tab, sep = "#")
-    do.call(paste, df_args)
-  }
-
   if (nrow(table2) == 0) {
     FALSE
   } else {
@@ -89,7 +86,6 @@ line_occurs_in <- function(table1, table2) {
   }
 
 }
-
 
 # If the given table is in the extracted_data,
 # create a copy of it, and set the already_exists_db
@@ -103,5 +99,40 @@ copy_unique_flag <- function(extracted_data, tab) {
     t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]], extracted_data[[tab]])
   }
   t
+}
+
+# For each row in csv_table, does it exist in db_table?
+# If so, set id_field in csv_table to the matching id in db_table.
+# If not, assign new key for that row.
+
+fill_in_keys <- function(csv_table, db_table, id_field, next_id) {
+
+  db_table$mash <- mash(db_table[, names(db_table) != id_field])
+  csv_table$mash <- mash(csv_table)
+
+  # Copy existing keys
+
+  csv_table[[id_field]] <- db_table[[id_field]][match(csv_table$mash, db_table$mash)]
+
+  csv_table <- csv_table[, names(csv_table) != 'mash']
+
+  csv_table$already_in_db <- !is.na(csv_table$id)
+
+  # For any NAs, assign new keys, starting at next_id
+
+  which_nas <- which(is.na(csv_table[[id_field]]))
+
+  csv_table[[id_field]][which_nas] <- seq(from = next_id, by = 1,
+                                          length.out = length(which_nas))
+
+  csv_table
+
+}
+# Here, we want to assign ids in csv_table
+tdd <- fill_in_keys(tdd, e$touchstone_demographic_dataset,
+                    "id", e$touchstone_demographic_dataset_next_id)
+
+fill_in_keys <- function(csv_table, db_table) {
+  csv$already_exists_db <- line_occurs_in(csv, db_table)
 }
 
