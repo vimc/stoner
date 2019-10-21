@@ -1,7 +1,25 @@
 ###############################################################################
 
 extract_touchstone_demographic_dataset <- function(path, con) {
-  e <- extract_table(path, con, "touchstone_demographic_dataset", "touchstone")
+  e <- list()
+  e$touchstone_demographic_dataset_csv <-
+    read_meta(path, "touchstone_demographic_dataset.csv")
+
+  e[['touchstone_demographic_dataset']] <- DBI::dbGetQuery(con, sprintf("
+    SELECT touchstone_demographic_dataset.id, touchstone, demographic_dataset,
+           demographic_source.code as dsource_code,
+           demographic_statistic_type.code as dtype_code,
+           demographic_source.id as dsource,
+           demographic_statistic_type.id as dtype
+      FROM touchstone_demographic_dataset
+      JOIN demographic_dataset
+        ON demographic_dataset.id = touchstone_demographic_dataset.demographic_dataset
+      JOIN demographic_source
+        ON demographic_source.id = demographic_dataset.demographic_source
+      JOIN demographic_statistic_type
+        ON demographic_statistic_type.id = demographic_dataset.demographic_statistic_type
+     WHERE touchstone IN %s", sql_in(e$touchstone_demographic_dataset_csv$touchstone)))
+
   e$touchstone_demographic_dataset_next_id <-
     next_id(con, "touchstone_demographic_dataset", "id")
 
@@ -48,6 +66,10 @@ extract_touchstone_demographic_dataset <- function(path, con) {
     e$touchstone_demographic_dataset_csv$demographic_source,
     e$touchstone_demographic_dataset_csv$demographic_statistic_type, sep = '#')
 
+  e$touchstone_demographic_dataset$mash <- paste(
+    e$touchstone_demographic_dataset$dsource_code,
+    e$touchstone_demographic_dataset$dtype_code, sep = '#')
+
   e
 }
 
@@ -89,9 +111,6 @@ test_extract_touchstone_demographic_dataset <- function(e) {
 ###############################################################################
 
 transform_touchstone_demographic_dataset <- function(e) {
-  e$touchstone_demographic_dataset$dtype <-
-    e$demographic_dataset$demographic_statistic_type[match(
-      e$touchstone_demographic_dataset$demographic_dataset, e$demographic_dataset$id)]
 
   tdd <- e$touchstone_demographic_dataset_csv
 
@@ -104,10 +123,10 @@ transform_touchstone_demographic_dataset <- function(e) {
   tdd$demographic_statistic_type_id <- e$demographic_statistic_type$id[match(
       tdd$demographic_statistic_type, e$demographic_statistic_type$code)]
 
-  # 1. Flag (touchstone,dataset) that already exist in demographic_dataset db
+  # 1. Flag (touchstone,dataset) that already exist in touchstone_demographic_dataset db
 
   tdd$mash <- paste(tdd$demographic_source, tdd$demographic_statistic_type, sep = '#')
-  tdd$already_exists_db <- tdd$mash %in% e$demographic_dataset$mash
+  tdd$already_exists_db <- tdd$mash %in% e$touchstone_demographic_dataset$mash
 
   # 2. If (touchstone,dataset) isn't already there, then...
   #    Is there (touchstone,dataset) of same demographic_statistic_type?
@@ -139,6 +158,7 @@ transform_touchstone_demographic_dataset <- function(e) {
   }
 
   tdd <- tdd[, c("already_exists_db", "demographic_dataset", "id", "touchstone")]
+
   list(touchstone_demographic_dataset = tdd)
 
 }
