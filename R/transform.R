@@ -14,7 +14,7 @@
 transform <- function(extracted_data) {
   t <- c(transform_touchstone(extracted_data),
          transform_scenario_description(extracted_data),
-         transform_touchstone_demographic_dataset(extacted_data)
+         transform_touchstone_demographic_dataset(extracted_data)
   )
 
   # Remove all rows that shouldn't be added/edited. (ie, database
