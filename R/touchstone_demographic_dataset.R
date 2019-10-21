@@ -89,7 +89,6 @@ test_extract_touchstone_demographic_dataset <- function(e) {
 ###############################################################################
 
 transform_touchstone_demographic_dataset <- function(e) {
-
   e$touchstone_demographic_dataset$dtype <-
     e$demographic_dataset$demographic_statistic_type[match(
       e$touchstone_demographic_dataset$demographic_dataset, e$demographic_dataset$id)]
@@ -108,7 +107,7 @@ transform_touchstone_demographic_dataset <- function(e) {
   # 1. Flag (touchstone,dataset) that already exist in demographic_dataset db
 
   tdd$mash <- paste(tdd$demographic_source, tdd$demographic_statistic_type, sep = '#')
-  tdd$already_in_db <- tdd$mash %in% e$demographic_dataset$mash
+  tdd$already_exists_db <- tdd$mash %in% e$demographic_dataset$mash
 
   # 2. If (touchstone,dataset) isn't already there, then...
   #    Is there (touchstone,dataset) of same demographic_statistic_type?
@@ -118,7 +117,7 @@ transform_touchstone_demographic_dataset <- function(e) {
   tdd$id <- e$touchstone_demographic_dataset$id[match(
     tdd$demographic_dataset, e$touchstone_demographic_dataset$demographic_dataset)]
 
-  overwrites <- which(!tdd$already_in_db)
+  overwrites <- which(!tdd$already_exists_db)
 
   next_id <- e$touchstone_demographic_dataset_next_id
 
@@ -139,7 +138,7 @@ transform_touchstone_demographic_dataset <- function(e) {
         e$touchstone_demographic_dataset$id == overwrite_id]
   }
 
-  tdd <- tdd[, c("already_in_db", "demographic_dataset", "id", "touchstone")]
+  tdd <- tdd[, c("already_exists_db", "demographic_dataset", "id", "touchstone")]
   list(touchstone_demographic_dataset = tdd)
 
 }
@@ -148,7 +147,8 @@ test_transform_touchstone_demographic_dataset <- function(transformed_data) {
   tdd <- transformed_data$touchstone_demographic_dataset
   expect_equal(0, sum(duplicated(tdd$demographic_dataset)))
   expect_equal(0, sum(duplicated(tdd$id)))
-
+  expect_false(any(is.na(transformed_data$tocuhstone_demographic_dataset$id)))
+  expect_false(any(is.na(transformed_data$tocuhstone_demographic_dataset$demographic_dataset)))
 }
 
 ###############################################################################
