@@ -128,11 +128,3 @@ fill_in_keys <- function(csv_table, db_table, id_field, next_id) {
   csv_table
 
 }
-# Here, we want to assign ids in csv_table
-tdd <- fill_in_keys(tdd, e$touchstone_demographic_dataset,
-                    "id", e$touchstone_demographic_dataset_next_id)
-
-fill_in_keys <- function(csv_table, db_table) {
-  csv$already_exists_db <- line_occurs_in(csv, db_table)
-}
-
