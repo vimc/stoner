@@ -128,3 +128,19 @@ fill_in_keys <- function(csv_table, db_table, id_field, next_id) {
   csv_table
 
 }
+
+# Add any rows in transformed_data[[table_name]] to the data where the id
+# does not already exist in that table. Return the leftovers, which are
+# edits to the table.
+
+add_return_edits <- function(table_name, transformed_data, con) {
+  data <- transformed_data[[table_name]]
+  ids_found <- db_get(con, table_name, "id", data$id, "id")$id
+  to_add <- data[!data$id %in% ids_found, ]
+
+  if (nrow(to_add) > 0) {
+    DBI::dbWriteTable(con, table_name, to_add, append = TRUE)
+  }
+
+  data[data$id %in% ids_found, ]
+}

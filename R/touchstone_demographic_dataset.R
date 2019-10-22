@@ -174,15 +174,8 @@ test_transform_touchstone_demographic_dataset <- function(transformed_data) {
 ###############################################################################
 
 load_touchstone_demographic_dataset <- function(transformed_data, con) {
-
-  tdd <- transformed_data[['touchstone_demographic_dataset']]
-  ids_found <- db_get(con, "touchstone_demographic_dataset", "id", tdd$id, "id")$id
-
-  to_add <- tdd[!tdd$id %in% ids_found, ]
-  to_edit <- tdd[tdd$id %in% ids_found, ]
-
-  if (nrow(to_add) > 0)
-    DBI::dbWriteTable(con, "touchstone_demographic_dataset", to_add, append = TRUE)
+  to_edit <- add_return_edits("touchstone_demographic_dataset",
+                              transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as the touchstone
   # being referred to is in the in-preparation state.
