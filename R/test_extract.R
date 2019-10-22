@@ -16,5 +16,6 @@ test_extract <- function(extracted_data) {
   test_extract_touchstone(extracted_data)
   test_extract_scenario_description(extracted_data)
   test_extract_touchstone_demographic_dataset(extracted_data)
+  test_extract_touchstone_countries(extracted_data)
 
 }
