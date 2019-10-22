@@ -18,16 +18,14 @@ transform <- function(extracted_data) {
          transform_touchstone_country(extracted_data)
   )
 
+  t <- c(t, transform_burden_estimate_expectation(extracted_data, t))
+
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).
 
-  for (table in c('touchstone', 'touchstone_name',
-                  'scenario_description', 'touchstone_demographic_dataset',
-                  'touchstone_country')) {
-    if (table %in% names(t)) {
-      t[[table]] <- t[[table]][!t[[table]]$already_exists_db, ]
-      t[[table]]$already_exists_db <- NULL
-    }
+  for (table in names(t)) {
+    t[[table]] <- t[[table]][!t[[table]]$already_exists_db, ]
+    t[[table]]$already_exists_db <- NULL
   }
 
   t

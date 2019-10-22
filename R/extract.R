@@ -15,6 +15,7 @@ extract <- function(path, con) {
     extract_touchstone(path, con),
     extract_scenario_description(path, con),
     extract_touchstone_demographic_dataset(path, con),
-    extract_touchstone_country(path, con)
+    extract_touchstone_country(path, con),
+    extract_burden_estimate_expectation(path, con)
   )
 }

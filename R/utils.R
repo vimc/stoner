@@ -28,7 +28,7 @@ sql_in <- function(things) {
 db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
   sql <- sprintf("SELECT %s FROM %s", select, table)
   if (!is.null(id_field)) {
-    sql <- sprintf("%s WHERE %s IN %s", sql, id_field, sql_in(id_values))
+    sql <- sprintf("%s WHERE %s IN %s", sql, id_field, sql_in(unique(id_values)))
   }
   DBI::dbGetQuery(con, sql)
 }
@@ -69,9 +69,10 @@ extract_table <- function(path, con, table, id_field = NULL) {
 # Return a vector of characters for a table, each entry being all the fields
 # of that table mashed together, separated by '#'
 
-mash <- function(tab) {
-  fields <- sort(names(tab))
-  df_args <- c(tab, sep = "#")
+mash <- function(tab, cols = NULL) {
+  if (is.null(cols)) cols <- names(tab)
+  fields <- sort(cols)
+  df_args <- c(tab[fields], sep = "#")
   do.call(paste, df_args)
 }
 
@@ -143,4 +144,10 @@ add_return_edits <- function(table_name, transformed_data, con) {
   }
 
   data[data$id %in% ids_found, ]
+}
+
+mash_id <- function(needle, haystack, fields, target_field = 'id') {
+  needle[['mash_the_id']] <- mash(needle, fields)
+  haystack[['mash_the_id']] <- mash(haystack, fields)
+  haystack[[target_field]][match(needle[['mash_the_id']], haystack[['mash_the_id']])]
 }

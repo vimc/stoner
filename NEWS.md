@@ -1,3 +1,7 @@
+## 0.0.5
+
+Support for burden_estimate_expectations.csv metadata
+
 ## 0.0.4
 
 Support for touchstone_countries.csv metadata
