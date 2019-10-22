@@ -15,7 +15,7 @@ transform <- function(extracted_data) {
   t <- c(transform_touchstone(extracted_data),
          transform_scenario_description(extracted_data),
          transform_touchstone_demographic_dataset(extracted_data),
-         transform_touchstone_countries(extracted_data)
+         transform_touchstone_country(extracted_data)
   )
 
   # Remove all rows that shouldn't be added/edited. (ie, database
@@ -23,7 +23,7 @@ transform <- function(extracted_data) {
 
   for (table in c('touchstone', 'touchstone_name',
                   'scenario_description', 'touchstone_demographic_dataset',
-                  'touchstone_countries')) {
+                  'touchstone_country')) {
     if (table %in% names(t)) {
       t[[table]] <- t[[table]][!t[[table]]$already_exists_db, ]
       t[[table]]$already_exists_db <- NULL
