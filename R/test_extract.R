@@ -13,14 +13,5 @@
 ##' @param extracted_data A list of \code{data.frame}s and/or values,
 
 test_extract <- function(extracted_data) {
-
-
-  supported_tables <- c("touchstone", "touchstone_csv",
-                        "touchstone_name", "touchstone_name_csv")
-
-  expect_true(all(names(extracted_data) %in% supported_tables),
-              label = "All extracted data is supported by stoner")
-
   test_extract_touchstone(extracted_data)
-
 }
