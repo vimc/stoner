@@ -78,13 +78,7 @@ test_transform_touchstone <- function(transformed_data) {
 ###############################################################################
 
 load_touchstone_name <- function(transformed_data, con) {
-  tnames <- transformed_data[['touchstone_name']]
-  ids_found <- db_get(con, "touchstone_name", "id", tnames$id, "id")$id
-
-  to_add <- tnames[!tnames$id %in% ids_found, ]
-  to_edit <- tnames[tnames$id %in% ids_found, ]
-
-  DBI::dbWriteTable(con, "touchstone_name", to_add, append = TRUE)
+  to_edit <- add_return_edits("touchstone_name", transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as all versions
   # of this touchstone have status "in-preparation".
@@ -122,13 +116,7 @@ load_touchstone_name <- function(transformed_data, con) {
 }
 
 load_touchstone <- function(transformed_data, con) {
-  touchstone <- transformed_data[['touchstone']]
-  ids_found <- db_get(con, "touchstone", "id", touchstone$id, "id")$id
-
-  to_add <- touchstone[!touchstone$id %in% ids_found, ]
-  to_edit <- touchstone[touchstone$id %in% ids_found, ]
-
-  DBI::dbWriteTable(con, "touchstone", to_add, append = TRUE)
+  to_edit <- add_return_edits("touchstone", transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as the status
   # is in-preparation.
