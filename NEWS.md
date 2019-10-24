@@ -1,3 +1,7 @@
+## 0.0.7
+
+Support for burden_estimate_country_expectation.csv and burden_estimate_outcome_expectation.csv metadata
+
 ## 0.0.6
 
 Support for responsibility.csv metadata

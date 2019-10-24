@@ -17,6 +17,7 @@ extract <- function(path, con) {
     extract_touchstone_demographic_dataset(path, con),
     extract_touchstone_country(path, con),
     extract_burden_estimate_expectation(path, con),
-    extract_responsibility(path, con)
+    extract_responsibility(path, con),
+    extract_burden_estimate_country_expectation(path, con)
   )
 }

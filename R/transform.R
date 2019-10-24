@@ -20,6 +20,7 @@ transform <- function(extracted_data) {
 
   t <- c(t, transform_burden_estimate_expectation(extracted_data, t))
   t <- c(t, transform_responsibility(extracted_data, t))
+  t <- c(t, transform_burden_estimate_country_expectation(extracted_data, t))
 
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).

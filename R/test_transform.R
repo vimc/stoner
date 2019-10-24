@@ -21,4 +21,5 @@ test_transform <- function(transformed_data) {
   test_transform_touchstone_country(transformed_data)
   test_transform_burden_estimate_expectation(transformed_data)
   test_transform_responsibility(transformed_data)
+  test_transform_burden_estimate_country_expectation(transformed_data)
 }

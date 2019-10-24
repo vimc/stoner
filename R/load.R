@@ -25,4 +25,7 @@ load <- function(transformed_data, con,
 
   load_touchstone_demographic_dataset(transformed_data, con)
   load_touchstone_countries(transformed_data, con)
+  load_burden_estimate_expectation(transformed_data, con)
+  load_responsibility(transformed_data, con)
+  load_burden_estimate_country_expectation(transformed_data, con)
 }
