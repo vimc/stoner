@@ -11,11 +11,12 @@
 ##' @param con The active DBI connection for extracting any data.
 ##' @return A list of named data frames and/or named values representing the extracted data.
 extract <- function(path, con) {
-  c(
+ c(
     extract_touchstone(path, con),
     extract_scenario_description(path, con),
     extract_touchstone_demographic_dataset(path, con),
     extract_touchstone_country(path, con),
-    extract_burden_estimate_expectation(path, con)
+    extract_burden_estimate_expectation(path, con),
+    extract_responsibility(path, con)
   )
 }

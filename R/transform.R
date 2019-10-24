@@ -15,10 +15,11 @@ transform <- function(extracted_data) {
   t <- c(transform_touchstone(extracted_data),
          transform_scenario_description(extracted_data),
          transform_touchstone_demographic_dataset(extracted_data),
-         transform_touchstone_country(extracted_data)
+         transform_touchstone_country(extracted_data),
   )
 
   t <- c(t, transform_burden_estimate_expectation(extracted_data, t))
+  t <- c(t, transform_responsibility(extracted_data, t))
 
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).
