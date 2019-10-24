@@ -34,14 +34,7 @@ test_transform_scenario_description <- function(transformed_data) {
 
 load_scenario_description <- function(transformed_data, con,
                     allow_overwrite_scenario_description = FALSE) {
-
-  sds <- transformed_data[['scenario_description']]
-  ids_found <- db_get(con, "scenario_description", "id", sds$id, "id")$id
-
-  to_add <- sds[!sds$id %in% ids_found, ]
-  to_edit <- sds[sds$id %in% ids_found, ]
-
-  DBI::dbWriteTable(con, "scenario_description", to_add, append = TRUE)
+  to_edit <- add_return_edits("scenario_description", transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as there is no
   # non in-preparation touchstone that refers to this scenario description.
