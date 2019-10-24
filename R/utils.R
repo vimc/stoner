@@ -11,6 +11,10 @@ data_frame <- function(...) {
   data.frame(stringsAsFactors = FALSE, ...)
 }
 
+split_semi <- function(string) {
+  strsplit(string, ";")
+}
+
 sql_in_char <- function(strings) {
   paste0("('", paste(strings, collapse = "','"), "')")
 }
@@ -33,7 +37,7 @@ db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") 
   DBI::dbGetQuery(con, sql)
 }
 
-next_id <- function(con, table, id_field) {
+next_id <- function(con, table, id_field = "id") {
   1L + as.numeric(DBI::dbGetQuery(con,
     sprintf("SELECT max(%s) FROM %s", id_field, table)))
 }
@@ -102,32 +106,17 @@ copy_unique_flag <- function(extracted_data, tab) {
   t
 }
 
-# For each row in csv_table, does it exist in db_table?
-# If so, set id_field in csv_table to the matching id in db_table.
-# If not, assign new key for that row.
+# For each row in csv_table, if id_field is NA, then set it to
+# next available key.
 
-fill_in_keys <- function(csv_table, db_table, id_field, next_id) {
+fill_in_keys <- function(table, next_id, id_field = "id") {
 
-  db_table$mash <- mash(db_table[, names(db_table) != id_field])
-  csv_table$mash <- mash(csv_table)
+  which_nas <- which(is.na(table[[id_field]]))
+  table[[id_field]][which_nas] <- seq(
+    from = next_id,
+    by = 1, length.out = length(which_nas))
 
-  # Copy existing keys
-
-  csv_table[[id_field]] <- db_table[[id_field]][match(csv_table$mash, db_table$mash)]
-
-  csv_table <- csv_table[, names(csv_table) != 'mash']
-
-  csv_table$already_in_db <- !is.na(csv_table$id)
-
-  # For any NAs, assign new keys, starting at next_id
-
-  which_nas <- which(is.na(csv_table[[id_field]]))
-
-  csv_table[[id_field]][which_nas] <- seq(from = next_id, by = 1,
-                                          length.out = length(which_nas))
-
-  csv_table
-
+  table
 }
 
 # Add any rows in transformed_data[[table_name]] to the data where the id

@@ -6,7 +6,11 @@ extract_responsibility <- function(path, con) {
   e[['responsibility_csv']] <- read_meta(path, "responsibility.csv")
 
   e[['responsibility']] <- DBI::dbGetQuery(con, sprintf("
-    SELECT *
+    SELECT responsibility.id as id, responsibility_set,
+           responsibility.scenario as scenario,
+           current_burden_estimate_set,
+           current_stochastic_burden_estimate_set,
+           is_open, expectations, touchstone
       FROM responsibility
       JOIN scenario
         ON responsibility.scenario = scenario.id
@@ -18,9 +22,15 @@ extract_responsibility <- function(path, con) {
   e[['scenario']] <- db_get(con, "scenario", "touchstone",
                             e$responsibility_csv$touchstone)
 
+  e[['scenario_next_id']] <- next_id(con, "scenario")
+
 
   e[['responsibility_set']] <- db_get(con, "responsibility_set", "touchstone",
                                       e$responsibility_csv$touchstone)
+
+  e[['responsibility_set_next_id']] <- next_id(con, "scenario")
+
+  e
 
 }
 
@@ -31,7 +41,7 @@ test_extract_responsibility <- function(e) {
 
 ###############################################################################
 
-transform_responsibility <- function(e, t_so_far) {
+transform_responsibility <- function(e, t) {
 
   transform_responsibility_set <- function(e) {
     responsibility_set <- data_frame(
@@ -41,7 +51,12 @@ transform_responsibility <- function(e, t_so_far) {
     responsibility_set$id <- mash_id(responsibility_set, e$responsibility_set,
                                      c("modelling_group", "touchstone"))
     responsibility_set$already_exists_db <- !is.na(responsibility_set$id)
-    responsibility_set
+    responsibility_set$status <- e$responsibility_set$status[
+      match(responsibility_set$id, e$responsibility_set$id)]
+
+    responsibility_set$status[is.na(responsibility_set$id)] <- "incomplete"
+
+    fill_in_keys(responsibility_set, e$responsibility_set_next_id)
   }
 
   transform_scenario <- function(e) {
@@ -62,10 +77,11 @@ transform_responsibility <- function(e, t_so_far) {
     scenario$focal_coverage_set <- e$scenario$focal_coverage_set[
       match(scenario$id, e$scenario$id)]
 
-    scenario
+    fill_in_keys(scenario, e$scenario_next_id)
+
   }
 
-  transform_responsibility_table <- function(e, t_so_far) {
+  transform_responsibility_table <- function(e, t) {
 
     # Build the responsibility table itself.
     # Cols: id, responsiblity_set, scenario (numerical),
@@ -86,7 +102,7 @@ transform_responsibility <- function(e, t_so_far) {
 
     # Convert scenario_description into numerical id.
 
-    responsibility$scenario <- mash_id(responsibility, e$scenario,
+    responsibility$scenario <- mash_id(responsibility, t$scenario,
                                  c("touchstone", "scenario_description"))
 
     # Responsibility_set was previously calculated, and is modelling_group &
@@ -95,23 +111,6 @@ transform_responsibility <- function(e, t_so_far) {
     responsibility$responsibility_set <-
       mash_id(responsibility, t$responsibility_set,
               c("modelling_group", "touchstone"))
-
-    # Fetch matching current_burden_estimate_set from database
-
-    responsibility$current_burden_estimate_set <-
-      mash_id(responsibility, e$responsibility, "id",
-              "current_burden_estimate_set")
-
-    # Fetch matching current_stochastic_burden_estimate_set from database
-
-    responsibility$current_stochastic_burden_estimate_set <-
-      mash_id(responsibility, e$responsibility, "id",
-              "current_stochastic_burden_estimate_set")
-
-    # Fetch is_open status from database
-
-    responsibility$is_open <-
-      mash_id(responsibility, e$responsibility, "id", "is_open")
 
     # Expectations we have to work harder with. The expectations may
     # be in t_so_far$burden_estimate_expectation, or they may be
@@ -175,30 +174,48 @@ transform_responsibility <- function(e, t_so_far) {
     responsibility$id <- mash_id(responsibility, e$responsibility,
             c("responsibility_set", "scenario", "expectations"))
 
+    # Fetch matching current_burden_estimate_set from database
+
+    responsibility$current_burden_estimate_set <-
+      mash_id(responsibility, e$responsibility, "id",
+              "current_burden_estimate_set")
+
+    # Fetch matching current_stochastic_burden_estimate_set from database
+
+    responsibility$current_stochastic_burden_estimate_set <-
+      mash_id(responsibility, e$responsibility, "id",
+              "current_stochastic_burden_estimate_set")
+
+    # Fetch is_open status from database, or assume newly added
+    # responsiblities are open.
+
+    responsibility$is_open <-
+      mash_id(responsibility, e$responsibility, "id", "is_open")
+    responsibility$is_open[is.na(responsibility$id)] <- TRUE
+
     # Allocate new ids for any NAs. Editing not really possible
     # with responsibilities. Perhaps we need to support deletion
     # for in-preparation touchstones.
 
-    which_nas <- which(is.na(responsibility$id))
-    responsibility$id[which_nas] <- seq(
-      from = e$responsibility_next_id,
-        by = 1, length.out = length(which_nas))
+    responsibility$touchstone <- NULL
+    responsibility$scenario_description <- NULL
+    responsibility$modelling_group <- NULL
 
-    responsibility
+    fill_in_keys(responsibility, e$responsibility_next_id)
+
   }
 
-  t <- list()
   t$responsibility_set <- transform_responsibility_set(e)
   t$scenario <- transform_scenario(e)
-  t[['responsibility']] <- transform_responsibility_table(e, t_so_far)
+  t[['responsibility']] <- transform_responsibility_table(e, t)
 
   t
 }
 
 test_transform_responsibility <- function(t) {
   expect_false(any(is.na(t$scenario$id)))
-  expect_false(any(is.na(t$responsibility)))
-  expect_false(any(is.na(t$responsibility_set)))
+  expect_false(any(is.na(t$responsibility$id)))
+  expect_false(any(is.na(t$responsibility_set$id)))
 }
 
 ###############################################################################
