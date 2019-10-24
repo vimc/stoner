@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 links together the coverage, demography, responsibilities and outputs for a particularly set of runs that VIMC modellers are asked
 to perform. Once a touchstone is opened, it is designed to be fixed, so having downloaded input data from a particular touchstone,
 if a modelling group chooses to download the input data again, they will always get the same result. This ensures reproducibility,
-but as a side effect, it means that if there is even a minor error that we discover in a touchstone, we will open a new version 
+but as a side effect, it means that if there is even a minor error that we discover in a touchstone, we will open a new version
 of that touchstone, so that any results made using the erroneous touchstone are still well audited and reproducible.
 
 This comes at a cost of creating new touchstones, or new versions quite often, including a significant period of development
@@ -30,13 +30,13 @@ perform CSV reading and SQL updates has often been tangled. [dettl](https://gith
 separation of such imports into cleanly bounded extract, transform and load stages, with unit testing of each stage; this is
 our state of the art we use for the [montagu-imports](https://github.com/vimc/montagu-imports) repository. This
 clarifies things greatly, but at times, at the cost of brevity, where writing a single SQL query in the three stages with tests can
-feel somewhat strenuous, compared to the simplicity of the actual task. 
+feel somewhat strenuous, compared to the simplicity of the actual task.
 
 `stoner` is in principle very similar to a [dettl](https://github.com/vimc/dettl) import; it has extract, transform and load
-phases, and tests on the extract and load phases. But it is specifically designed for a particular set of tasks, and relying 
-on specific metadata, in order to do the specific tasks of incrementally building a touchstone. The aim is that the montagu-import 
-for creating a new touchstone (or making edits to a touchstone that is in preparation), will consist of single-line functions for 
-extract, transform and load, which stoner will take care of. The tests in the import will consist of a single-line call to stoner's 
+phases, and tests on the extract and load phases. But it is specifically designed for a particular set of tasks, and relying
+on specific metadata, in order to do the specific tasks of incrementally building a touchstone. The aim is that the montagu-import
+for creating a new touchstone (or making edits to a touchstone that is in preparation), will consist of single-line functions for
+extract, transform and load, which stoner will take care of. The tests in the import will consist of a single-line call to stoner's
 tests, followed by tests that are specific to the metadata in the import.
 
 The review of a montagu-import that uses stoner, will therefore be a case of looking at the metadata, and the tests that are
@@ -49,8 +49,8 @@ specific to the metadata, and all of the reproducible work will be separately re
 ### extract
 
 The extract phase is called as `stoner::extract(path, con)`; the arguments are the path to the particular montagu-import, and a
-database connection. Within `path`, stoner expects a folder called `meta` to exist, containing the metadata for the import. 
-Various CSV files are expected to be read from there, as part of the extraction. and stoner will then query the database to 
+database connection. Within `path`, stoner expects a folder called `meta` to exist, containing the metadata for the import.
+Various CSV files are expected to be read from there, as part of the extraction. and stoner will then query the database to
 find table data, in order to distinguish between existing rows (perhaps to be edited) and new rows to be added.
 
 #### touchstone and touchstone_name
@@ -69,7 +69,7 @@ find table data, in order to distinguish between existing rows (perhaps to be ed
 
 ### test-extract
 
-Tests are carried out for each part of the touchstone, as follows. All items 
+Tests are carried out for each part of the touchstone, as follows. All items
 referred to will be in the `extracted_data` list, unless otherwise specified.
 
 #### touchstone and touchstone_name
@@ -89,8 +89,8 @@ referred to will be in the `extracted_data` list, unless otherwise specified.
 
 The transform stage involves processing the `extracted_data` and returning a list of data.frames
 that are have the right names, and correct columns to be appended to tables in the Montagu database.
-During the transform, some tables will have an extra column `already_exists_db` added, to indicate 
-that the entire row matches exactly with one in the database. At the end of the transform, any rows 
+During the transform, some tables will have an extra column `already_exists_db` added, to indicate
+that the entire row matches exactly with one in the database. At the end of the transform, any rows
 that have this column set will be dropped if the rows are exactly the same
 as the database content, or kept for potential editing, which we'll discuss in the load section.
 
@@ -113,7 +113,7 @@ and it will perform the following standard tests on all transformed data - if th
 does not require them all to exist.
 
 #### touchstone and touchstone_name
-  
+
   * Test that in `touchstone`, `id` is in the format `touchstone_name`-`version`
   * Test that all touchstones have valid status. (open, in-preparation, finished)
 
@@ -124,19 +124,19 @@ All the useful tests are already done in the test_extract stage.
 ### load
 
 The montagu-import using stoner msut use a custom load, not an automatic one, since the first line of the
-load should be `stoner::load(transformed_data, con)`. 
+load should be `stoner::load(transformed_data, con)`.
 
 #### touchstone_name
-  
-  * `touchstone_name` is uploaded first, since `touchstone` may refer to it. 
+
+  * `touchstone_name` is uploaded first, since `touchstone` may refer to it.
   * Rows with new ids are trivially appended.
-  * Rows with the same id but differing other columns will be edited in-place, provided that 
+  * Rows with the same id but differing other columns will be edited in-place, provided that
     if any touchstone refers to the touchstone_name id, that touchstone must have status `in-preparation`.
 
 #### touchstone
 
   * Rows with new ids are trivially appended.
-  * Rows with the same id but differing other columns will be edited in-place, provided that 
+  * Rows with the same id but differing other columns will be edited in-place, provided that
     the status of that touchstone is `in-preparation`.
 
 ### test-load
@@ -155,6 +155,6 @@ for both future and historic touchstones.
 
 Usually, this would not be permitted, but since this is purely for the purpose of readability and clarity,
 and because it causes no data changes, the default behaviour of forbidding such changes on open or finished
-touchstones can be relaxed by using this longer form of `stoner::load` :- 
+touchstones can be relaxed by using this longer form of `stoner::load` :-
 
 `stoner::load(transformed_data, con, allow_overwrite_scenario_description = TRUE)`
