@@ -116,7 +116,7 @@ transform_responsibility <- function(e, t) {
     # be in t_so_far$burden_estimate_expectation, or they may be
     # in the database.
 
-    new_exps <- t_so_far$burden_estimate_expectation
+    new_exps <- t$burden_estimate_expectation
     new_exps <- new_exps[!new_exps$already_exists_db, ]
     new_exps$already_exists_db <- NULL
     all_expectations <- rbind(e$burden_estimate_expectation,
