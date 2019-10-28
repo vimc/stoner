@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -eu
+
+HERE=$(dirname $0)
+. $HERE/common
+
+docker kill $DB_CONTAINER
+docker network remove $DB_NETWORK
