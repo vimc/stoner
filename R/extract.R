@@ -11,7 +11,22 @@
 ##' @param con The active DBI connection for extracting any data.
 ##' @return A list of named data frames and/or named values representing the extracted data.
 extract <- function(path, con) {
-  c(
-    extract_touchstone(path, con)
+
+  # First get just the meta CSVs
+
+  e <- c(
+    extract_touchstone_csv(path)
   )
+
+  # Remove any NULLs
+
+  e <- e[!unlist(lapply(e, is.null))]
+
+  # Now we know what we need, extract from db
+
+  e <- c(
+    extract_touchstone(e, path, con)
+  )
+
+  e
 }

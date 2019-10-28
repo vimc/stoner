@@ -1,6 +1,10 @@
 read_meta <- function(path, filename) {
-  read.csv(file.path(path, "meta", filename),
+  if (meta_exists(path, filename)) {
+    read.csv(file.path(path, "meta", filename),
            stringsAsFactors = FALSE)
+  } else {
+    NULL
+  }
 }
 
 meta_exists <- function(path, filename) {
@@ -134,6 +138,10 @@ fill_in_keys <- function(csv_table, db_table, id_field, next_id) {
 # edits to the table.
 
 add_return_edits <- function(table_name, transformed_data, con) {
+  if (!table_name %in% names(transformed_data)) {
+    return(data_frame())
+  }
+
   data <- transformed_data[[table_name]]
   ids_found <- db_get(con, table_name, "id", data$id, "id")$id
   to_add <- data[!data$id %in% ids_found, ]

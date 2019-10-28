@@ -1,57 +1,94 @@
 ###############################################################################
 
-extract_touchstone <- function(path, con) {
-  # Get touchstone.csv as touchstone_csv, and
-  # touchstone database (for touchstone.csv$id) as touchstone
+extract_touchstone_csv <- function(path) {
+  list(
+    touchstone_csv = read_meta(path, "touchstone.csv"),
+    touchstone_name_csv = read_meta(path, "touchstone_name.csv")
+  )
+}
 
-  e <- extract_table(path, con, "touchstone", "id")
+extract_touchstone <- function(e, path, con) {
 
-  # Also load touchstone_name.csv as touchstone_name_csv, and
-  # touchstone_name database (for touchstone.csv$touchstone_name
-  #                           and touchstone_name_csv.id)
-  #                                as touchstone_name
+  # Collect touchstone info for all touchstones we're interested in
 
-  e[['touchstone_name_csv']] <- read_meta(path, "touchstone_name.csv")
+  ts <- NULL
 
-  ids <- DBI::dbGetQuery(con, sprintf("
-    SELECT DISTINCT id FROM touchstone_name
-     WHERE id IN %s", sql_in(unique(
-                        c(e[['touchstone_name_csv']]$id,
-                          e[['touchstone_csv']]$touchstone_name)))))$id
+  if (!is.null(e$touchstone_csv)) {
+    ts <- e$touchstone_csv$id
+  }
 
-  e[['touchstone_name']] <- db_get(con, "touchstone_name", "id", ids)
+  if (!is.null(e$touchstone_name_csv)) {
+    ts <- c(ts,
+      DBI::dbGetQuery(con, sprintf("
+        SELECT DISTINCT touchstone.id
+          FROM touchstone
+          JOIN touchstone_name
+            ON touchstone.touchstone_name = touchstone_name.id
+         WHERE touchstone_name.id IN %s",
+               sql_in(e$touchstone_name_csv$id)))$id)
+
+    e <- c(e, list(touchstone = db_get(con, "touchstone", "id", unique(ts))))
+  }
+
+
+
+  # And collect touchstone_name info for all relevant touchstone_names.
+
+  if (!is.null(e$touchstone_name_csv)) {
+    e <- c(e, list(
+      touchstone_name = db_get(con, "touchstone_name", "id",
+                               unique(e$touchstone_name_csv$id))))
+  }
 
   e
 }
 
-test_extract_touchstone <- function(extracted_data) {
-  ex_names <- names(extracted_data)
-  expect_true(("touchstone" %in% ex_names +
-                 "touchstone_csv" %in% ex_names) %in% c(0, 2),
-              label = "touchstone csv/db - both or none")
+test_extract_touchstone <- function(e) {
 
-  expect_true(("touchstone_name" %in% ex_names +
-                 "touchstone_name_csv" %in% ex_names) %in% c(0, 2),
-              label = "touchstone_name csv/db - both or none")
+  test_extract_touchstone_csv <- function(e) {
+    ts <- e$touchstone_csv
+    expect_equal(sort(names(ts)),
+                 sort(c("id", "touchstone_name", "version", "description",
+                        "status", "comment")),
+      label = "Correct columns in touchstone.csv")
 
-  expect_equal(sort(names(extracted_data[['touchstone']])),
-               sort(names(extracted_data[['touchstone_csv']])),
-               label = "touchstone csv columns match database")
+    expect_true(all(ts$touchstone_name %in%
+                c(e[['touchstone_name_csv']]$id,
+                  e[['touchstone_name']]$id)),
+      label = "All touchstone.touchstone_name are known")
 
-  expect_equal(sort(names(extracted_data[['touchstone_name']])),
-               sort(names(extracted_data[['touchstone_name_csv']])),
-               label = "touchstone_name csv columns match database")
+    expect_true(all(ts$id == paste0(ts$touchstone_name, "-", ts$version)),
+      label = "All touchstone.id are [touchstone_name]-[version]")
 
-  expect_true(all(extracted_data[['touchstone_csv']]$touchstone_name %in%
-                  extracted_data[['touchstone_name_csv']]$id),
-              label = "All touchston$touchstone_name in touchstone_name_csv")
+    expect_true(all(ts$description == paste0(ts$touchstone_name,
+                                               " (version ", ts$version,")")),
+      label = "All touchstone.description are [touchstone_name] (Version [v])")
 
-  expect_false(any(duplicated(extracted_data[['touchstone_csv']]$id)),
-               label = "No duplicate ids in touchstone_csv")
+    expect_false(any(duplicated(ts$id)),
+      label = "No duplicate ids in touchstone.csv")
 
-  expect_false(any(duplicated(extracted_data[['touchstone_names_csv']]$id)),
-               label = "No duplicate ids in touchstone_names_csv")
+    expect_true(all(ts$status %in% c("in-preparation", "open", "finished")),
+      label = "All touchstone.status are valid")
+  }
 
+  test_extract_touchstone_name_csv <- function(e) {
+    tsn <- e$touchstone_name_csv
+    expect_equal(sort(names(tsn)),
+                 sort(c("id", "description","comment")),
+      label = "Correct columns in touchstone_name.csv")
+
+    expect_false(any(duplicated(tsn$id)),
+      label = "No duplicate ids in touchstone.csv")
+  }
+
+
+  if (!is.null(e$touchstone_csv)) {
+    test_extract_touchstone_csv(e)
+  }
+
+  if (!is.null(e$touchstone_name_csv)) {
+    test_extract_touchstone_name_csv(e)
+  }
 }
 
 ###############################################################################
