@@ -11,6 +11,9 @@ init:
 install:
   ps: Bootstrap
 
+ps
+  - docker-switch-linux
+
 cache:
   - C:\RLibrary
 
