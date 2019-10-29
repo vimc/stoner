@@ -69,7 +69,6 @@ extract_table <- function(path, con, table, id_field = NULL) {
   ret
 }
 
-
 # Return a vector of characters for a table, each entry being all the fields
 # of that table mashed together, separated by '#'
 
@@ -153,7 +152,6 @@ add_return_edits <- function(table_name, transformed_data, con) {
 
   data[data$id %in% ids_found, ]
 }
-
 
 `%||%` <- function(a, b) {
   if (is.null(a)) b else a
