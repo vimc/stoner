@@ -1,5 +1,5 @@
 Package: stoner
-Title: Support for building VIMC Montagu Touchstones, using dettl.
+Title: Support for building VIMC Montagu Touchstones, using dettl
 Version: 0.0.1
 Authors@R:
     c(person("Wes", "Hinsley",role = c("aut", "cre", "itr"),
@@ -15,7 +15,8 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports:
-    DBI
+    DBI,
+    RPostgres
 Language: en-GB
 RoxygenNote: 6.1.1
 Roxygen: list(markdown = TRUE)
