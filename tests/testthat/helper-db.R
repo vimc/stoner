@@ -20,6 +20,7 @@ test_db_script <- function(name, verbose = TRUE) {
   } else {
     command <- path
     args = character()
+    message(sprintf("sysname: %s, command=%s", sysname, command))
   }
 
   if (verbose) {
