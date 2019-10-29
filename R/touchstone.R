@@ -1,5 +1,3 @@
-###############################################################################
-
 extract_touchstone_csv <- function(path) {
   list(
     touchstone_csv = read_meta(path, "touchstone.csv"),
@@ -9,15 +7,17 @@ extract_touchstone_csv <- function(path) {
 
 extract_touchstone <- function(e, path, con) {
 
-  # Collect touchstone info for all touchstones we're interested in
+  # Collect db rows for touchstones, and touchstone_names that
+  # we are interested in. Start with the CSVs (if any)
 
-  ts <- NULL
+  ts <- e$touchstone_csv$id
+  tsn <- unique(c(e$touchstone_name_csv$id,
+                  e$touchstone_csv$touchstone_name))
 
-  if (!is.null(e$touchstone_csv)) {
-    ts <- e$touchstone_csv$id
-  }
+  # Query DB for all touchstones that are connected with any
+  # touchstone_name in tsn.
 
-  if (!is.null(e$touchstone_name_csv)) {
+  if (!is.null(tsn)) {
     ts <- c(ts,
       DBI::dbGetQuery(con, sprintf("
         SELECT DISTINCT touchstone.id
@@ -25,22 +25,20 @@ extract_touchstone <- function(e, path, con) {
           JOIN touchstone_name
             ON touchstone.touchstone_name = touchstone_name.id
          WHERE touchstone_name.id IN %s",
-               sql_in(e$touchstone_name_csv$id)))$id)
+               sql_in(tsn)))$id)
 
     e <- c(e, list(touchstone = db_get(con, "touchstone", "id", unique(ts))))
   }
 
+  # And also get the touchstone_name info itself
 
-
-  # And collect touchstone_name info for all relevant touchstone_names.
-
-  if (!is.null(e$touchstone_name_csv)) {
+  if (!is.null(tsn)) {
     e <- c(e, list(
       touchstone_name = db_get(con, "touchstone_name", "id",
-                               unique(e$touchstone_name_csv$id))))
+                               unique(tsn))))
   }
-
   e
+
 }
 
 test_extract_touchstone <- function(e) {

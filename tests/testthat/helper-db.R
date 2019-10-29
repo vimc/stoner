@@ -37,10 +37,9 @@ test_path <- function(context, path) {
 test_prepare <- function(path, con = NULL) {
   db_tables <- c("touchstone", "touchstone_name")
   for (table in db_tables) {
-    csv_file <- file.path(path, paste0("db_", table, ".csv"))
-    if (file.exists(csv_file)) {
-      csv <- read_csv(dbf)
-      DBI::dbWriteTable(con, table, csv_file)
+    csv_file <- read_meta(path, paste0("db_", table, ".csv"))
+    if (!is.null(csv_file)) {
+      DBI::dbWriteTable(con, table, csv_file, append = TRUE)
     }
   }
 }
@@ -63,7 +62,7 @@ test_compare_csv_db <- function(con, csv, db) {
 }
 
 test_run_import <- function(path, con = NULL) {
-  e <- extract(path,con)
+  e <- extract(path, con)
   test_extract(e)
   t <- transform(e)
   test_transform(t)

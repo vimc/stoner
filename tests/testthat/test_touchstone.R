@@ -8,43 +8,39 @@ context("touchstone")
 # touchstone_name.csv
 # Cols: id, description, comment
 
+test_touchstone <- function(test_name, no_con = FALSE) {
+  con <- NULL
+  if (!no_con) con <- test_db_connection()
+  path <- test_path("touchstone", test_name)
+  test_prepare(path, con)
+  c(test_run_import(path, con), con = con)
+}
+
 test_that("Empty import should succeed trivially without needing db", {
-  path <- test_path("touchstone", "empty")
-  test_prepare(path)
-  expect_silent(test_run_import(path))
+  res <- test_touchstone("empty", no_con = TRUE)
+  expect_equal(length(res$e), 0)
+  expect_equal(length(res$t), 0)
 })
 
-
 test_that("A new touchstone and name", {
-  con <- test_db_connection()
-  path <- test_path("touchstone", "new_touchstone_and_name")
-  test_prepare(path, con)
-  res <- test_run_import(path, con)
-  test_compare_csv_db(con, res$e$touchstone_csv, "touchstone")
-  test_compare_csv_db(con, res$e$touchstone_name_csv, "touchstone_name")
+  res <- test_touchstone("new_touchstone_and_name")
+  test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone")
+  test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name")
 })
 
 test_that("Two new touchstones and names", {
-  con <- test_db_connection()
-  path <- test_path("touchstone", "two_touchstones_and_names")
-  test_prepare(path, con)
-  res <- test_run_import(path, con)
-  e <-expect_true(test_compare_csv_db(con, res$e$touchstone_csv, "touchstone"))
-  expect_true(test_compare_csv_db(con, res$e$touchstone_name_csv, "touchstone_name"))
+  res <- test_touchstone("two_touchstones_and_names")
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
 })
 
 test_that("Two new touchstones, one touchstone name", {
-  con <- test_db_connection()
-  path <- test_path("touchstone", "two_touchstones_one_name")
-  test_prepare(path, con)
-  res <- test_run_import(path, con)
-  expect_true(test_compare_csv_db(con, res$e$touchstone_csv, "touchstone"))
-  expect_true(test_compare_csv_db(con, res$e$touchstone_name_csv, "touchstone_name"))
+  res <- test_touchstone("two_touchstones_one_name")
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
 })
 
-
-# Tests:
-# 1. touchstone_csv id is not in database, and gets added.
-# 2. touchstone_csv id is in database, is in-preparation and an edit occurs
-# 3. touchstone_csv id is in database, is not in-preparation - > error
-
+ test_that("New touchstone, touchstone name already in db", {
+   res <- test_touchstone("new_touchstone_existing_name")
+   expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
+ })

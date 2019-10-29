@@ -98,7 +98,8 @@ line_occurs_in <- function(table1, table2) {
 
 copy_unique_flag <- function(extracted_data, tab) {
   t <- list()
-  if (tab %in% names(extracted_data)) {
+  if (tab %in% names(extracted_data) &&
+      paste0(tab, "_csv") %in% names(extracted_data)) {
     t[[tab]] <- extracted_data[[paste0(tab, "_csv")]]
     t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]], extracted_data[[tab]])
   }
