@@ -16,7 +16,8 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     DBI,
-    RPostgres
+    RPostgres,
+    utils
 Language: en-GB
 RoxygenNote: 6.1.1
 Roxygen: list(markdown = TRUE)
