@@ -1,5 +1,11 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
+services:
+  - docker
+
+before_install
+- docker pull docker.montagu.dide.ic.ac.uk:5000/montagu-db:master
+
 language: R
 sudo: false
 cache: packages
