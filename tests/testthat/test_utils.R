@@ -1,4 +1,4 @@
-context(utils)
+context("utils")
 
 test_that("%||% works", {
   expect_equal(NULL %||% 0, 0)
