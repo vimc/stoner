@@ -48,7 +48,7 @@ test_path <- function(context, path) {
 }
 
 test_prepare <- function(path, con = NULL) {
-  db_tables <- c("touchstone", "touchstone_name")
+  db_tables <- c("touchstone_name", "touchstone")
   for (table in db_tables) {
     csv_file <- read_meta(path, paste0("db_", table, ".csv"))
     if (!is.null(csv_file)) {
