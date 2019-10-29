@@ -95,7 +95,7 @@ test_that("Add touchstone, bad id format", {
 })
 
 test_that("Edit touchstone name - not in-preparation", {
-  expect_error(test_touchstone("update_touchstone_name_not_in_prep"),
+  expect_error(test_touchstone("update_touchstone_name_not_prep"),
                "Can't edit touchstone_name id (.*). Already exists with open/finished touchstone versions",
                class = "simpleError")
 })

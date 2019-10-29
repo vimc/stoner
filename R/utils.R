@@ -1,6 +1,6 @@
 read_meta <- function(path, filename) {
   if (meta_exists(path, filename)) {
-    read.csv(file.path(path, "meta", filename),
+    utils::read.csv(file.path(path, "meta", filename),
            stringsAsFactors = FALSE)
   } else {
     NULL
