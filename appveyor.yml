@@ -17,7 +17,6 @@ cache:
 # Adapt as necessary starting from here
 
 build_script:
-  - docker-switch-linux
   - docker pull vimc/montagu-db:master
   - travis-tool.sh install_deps
 
