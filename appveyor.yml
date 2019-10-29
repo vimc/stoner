@@ -9,9 +9,7 @@ init:
         Import-Module '..\appveyor-tool.ps1'
 
 install:
-  ps: 
-     - Bootstrap
-     - Switch-DockerLinux
+  ps: Bootstrap
 
 cache:
   - C:\RLibrary
@@ -19,6 +17,7 @@ cache:
 # Adapt as necessary starting from here
 
 build_script:
+  - docker-switch-linux
   - docker pull vimc/montagu-db:master
   - travis-tool.sh install_deps
 
