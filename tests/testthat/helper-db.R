@@ -10,7 +10,8 @@ test_db_stop <- function(verbose = FALSE) {
   test_db_script("db_stop", verbose)
 }
 
-test_db_script <- function(name, verbose = TRUE) {
+test_db_script <- function(name, verbose = FALSE) {
+  verbose <- TRUE
   path <- system.file(file.path("db", name), package = "stoner", mustWork = TRUE)
   sysname <- tolower(Sys.info()[["sysname"]])
 
@@ -18,6 +19,7 @@ test_db_script <- function(name, verbose = TRUE) {
     command <- file.path(dirname(dirname(Sys.which("git"))), "bin", "bash.exe")
     args <- path
   } else {
+
     command <- path
     args = character()
     message(sprintf("sysname: %s, command=%s", sysname, command))
