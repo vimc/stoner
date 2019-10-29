@@ -33,7 +33,7 @@ test_db_script <- function(name, verbose = FALSE) {
   }
 
   if (code != 0) {
-    if (!verbose) {
+    if (verbose) {
       cat(res)
     }
     stop(sprintf("DB script %s failed with code %d", name, code))
