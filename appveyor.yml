@@ -9,8 +9,9 @@ init:
         Import-Module '..\appveyor-tool.ps1'
 
 install:
-  ps: Bootstrap
-  ps: Switch-DockerLinux
+  ps: 
+     - Bootstrap
+     - Switch-DockerLinux
 
 cache:
   - C:\RLibrary
