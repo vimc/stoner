@@ -73,11 +73,11 @@ test_extract_touchstone <- function(e) {
 
   test_extract_touchstone_name_csv <- function(e) {
     tsn <- e$touchstone_name_csv
-    expect_equal(sort(names(tsn)),
+    testthat::expect_equal(sort(names(tsn)),
                  sort(c("id", "description","comment")),
       label = "Correct columns in touchstone_name.csv")
 
-    expect_false(any(duplicated(tsn$id)),
+    testthat::expect_false(any(duplicated(tsn$id)),
       label = "No duplicate ids in touchstone_name.csv")
   }
 
