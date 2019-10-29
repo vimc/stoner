@@ -65,12 +65,10 @@ test_compare_csv_db <- function(con, csv, db) {
   expect_equal(nrow(tab), nrow(csv),
     label = "DB Compare: Row count matches")
 
-  # Not sure how to do row ordering, but...
   cols <- sort(names(tab))
-  matches <- all(unlist(lapply(cols,
-    function(x) all(tab[[x]] == csv[[x]]))))
-
-  expect_true(matches,
+  tab$mash <- mash(tab)
+  csv$mash <- mash(csv)
+  expect_true(all(sort(tab$mash) == sort(csv$mash)),
     label = "DB Compare: Data matches")
 }
 
