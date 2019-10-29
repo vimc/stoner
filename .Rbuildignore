@@ -3,3 +3,6 @@
 ^stoneR\.Rproj$
 ^\.Rproj\.user$
 ^scripts$
+codecov.yml
+appveyor.yml
+.travis.yml
