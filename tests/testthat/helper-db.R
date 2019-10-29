@@ -43,5 +43,5 @@ test_db_script <- function(name, verbose = FALSE) {
 test_db_connection <- function() {
   test_db_clear()
   DBI::dbConnect(RPostgres::Postgres(), dbname = "montagu",
-                 user = "vimc", password = "changeme", port = 5432)
+                 user = "vimc", password = "changeme", port = 5435)
 }
