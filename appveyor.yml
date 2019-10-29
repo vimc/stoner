@@ -1,5 +1,5 @@
 # DO NOT CHANGE the "init" and "install" sections below
-image: Visual Studio 2019
+image: Visual Studio 2017
 # Download script file from GitHub
 
 init:
@@ -8,23 +8,9 @@ init:
         Invoke-WebRequest http://raw.github.com/krlmlr/r-appveyor/master/scripts/appveyor-tool.ps1 -OutFile "..\appveyor-tool.ps1"
         Import-Module '..\appveyor-tool.ps1'
 
-- ps: _
-# Now let's switch Docker to Linux containers mode!
-# 
-# For switching between Windows and Linux modes AppVeyor provides two sets of commands.
-# 
-# PowerShell:
-#   Switch-DockerWindows       - switch Docker to Windows mode
-#   Switch-DockerLinux         - switch Docker to Linux mode
-# CMD:
-#   docker-switch-windows      - switch Docker to Windows mode
-#   docker-switch-linux        - switch Docker to Linux mode
-# 
-# Switching Docker to Linux for the first time takes around a minute. This is the time required to start "MobyLinuxVM" VM:
-- docker-switch-linux
-
 install:
   ps: Bootstrap
+  ps: Switch-DockerLinux
 
 cache:
   - C:\RLibrary
