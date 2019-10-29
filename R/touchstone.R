@@ -151,8 +151,10 @@ load_touchstone_name <- function(transformed_data, con) {
 load_touchstone <- function(transformed_data, con) {
   to_edit <- add_return_edits("touchstone", transformed_data, con)
 
-  existing_status <- db_get(con, "touchstone", "id", to_edit$id,
-                            "id, status")
+  if (nrow(to_edit) > 0) {
+    existing_status <- db_get(con, "touchstone", "id", to_edit$id,
+                              "id, status")
+  }
 
   # For each row in to_edit, do an SQL update, as long as the status
   # is in-preparation.
