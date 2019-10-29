@@ -8,10 +8,11 @@ HERE=$(dirname $0)
 docker network create $DB_NETWORK
 
 echo "Starting container"
-docker run --rm -p 5432:5432 --network=$DB_NETWORK -d --name $DB_CONTAINER $DB_IMAGE
+docker run -d -p -p 127.0.0.1:5432:5432 --rm --network=$DB_NETWORK --name $DB_CONTAINER $DB_IMAGE
 
 # Wait for things to become responsive
 docker exec $DB_CONTAINER montagu-wait.sh
+docker network ls
 
 # Do the migrations
 echo "Creating montagu schema"
