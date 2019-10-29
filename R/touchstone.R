@@ -60,7 +60,7 @@ test_extract_touchstone <- function(e) {
 
     expect_true(all(ts$description == paste0(ts$touchstone_name,
                                                " (version ", ts$version,")")),
-      label = "All touchstone.description are [touchstone_name] (Version [v])")
+      label = "All touchstone.description are formatted correctly")
 
     expect_false(any(duplicated(ts$id)),
       label = "No duplicate ids in touchstone.csv")

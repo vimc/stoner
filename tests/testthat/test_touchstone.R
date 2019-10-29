@@ -65,3 +65,18 @@ test_that("Update and add touchstone and touchstone_name (in prep)", {
   expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
   expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
 })
+
+## Tests that should fail:
+
+test_that("Add touchstone, name not found", {
+  expect_error(test_touchstone("add_touchstone_no_touchstone_name"),
+    "All touchstone.touchstone_name are known isn't true",
+    class = "expectation_failure")
+})
+
+test_that("Add touchstone, bad version", {
+  expect_error(test_touchstone("add_touchstone_bad_version"),
+    "All touchstone.description are formatted correctly isn't true",
+               class = "expectation_failure")
+})
+
