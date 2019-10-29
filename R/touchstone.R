@@ -157,7 +157,7 @@ load_touchstone <- function(transformed_data, con) {
   for (r in seq_len(nrow(to_edit))) {
     touch <- to_edit[r, ]
 
-    if (touch$status == 'in_preparation') {
+    if (touch$status == 'in-preparation') {
 
       DBI::dbExecute(con, "
         UPDATE touchstone

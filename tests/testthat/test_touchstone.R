@@ -40,17 +40,22 @@ test_that("Two new touchstones, one touchstone name", {
   expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
 })
 
- test_that("New touchstone, touchstone name in db, not csv", {
-   res <- test_touchstone("new_touchstone_existing_name")
+test_that("New touchstone, touchstone name in db, not csv", {
+  res <- test_touchstone("new_touchstone_existing_name")
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
+})
+
+test_that("Update existing touchstone_name (no refs)", {
+  res <- test_touchstone("update_touchstone_name_no_refs")
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
+})
+
+test_that("Update existing touchstone_name (in prep)", {
+  res <- test_touchstone("update_touchstone_name_in_prep")
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
+})
+
+test_that("Update existing touchstone details (in prep)", {
+  res <- test_touchstone("update_touchstone_in_prep")
    expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
- })
-
- test_that("Update existing touchstone_name (no refs)", {
-   res <- test_touchstone("update_touchstone_name_no_refs")
-   expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
- })
-
- test_that("Update existing touchstone_name (in prep)", {
-   res <- test_touchstone("update_touchstone_name_in_prep")
-   expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
- })
+})
