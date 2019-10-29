@@ -45,27 +45,29 @@ test_extract_touchstone <- function(e) {
 
   test_extract_touchstone_csv <- function(e) {
     ts <- e$touchstone_csv
-    expect_equal(sort(names(ts)),
+    testthat::expect_equal(sort(names(ts)),
                  sort(c("id", "touchstone_name", "version", "description",
                         "status", "comment")),
       label = "Correct columns in touchstone.csv")
 
-    expect_true(all(ts$touchstone_name %in%
+    testthat::expect_true(all(ts$touchstone_name %in%
                 c(e[['touchstone_name_csv']]$id,
                   e[['touchstone_name']]$id)),
       label = "All touchstone.touchstone_name are known")
 
-    expect_true(all(ts$id == paste0(ts$touchstone_name, "-", ts$version)),
+    testthat::expect_true(all(ts$id ==
+        paste0(ts$touchstone_name, "-", ts$version)),
       label = "All touchstone.id are touchstone_name-version")
 
-    expect_true(all(ts$description == paste0(ts$touchstone_name,
+    testthat::expect_true(all(ts$description == paste0(ts$touchstone_name,
                                                " (version ", ts$version,")")),
       label = "All touchstone.description are formatted correctly")
 
-    expect_false(any(duplicated(ts$id)),
+    testthat::expect_false(any(duplicated(ts$id)),
       label = "No duplicate ids in touchstone.csv")
 
-    expect_true(all(ts$status %in% c("in-preparation", "open", "finished")),
+    testthat::expect_true(all(ts$status %in%
+      c("in-preparation", "open", "finished")),
       label = "All touchstone.status are valid")
   }
 
