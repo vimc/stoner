@@ -1,6 +1,6 @@
 context("touchstone")
 
-# Here, we do tests with these two CSV files...
+# Here, we do tests on  these two CSV files...
 
 # touchstone.csv
 # Cols: id, touchstone_name, version, description, status, comment
@@ -66,6 +66,14 @@ test_that("Update and add touchstone and touchstone_name (in prep)", {
   expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
 })
 
+test_that("Exact match", {
+  res <- test_touchstone("exact_match")
+  expect_equal(nrow(res$t$touchstone), 0)
+  expect_equal(nrow(res$t$touchstone_name), 0)
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_name_csv, "touchstone_name"))
+})
+
 ## Tests that should fail:
 
 test_that("Add touchstone, name not found", {
@@ -77,6 +85,66 @@ test_that("Add touchstone, name not found", {
 test_that("Add touchstone, bad version", {
   expect_error(test_touchstone("add_touchstone_bad_version"),
     "All touchstone.description are formatted correctly isn't true",
+               class = "expectation_failure")
+})
+
+test_that("Add touchstone, bad id format", {
+  expect_error(test_touchstone("add_touchstone_bad_id_format"),
+               "All touchstone.id are touchstone_name-version isn't true",
+               class = "expectation_failure")
+})
+
+test_that("Edit touchstone name - not in-preparation", {
+  expect_error(test_touchstone("update_touchstone_name_not_in_prep"),
+               "Can't edit touchstone_name id (.*). Already exists with open/finished touchstone versions",
+               class = "simpleError")
+})
+
+test_that("Edit touchstone - not in-preparation", {
+  expect_error(test_touchstone("update_touchstone_not_in_prep"),
+               "Can't edit touchstone id (.*). Already exists with open/finished status.",
+               class = "simpleError")
+})
+
+test_that("touchstone CSV invalid", {
+  expect_error(test_touchstone("touchstone_csv_invalid"),
+               "Correct columns in touchstone.csv not equal to (.*)",
+               class = "expectation_failure")
+})
+
+test_that("touchstone_name CSV invalid", {
+  expect_error(test_touchstone("touchstone_name_csv_invalid"),
+               "Correct columns in touchstone_name.csv not equal to (.*)",
+               class = "expectation_failure")
+})
+
+test_that("Duplicate touchstone id in csv", {
+  expect_error(test_touchstone("duplicate_touchstone_id"),
+               "No duplicate ids in touchstone.csv isn't false.",
+               class = "expectation_failure")
+})
+
+test_that("Duplicate touchstone_name in csv", {
+  expect_error(test_touchstone("duplicate_touchstone_name"),
+               "No duplicate ids in touchstone_name.csv isn't false.",
+               class = "expectation_failure")
+})
+
+test_that("Duplicate touchstone_name in csv", {
+  expect_error(test_touchstone("duplicate_touchstone_name"),
+               "No duplicate ids in touchstone_name.csv isn't false.",
+               class = "expectation_failure")
+})
+
+test_that("Add touchstone, bad status", {
+  expect_error(test_touchstone("add_bad_status"),
+               "All touchstone.status are valid isn't true.",
+               class = "expectation_failure")
+})
+
+test_that("Edit touchstone, bad status", {
+  expect_error(test_touchstone("edit_bad_status"),
+               "All touchstone.status are valid isn't true.",
                class = "expectation_failure")
 })
 

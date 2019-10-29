@@ -56,7 +56,7 @@ test_extract_touchstone <- function(e) {
       label = "All touchstone.touchstone_name are known")
 
     expect_true(all(ts$id == paste0(ts$touchstone_name, "-", ts$version)),
-      label = "All touchstone.id are [touchstone_name]-[version]")
+      label = "All touchstone.id are touchstone_name-version")
 
     expect_true(all(ts$description == paste0(ts$touchstone_name,
                                                " (version ", ts$version,")")),
@@ -76,7 +76,7 @@ test_extract_touchstone <- function(e) {
       label = "Correct columns in touchstone_name.csv")
 
     expect_false(any(duplicated(tsn$id)),
-      label = "No duplicate ids in touchstone.csv")
+      label = "No duplicate ids in touchstone_name.csv")
   }
 
 
@@ -151,13 +151,18 @@ load_touchstone_name <- function(transformed_data, con) {
 load_touchstone <- function(transformed_data, con) {
   to_edit <- add_return_edits("touchstone", transformed_data, con)
 
+  existing_status <- db_get(con, "touchstone", "id", to_edit$id,
+                            "id, status")
+
   # For each row in to_edit, do an SQL update, as long as the status
   # is in-preparation.
 
   for (r in seq_len(nrow(to_edit))) {
     touch <- to_edit[r, ]
 
-    if (touch$status == 'in-preparation') {
+    if (all(unique(c(touch$status,
+                 existing_status$status[existing_status$id == touch$id]))
+        == 'in-preparation')) {
 
       DBI::dbExecute(con, "
         UPDATE touchstone
