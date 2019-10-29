@@ -124,15 +124,13 @@ load_touchstone_name <- function(transformed_data, con) {
       SELECT DISTINCT status
         FROM touchstone
        WHERE touchstone_name = $1",
-        to_edit$id[r])
+        to_edit$id[r])$status
 
     # If there are no versions whatsoever, it's safe to edit.
 
     if (length(status) == 0) {
-      status = 'in-preparation'
+      status <- "in-preparation"
     }
-
-    status = unlist(as.character(status))
 
     if ((length(status) == 1) && (status == 'in-preparation')) {
 

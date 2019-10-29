@@ -1,25 +1,38 @@
-test_db_start <- function() {
-  test_db_script("db_start")
+test_db_start <- function(verbose = FALSE) {
+  test_db_script("db_start", verbose)
 }
 
-test_db_clear <- function() {
-  test_db_script("db_clear")
+test_db_clear <- function(verbose = FALSE) {
+  test_db_script("db_clear", verbose)
 }
 
-test_db_stop <- function() {
-  test_db_script("db_stop")
+test_db_stop <- function(verbose = FALSE) {
+  test_db_script("db_stop", verbose)
 }
 
-test_db_script <- function(name) {
+test_db_script <- function(name, verbose = FALSE) {
   path <- system.file(file.path("db", name), package = "stoner", mustWork = TRUE)
   sysname <- tolower(Sys.info()[["sysname"]])
+
   if (tolower(sysname) == "windows") {
-    bash <- file.path(dirname(dirname(Sys.which("git"))), "bin", "bash.exe")
-    code <- system2(bash, path)
+    command <- file.path(dirname(dirname(Sys.which("git"))), "bin", "bash.exe")
+    args <- path
   } else {
-    code <- system2(path)
+    command <- path
+    args = character()
   }
+
+  if (verbose) {
+    code <- system2(command, args, stdout = "", stderr = "")
+  } else {
+    res <- system2(command, args, stdout = TRUE, stderr = TRUE)
+    code <- attr(res, "status") %||% 0
+  }
+
   if (code != 0) {
+    if (!verbose) {
+      cat(res)
+    }
     stop(sprintf("DB script %s failed with code %d", name, code))
   }
 }

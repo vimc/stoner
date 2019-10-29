@@ -18,13 +18,5 @@ echo "Creating montagu schema"
 docker run --rm --network=$DB_NETWORK $DB_MIGRATE_IMAGE
 
 echo "Setting up utility scripts"
-cat <<EOF > clear_schema.sql
-DROP SCHEMA public cascade;
-CREATE SCHEMA public;
-GRANT ALL ON SCHEMA public TO vimc;
-GRANT ALL ON SCHEMA public TO postgres;
-EOF
 
-docker cp clear_schema.sql $DB_CONTAINER:/
-
-rm -f clear_schema.sql
+docker cp $HERE/clear_schema.sql $DB_CONTAINER:/
