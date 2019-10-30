@@ -25,9 +25,6 @@ extract <- function(path, con) {
 
   # Now we know what we need, extract from db
 
-  e <- c(
-    extract_touchstone(e, path, con)
-  )
+  extract_touchstone(e, path, con)
 
-  e
 }
