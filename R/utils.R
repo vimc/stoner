@@ -16,17 +16,21 @@ data_frame <- function(...) {
 }
 
 sql_in_char <- function(strings) {
-  paste0("('", paste(strings, collapse = "','"), "')")
+  sprintf("('%s')", paste(strings, collapse = "','"))
 }
 
 sql_in_numeric <- function(numerics) {
-  paste0("(", paste(numerics, collapse = ","), ")")
+  sprintf("(%s)", paste(numerics, collapse = ","))
 }
 
 sql_in <- function(things) {
-  if (is.character(things)) sql_in_char(things)
-  else if (is.numeric(things)) sql_in_numeric(things)
-  else stop("Can't convert things with sql_in")
+  if (is.character(things)) {
+    sql_in_char(things)
+  } else if (is.numeric(things)) {
+    sql_in_numeric(things)
+  } else {
+    stop("Can't convert things with sql_in")
+  }
 }
 
 db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
@@ -42,7 +46,7 @@ db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") 
 
 mash <- function(tab) {
   fields <- sort(names(tab))
-  df_args <- c(tab, sep = "#")
+  df_args <- c(tab, sep = "\r")
   do.call(paste, df_args)
 }
 
