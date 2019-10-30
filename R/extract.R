@@ -14,8 +14,9 @@ extract <- function(path, con) {
 
   # First get just the meta CSVs
 
-  e <- c(
-    extract_touchstone_csv(path)
+  e <- list(
+      touchstone_csv = read_meta(path, "touchstone.csv"),
+      touchstone_name_csv = read_meta(path, "touchstone_name.csv")
   )
 
   # Remove any NULLs

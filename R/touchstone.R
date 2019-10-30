@@ -1,10 +1,3 @@
-extract_touchstone_csv <- function(path) {
-  list(
-    touchstone_csv = read_meta(path, "touchstone.csv"),
-    touchstone_name_csv = read_meta(path, "touchstone_name.csv")
-  )
-}
-
 extract_touchstone <- function(e, path, con) {
 
   # Collect db rows for touchstones, and touchstone_names that
