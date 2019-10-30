@@ -28,11 +28,11 @@ test_compare_csv_db <- function(con, csv, db) {
 }
 
 test_run_import <- function(path, con = NULL) {
-  e <- extract(path, con)
-  test_extract(e)
-  t <- transform(e)
-  test_transform(t)
-  l <- load(t, con)
+  e <- stone_extract(path, con)
+  stone_test_extract(e)
+  t <- stone_transform(e)
+  stone_test_transform(t)
+  l <- stone_load(t, con)
   list(e = e, t = t)
 }
 
