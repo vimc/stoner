@@ -12,7 +12,7 @@
 #'   database table names, and containing rows to be added to that table.
 
 transform <- function(extracted_data) {
-  t <- c(transform_touchstone(extracted_data))
+  t <- transform_touchstone(extracted_data)
 
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).

@@ -46,7 +46,7 @@ db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") 
 
 mash <- function(tab) {
   fields <- sort(names(tab))
-  df_args <- paste(tab, sep = "\r")
+  df_args <- c(tab, sep = "\r")
   do.call(paste, df_args)
 }
 
