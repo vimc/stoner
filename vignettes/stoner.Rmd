@@ -52,7 +52,7 @@ element of an import exist in `tests/testthat/examples`.
 
 ### extract
 
-The extract phase is called as `stoner::extract(path, con)`; the arguments are the path to the particular montagu-import, and a
+The extract phase is called as `stoner::stone_extract(path, con)`; the arguments are the path to the particular montagu-import, and a
 database connection. Internally, `stoner` splits the extract phase into two; the first reads all the `csv` metadata first, and
 the second queries the database for rows regarding the metadata. This split is necessary because (for example) there are several 
 different parts of the import that might all refer to touchstones, and it would be good to know about all the touchstones we ever 
@@ -98,7 +98,7 @@ new, or have matching ids but differ in some other column to the database:
 
 ### test-transform
 
-`stoner::test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
+`stoner::stone_test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
 and it will perform the following standard tests on all transformed data - if they exist, since stoner
 does not require them all to exist.
 
