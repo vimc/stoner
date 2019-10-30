@@ -21,7 +21,7 @@ extract <- function(path, con) {
 
   # Remove any NULLs
 
-  e <- e[!unlist(lapply(e, is.null))]
+  e <- e[!vlapply(e, is.null)]
 
   # Now we know what we need, extract from db
 

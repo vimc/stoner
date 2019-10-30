@@ -95,3 +95,7 @@ add_return_edits <- function(table_name, transformed_data, con) {
 `%||%` <- function(a, b) {
   if (is.null(a)) b else a
 }
+
+vlapply <- function(X, FUN, ...) {
+  vapply(X, FUN, logical(1), ...)
+}
