@@ -51,7 +51,7 @@ mash <- function(tab) {
 
 line_occurs_in <- function(table1, table2) {
   if (nrow(table2) == 0) {
-    FALSE
+    rep(FALSE, nrow(table1))
   } else {
     mash(table1) %in% mash(table2)
   }
