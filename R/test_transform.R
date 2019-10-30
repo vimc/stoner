@@ -2,7 +2,7 @@
 ##' called from \code{test-extract.R} in a montagu-imports import. It tests
 ##' that the csv metadata is syntactically valid and as expected, and
 ##' that querying related database tables has also worked. After
-##' calling \code{stoner::text_extract(extracted_data)}, you should
+##' calling \code{stoner::stone_text_extract(extracted_data)}, you should
 ##' write tests that are specific to the metadata for the particular
 ##' import you are writing.
 ##'
@@ -14,6 +14,6 @@
 ##'        function. They will have names matching database tables in montagu, and
 ##'        columns matching the columns of those tables.
 
-test_transform <- function(transformed_data) {
+stone_test_transform <- function(transformed_data) {
   test_transform_touchstone(transformed_data)
 }
