@@ -97,6 +97,8 @@ During the transform, some tables will have an extra column `already_exists_db` 
 that the entire row matches exactly with one in the database. At the end of the transform, any rows
 that have this column set will be dropped if the rows are exactly the same
 as the database content, or kept for potential editing, which we'll discuss in the load section.
+Call the transform code with `stoner::stone_transform(extracted_data)` from within the dettl
+transform.
 
 #### touchstone and touchstone_name
 
@@ -127,7 +129,7 @@ does not require them all to exist.
 ### stone_load
 
 The montagu-import using stoner msut use a custom load, not an automatic one, since the first line of the
-load should be `stoner::load(transformed_data, con)`.
+load should be `stoner::stone_load(transformed_data, con)`.
 
 #### touchstone_name
 
@@ -160,4 +162,4 @@ Usually, this would not be permitted, but since this is purely for the purpose o
 and because it causes no data changes, the default behaviour of forbidding such changes on open or finished
 touchstones can be relaxed by using this longer form of `stoner::load` :-
 
-`stoner::load(transformed_data, con, allow_overwrite_scenario_description = TRUE)`
+`stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)`

@@ -59,3 +59,9 @@ test_that("Edit scenario description for unused scenario description", {
   test_compare_csv_db(res$con, res$e$scenario_description_csv,
                       "scenario_description")
 })
+
+test_that("Invalid columns", {
+  expect_error(test_scenario_description("invalid_columns"),
+               "Column names correct in scenario_description.csv isn't true",
+               class = "expectation_failure")
+})
