@@ -103,8 +103,3 @@ add_return_edits <- function(table_name, transformed_data, con) {
 vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
-
-next_id <- function(con, table, id_field) {
-  1L + as.numeric(DBI::dbGetQuery(con,
-    sprintf("SELECT max(%s) FROM %s", id_field, table)))
-}
