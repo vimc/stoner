@@ -1,12 +1,10 @@
-###############################################################################
-
 extract_scenario_description <- function(e, path, con) {
-  e <- c(e,
+  c(e, list(
     scenario_description = db_get(con, "scenario_description", "id",
                      unique(e$scenario_description_csv$id)),
-    disease = db_get(con, "disease", "id",
+                 disease = db_get(con, "disease", "id",
                      unique(e$scenario_description_csv$disease), "id")
-  )
+  ))
 }
 
 test_extract_scenario_description <- function(extracted_data) {
@@ -14,22 +12,16 @@ test_extract_scenario_description <- function(extracted_data) {
   expect_true(all(unique(extracted_data[['scenario_description_csv']]$disease)
                   %in% extracted_data[['disease']]$id),
               label = "Diseases in scenario_description are valid")
-
-  expect_false(any(is.null(extracted_data[['scenario_description_csv']]$description)))
-  expect_false(any(is.na(extracted_data[['scenario_description_csv']]$description)))
-  expect_false(any(is.null(extracted_data[['scenario_description_csv']]$id)))
-  expect_false(any(is.na(extracted_data[['scenario_description_csv']]$id)))
-
 }
 
 ###############################################################################
 
 transform_scenario_description <- function(e) {
-  copy_unique_flag(e, "scenario_description")
+  list(scenario_description = e$scenario_description_csv)
 }
 
 test_transform_scenario_description <- function(transformed_data) {
-  # Nothing really useful to do here.
+  # Nothing useful to do here.
 }
 
 ###############################################################################
@@ -71,7 +63,7 @@ load_scenario_description <- function(transformed_data, con,
 
       # If no results at all, then it's also ok to edit.
 
-      if (length(status == 0)) {
+      if (length(status) == 0) {
         status <- "in-preparation"
       }
     }
