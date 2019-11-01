@@ -7,17 +7,20 @@ extract_scenario_description <- function(e, path, con) {
   ))
 }
 
-test_extract_scenario_description <- function(extracted_data) {
+test_extract_scenario_description <- function(e) {
 
-  expect_true(all(unique(extracted_data[['scenario_description_csv']]$disease)
-                  %in% extracted_data[['disease']]$id),
+  expect_true(all(unique(e[['scenario_description_csv']]$disease)
+                  %in% e[['disease']]$id),
               label = "Diseases in scenario_description are valid")
+
+  expect_false(any(duplicated(e[['scenario_description_csv']]$id)),
+               label = "Duplicate ids in scenario_description.csv")
 }
 
 ###############################################################################
 
 transform_scenario_description <- function(e) {
-  list(scenario_description = e$scenario_description_csv)
+  copy_unique_flag(e, "scenario_description")
 }
 
 test_transform_scenario_description <- function(transformed_data) {
