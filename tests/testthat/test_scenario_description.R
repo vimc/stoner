@@ -51,6 +51,6 @@ test_that("Edit scenario description for open touchstone", {
 
   expect_error(test_scenario_description("edit_not_in_prep",
            allow_overwrite_scenario_description = FALSE),
-    "Can't edit scenario_description with id (%s). Already exists with open/finished touchstone versions."))
+    "Can't edit scenario_description with id hot_chocolate. Already exists with open/finished touchstone versions.")
 
 })
