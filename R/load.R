@@ -1,6 +1,6 @@
 #' Load touchstone-relevant transformed data into the database. This should be
 #' called from the load code of a montagu-import, which must therefore be a
-#' custom load, not an automatic one. Call `stoner::load(transformed_data, con)`
+#' custom load, not an automatic one. Call `stoner::stone_load(transformed_data, con)`
 #' with the same arguments provided to the montagu-import load function.
 #' @title Load touchstone data to database
 #' @export
@@ -14,11 +14,11 @@
 #' on why this may be necessary.
 #'
 
-load <- function(transformed_data, con,
-                 allow_overwrite_scenario_description = FALSE) {
+stone_load <- function(transformed_data, con,
+                       allow_overwrite_scenario_description = FALSE) {
 
-  load_touchstone_name      (transformed_data, con)
-  load_touchstone           (transformed_data, con)
-  load_scenario_description (transformed_data, con,
-                             allow_overwrite_scenario_description)
+  load_touchstone_name(transformed_data, con)
+  load_touchstone(transformed_data, con)
+  load_scenario_description(transformed_data, con,
+                            allow_overwrite_scenario_description)
 }

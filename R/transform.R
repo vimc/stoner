@@ -1,6 +1,6 @@
 #' Transform touchstone-relevant extracted data into tables ready for
 #' database import. This should be called from the transform code of montagu-import,
-#' calling `stoner::transform(extracted_data)` with the same argument provided
+#' calling `stoner::stone_transform(extracted_data)` with the same argument provided
 #' to the montagu-import transform function.
 #'
 #' For specific information on what steps the transform function does.
@@ -11,9 +11,11 @@
 #' @return A list of data frames, one for each table, with names matching the
 #'   database table names, and containing rows to be added to that table.
 
-transform <- function(extracted_data) {
-  t <- c(transform_touchstone(extracted_data),
-         transform_scenario_description(extracted_data))
+stone_transform <- function(extracted_data) {
+  t <- c(
+          transform_touchstone(extracted_data),
+          transform_scenario_description(extracted_data)
+	)
 
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).

@@ -1,4 +1,5 @@
----
+ must have a matching entry in either the `touchstone_name` csv file, or the
+`---
 title: "stoner"
 author: "Wes Hinsley"
 date: "`r Sys.Date()`"
@@ -41,25 +42,33 @@ tests, followed by tests that are specific to the metadata in the import.
 
 The review of a montagu-import that uses stoner, will therefore be a case of looking at the metadata, and the tests that are
 specific to the metadata, and all of the reproducible work will be separately reviewed, once for all, in the stoner package.
+Tests of `stoner` itself are done by running a docker instance of the montagu database, and a rack of tests for each 
+element of an import exist in `tests/testthat/examples`.
+
 
 ## Creating a montagu-import that uses stoner
 
 ## What stoner does
 
-### extract
+### stone_extract
 
-The extract phase is called as `stoner::extract(path, con)`; the arguments are the path to the particular montagu-import, and a
-database connection. Within `path`, stoner expects a folder called `meta` to exist, containing the metadata for the import.
-Various CSV files are expected to be read from there, as part of the extraction. and stoner will then query the database to
-find table data, in order to distinguish between existing rows (perhaps to be edited) and new rows to be added.
+The extract phase is called as `stoner::stone_extract(path, con)`; the arguments are the path to the particular montagu-import, and a
+database connection. Internally, `stoner` splits the extract phase into two; the first reads all the `csv` metadata first, and
+the second queries the database for rows regarding the metadata. This split is necessary because (for example) there are several 
+different parts of the import that might all refer to touchstones, and it would be good to know about all the touchstones we ever 
+mention in the metadata, at the point where we query the `touchstone` database table.
+
+The metadata files are expected to be in a folder called `meta`, within the import.
 
 #### touchstone and touchstone_name
 
-  * If present within `path`, read `meta/touchstone.csv` as `touchstone_csv`.
-  * If present within `path`, read `meta/touchstone_name.csv` as `touchstone_name_csv`.
-  * Fetch `touchstone` rows from database for any matching `id` in `touchstone_csv`.
-  * Fetch `touchstone_name` rows from database for any matching `id` in `touchstone_name_csv`, and
+  * In the `extract-csv` phase, read `touchstone_name` and `touchstone` csv files, if they exist.
+  * In the `extract-db` phase, fetch `touchstone` rows from database for any matching `id` in `touchstone_csv`, 
+    and `touchstone_name` rows from database for any matching `id` in `touchstone_name_csv`, and
     also matching `touchstone_name` in `touchstone_csv`.
+  * The format of all new `touchstone.id` should be `touchstone_name-version`
+  * All new `touchstone.description` should be `touchstone_name (version v)`
+  * All new `touchstone.status` must be either `in-preparation`, `open`, or `finished`.
 
 #### scenario_description
 
@@ -67,17 +76,14 @@ find table data, in order to distinguish between existing rows (perhaps to be ed
   * Fetch `scenario_description` rows from database for any matching `id` in `scenario_description_csv`.
   * Also lookup Montagu's `disease` table for ids that match `scenario_description_csv`$disease.
 
-### test-extract
-
-Tests are carried out for each part of the touchstone, as follows. All items
-referred to will be in the `extracted_data` list, unless otherwise specified.
+### stone_test_extract
 
 #### touchstone and touchstone_name
 
-  * `touchstone` and `touchstone_csv` must be either both present, or both absent.
-  * `touchstone_name` and `touchstone_name_csv` must be either both present, or both absent.
-  * If they are present, then both files must columns matching the \code{touchstone} database table.
-  * All `touchstone_csv`$`touchstone_name` values must match a `touchstone_name_csv`$`id`.
+  * Check that columns in the `touchstone` and `touchstone_name` csv files match the databse table.
+  * All `touchstone.touchstone_name` must have a matching entry in either the `touchstone_name` csv file, or the
+    `touchstone_name` database tablwe.
+  * All `touchstone.touchstone_name` and `touchstone.id` must be unique within the csv files.
 
 #### scenario_description
 
@@ -85,7 +91,7 @@ referred to will be in the `extracted_data` list, unless otherwise specified.
   * Test that all descriptions are non-empty. (Cannot check for duplicates here, since duplicates
     are permitted in the table; "No vaccination" is duplicated for all diseases.)
 
-### transform
+### stone_transform
 
 The transform stage involves processing the `extracted_data` and returning a list of data.frames
 that are have the right names, and correct columns to be appended to tables in the Montagu database.
@@ -106,22 +112,21 @@ new, or have matching ids but differ in some other column to the database:
 
   * Use new/differing rows in `scenario_description_csv` as the transformed `scenario_description` table rows.
 
-### test-transform
+### stone_test_transform
 
-`stoner::test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
+`stoner::stone_test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
 and it will perform the following standard tests on all transformed data - if they exist, since stoner
 does not require them all to exist.
 
 #### touchstone and touchstone_name
 
-  * Test that in `touchstone`, `id` is in the format `touchstone_name`-`version`
-  * Test that all touchstones have valid status. (open, in-preparation, finished)
+  * Nothing further to test here; all useful tests are in the extract stage.
 
 #### scenario_description
 
 All the useful tests are already done in the test_extract stage.
 
-### load
+### stone_load
 
 The montagu-import using stoner msut use a custom load, not an automatic one, since the first line of the
 load should be `stoner::load(transformed_data, con)`.
@@ -139,7 +144,7 @@ load should be `stoner::load(transformed_data, con)`.
   * Rows with the same id but differing other columns will be edited in-place, provided that
     the status of that touchstone is `in-preparation`.
 
-### test-load
+### (test_load)
 
 There are no generic tests for load; these must be implemented specifically for the metadata
 in the montagu-import.

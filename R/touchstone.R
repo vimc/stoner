@@ -1,57 +1,87 @@
-###############################################################################
+extract_touchstone <- function(e, path, con) {
 
-extract_touchstone <- function(path, con) {
-  # Get touchstone.csv as touchstone_csv, and
-  # touchstone database (for touchstone.csv$id) as touchstone
+  # Collect db rows for touchstones, and touchstone_names that
+  # we are interested in. Start with the CSVs (if any)
 
-  e <- extract_table(path, con, "touchstone", "id")
+  ts <- e$touchstone_csv$id
+  tsn <- unique(c(e$touchstone_name_csv$id,
+                  e$touchstone_csv$touchstone_name))
 
-  # Also load touchstone_name.csv as touchstone_name_csv, and
-  # touchstone_name database (for touchstone.csv$touchstone_name
-  #                           and touchstone_name_csv.id)
-  #                                as touchstone_name
+  # Query DB for all touchstones that are connected with any
+  # touchstone_name in tsn.
 
-  e[['touchstone_name_csv']] <- read_meta(path, "touchstone_name.csv")
+  if (!is.null(tsn)) {
+    ts <- c(ts,
+      DBI::dbGetQuery(con, sprintf("
+        SELECT DISTINCT touchstone.id
+          FROM touchstone
+          JOIN touchstone_name
+            ON touchstone.touchstone_name = touchstone_name.id
+         WHERE touchstone_name.id IN %s",
+               sql_in(tsn)))$id)
 
-  ids <- DBI::dbGetQuery(con, sprintf("
-    SELECT DISTINCT id FROM touchstone_name
-     WHERE id IN %s", sql_in(unique(
-                        c(e[['touchstone_name_csv']]$id,
-                          e[['touchstone_csv']]$touchstone_name)))))$id
+    e <- c(e, list(touchstone = db_get(con, "touchstone", "id", unique(ts))))
+  }
 
-  e[['touchstone_name']] <- db_get(con, "touchstone_name", "id", ids)
+  # And also get the touchstone_name info itself
 
+  if (!is.null(tsn)) {
+    e <- c(e, list(
+      touchstone_name = db_get(con, "touchstone_name", "id",
+                               unique(tsn))))
+  }
   e
+
 }
 
-test_extract_touchstone <- function(extracted_data) {
-  ex_names <- names(extracted_data)
-  expect_true(("touchstone" %in% ex_names +
-                 "touchstone_csv" %in% ex_names) %in% c(0, 2),
-              label = "touchstone csv/db - both or none")
+test_extract_touchstone <- function(e) {
 
-  expect_true(("touchstone_name" %in% ex_names +
-                 "touchstone_name_csv" %in% ex_names) %in% c(0, 2),
-              label = "touchstone_name csv/db - both or none")
+  test_extract_touchstone_csv <- function(e) {
+    ts <- e$touchstone_csv
+    testthat::expect_equal(sort(names(ts)),
+                 sort(c("id", "touchstone_name", "version", "description",
+                        "status", "comment")),
+      label = "Correct columns in touchstone.csv")
 
-  expect_equal(sort(names(extracted_data[['touchstone']])),
-               sort(names(extracted_data[['touchstone_csv']])),
-               label = "touchstone csv columns match database")
+    testthat::expect_true(all(ts$touchstone_name %in%
+                c(e[['touchstone_name_csv']]$id,
+                  e[['touchstone_name']]$id)),
+      label = "All touchstone.touchstone_name are known")
 
-  expect_equal(sort(names(extracted_data[['touchstone_name']])),
-               sort(names(extracted_data[['touchstone_name_csv']])),
-               label = "touchstone_name csv columns match database")
+    testthat::expect_true(all(ts$id ==
+        paste0(ts$touchstone_name, "-", ts$version)),
+      label = "All touchstone.id are touchstone_name-version")
 
-  expect_true(all(extracted_data[['touchstone_csv']]$touchstone_name %in%
-                  extracted_data[['touchstone_name_csv']]$id),
-              label = "All touchston$touchstone_name in touchstone_name_csv")
+    testthat::expect_true(all(ts$description == paste0(ts$touchstone_name,
+                                               " (version ", ts$version,")")),
+      label = "All touchstone.description are formatted correctly")
 
-  expect_false(any(duplicated(extracted_data[['touchstone_csv']]$id)),
-               label = "No duplicate ids in touchstone_csv")
+    testthat::expect_false(any(duplicated(ts$id)),
+      label = "No duplicate ids in touchstone.csv")
 
-  expect_false(any(duplicated(extracted_data[['touchstone_names_csv']]$id)),
-               label = "No duplicate ids in touchstone_names_csv")
+    testthat::expect_true(all(ts$status %in%
+      c("in-preparation", "open", "finished")),
+      label = "All touchstone.status are valid")
+  }
 
+  test_extract_touchstone_name_csv <- function(e) {
+    tsn <- e$touchstone_name_csv
+    testthat::expect_equal(sort(names(tsn)),
+                 sort(c("id", "description","comment")),
+      label = "Correct columns in touchstone_name.csv")
+
+    testthat::expect_false(any(duplicated(tsn$id)),
+      label = "No duplicate ids in touchstone_name.csv")
+  }
+
+
+  if (!is.null(e$touchstone_csv)) {
+    test_extract_touchstone_csv(e)
+  }
+
+  if (!is.null(e$touchstone_name_csv)) {
+    test_extract_touchstone_name_csv(e)
+  }
 }
 
 ###############################################################################
@@ -64,15 +94,7 @@ transform_touchstone <- function(e) {
 }
 
 test_transform_touchstone <- function(transformed_data) {
-  ts <- transformed_data[['touchstone']]
-  if (!is.null(ts)) {
-    if (nrow(ts) > 0) {
-      expect_equal(ts$id, paste0(ts$touchstone_name, "-", ts$version),
-                   label = "touchstone id version correctly formatted")
-      expect_true(all(ts$status %in% c("in-preparation", "open", "finished")),
-                   label = "touchstone status is valid")
-    }
-  }
+  # All useful tests done in extract stage.
 }
 
 ###############################################################################
@@ -89,15 +111,13 @@ load_touchstone_name <- function(transformed_data, con) {
       SELECT DISTINCT status
         FROM touchstone
        WHERE touchstone_name = $1",
-        to_edit$id[r])
+        to_edit$id[r])$status
 
     # If there are no versions whatsoever, it's safe to edit.
 
     if (length(status) == 0) {
-      status = 'in-preparation'
+      status <- "in-preparation"
     }
-
-    status = unlist(as.character(status))
 
     if ((length(status) == 1) && (status == 'in-preparation')) {
 
@@ -118,13 +138,20 @@ load_touchstone_name <- function(transformed_data, con) {
 load_touchstone <- function(transformed_data, con) {
   to_edit <- add_return_edits("touchstone", transformed_data, con)
 
+  if (nrow(to_edit) > 0) {
+    existing_status <- db_get(con, "touchstone", "id", to_edit$id,
+                              "id, status")
+  }
+
   # For each row in to_edit, do an SQL update, as long as the status
   # is in-preparation.
 
   for (r in seq_len(nrow(to_edit))) {
     touch <- to_edit[r, ]
 
-    if (touch$status == 'in_preparation') {
+    if (all(unique(c(touch$status,
+                 existing_status$status[existing_status$id == touch$id]))
+        == 'in-preparation')) {
 
       DBI::dbExecute(con, "
         UPDATE touchstone
