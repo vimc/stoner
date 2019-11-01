@@ -71,8 +71,8 @@ The metadata files are expected to be in a folder called `meta`, within the impo
 
 #### scenario_description
 
-  * If present within `path`, read `meta/scenario_description.csv` as `scenario_description_csv`.
-  * Fetch `scenario_description` rows from database for any matching `id` in `scenario_description_csv`.
+  * In the `extract-csv` phase, read `meta/scenario_description.csv` if it exists.
+  * In the `extract-db` phase, read all matching rows from the scenario_description table.
   * Also lookup Montagu's `disease` table for ids that match `scenario_description_csv`$disease.
 
 ### stone_test_extract
@@ -81,14 +81,13 @@ The metadata files are expected to be in a folder called `meta`, within the impo
 
   * Check that columns in the `touchstone` and `touchstone_name` csv files match the databse table.
   * All `touchstone.touchstone_name` must have a matching entry in either the `touchstone_name` csv file, or the
-    `touchstone_name` database tablwe.
+    `touchstone_name` database table.
   * All `touchstone.touchstone_name` and `touchstone.id` must be unique within the csv files.
 
 #### scenario_description
 
   * Test that all diseases in `scenario_description_csv`$disease are valid.
-  * Test that all descriptions are non-empty. (Cannot check for duplicates here, since duplicates
-    are permitted in the table; "No vaccination" is duplicated for all diseases.)
+  * Test that there are no rows in `scenario_description_csv` with duplicate ids.
 
 ### stone_transform
 
@@ -123,7 +122,7 @@ does not require them all to exist.
 
 #### scenario_description
 
-All the useful tests are already done in the test_extract stage.
+  * Nothing further to test here; all useful tests are in the extract stage.
 
 ### stone_load
 
