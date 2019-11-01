@@ -20,10 +20,11 @@ test_extract_scenario_description <- function(e) {
   expect_false(any(duplicated(e[['scenario_description_csv']]$id)),
                label = "Duplicate ids in scenario_description.csv")
 
-  expect_true(identical(sort(names(e[['scenario_description_csv']])),
+  if (!is.null(e[['scenario_description_csv']])) {
+    expect_true(identical(sort(names(e[['scenario_description_csv']])),
                         sort(c("id", "description", "disease"))),
               label = "Column names correct in scenario_description.csv")
-
+  }
 }
 
 ###############################################################################
