@@ -1,5 +1,4 @@
- must have a matching entry in either the `touchstone_name` csv file, or the
-`---
+---
 title: "stoner"
 author: "Wes Hinsley"
 date: "`r Sys.Date()`"
