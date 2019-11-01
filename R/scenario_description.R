@@ -1,10 +1,14 @@
 extract_scenario_description <- function(e, path, con) {
-  c(e, list(
-    scenario_description = db_get(con, "scenario_description", "id",
-                     unique(e$scenario_description_csv$id)),
-                 disease = db_get(con, "disease", "id",
-                     unique(e$scenario_description_csv$disease), "id")
-  ))
+  if (!is.null(e$scenario_description_csv)) {
+    e <- c(e, list(
+      scenario_description = db_get(con, "scenario_description", "id",
+                       unique(e$scenario_description_csv$id)),
+                   disease = db_get(con, "disease", "id",
+                       unique(e$scenario_description_csv$disease), "id")
+    ))
+  }
+
+  e
 }
 
 test_extract_scenario_description <- function(e) {
