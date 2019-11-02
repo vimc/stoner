@@ -29,10 +29,8 @@ stone_extract <- function(path, con) {
   # Now we know what we need, extract from db
 
   c(
-    extract_touchstone(path, con),
-    extract_scenario_description(path, con),
     extract_touchstone(e, path, con),
-    extract_scenario_description(e, path, con)
-    extract_touchstone_demographic_dataset(path, con)
+    extract_scenario_description(e, path, con),
+    extract_touchstone_demographic_dataset(e, path, con)
   )
 }
