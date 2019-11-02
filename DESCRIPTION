@@ -2,10 +2,11 @@ Package: stoner
 Title: Support for building VIMC Montagu Touchstones, using dettl.
 Version: 0.0.3
 Authors@R:
-    person(given = "Wes",
-           family = "Hinsley",
-           role = c("aut", "cre"),
-           email = "w.hinsley@imperial.ac.uk")
+    c(person("Wes", "Hinsley",role = c("aut", "cre", "itr"),
+           email = "w.hinsley@imperial.ac.uk"),
+      person("Rich", "Fitzjohn", role = "aut"))       
+URL: https://github.com/vimc/stoner
+BugReports: https://github.com/vimc/stoner/issues           
 Description: For montagu-imports that create touchstones, or augment existing
     touchstones, allow the import to be as minimal as possible, towards  single
     line extract and transform calls, in order that the review for that import
@@ -14,11 +15,14 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports:
-    DBI
+    DBI,
+    RPostgres,
+    utils
 Language: en-GB
 RoxygenNote: 6.1.1
 Roxygen: list(markdown = TRUE)
 Suggests:
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat
 VignetteBuilder: knitr

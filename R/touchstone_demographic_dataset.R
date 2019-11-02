@@ -1,9 +1,4 @@
-###############################################################################
-
-extract_touchstone_demographic_dataset <- function(path, con) {
-  e <- list()
-  e$touchstone_demographic_dataset_csv <-
-    read_meta(path, "touchstone_demographic_dataset.csv")
+extract_touchstone_demographic_dataset <- function(e, path, con) {
 
   e[['touchstone_demographic_dataset']] <- DBI::dbGetQuery(con, sprintf("
     SELECT touchstone_demographic_dataset.id, touchstone, demographic_dataset,

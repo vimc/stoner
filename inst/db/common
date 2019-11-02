@@ -1,0 +1,5 @@
+DB_IMAGE=vimc/montagu-db:master
+DB_MIGRATE_IMAGE=vimc/montagu-migrate:master
+
+DB_CONTAINER=db
+DB_NETWORK=db_nw
