@@ -10,7 +10,7 @@ extract_scenario_description <- function(e, path, con) {
          unique(e$scenario_description_csv$disease), "id")
     ))
 
-    e
+  e
 
   } else {
     list()

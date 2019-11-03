@@ -14,13 +14,13 @@ extract_touchstone <- function(e, path, con) {
 
   if (!is.null(tsn)) {
     ts <- c(ts,
-            DBI::dbGetQuery(con, sprintf("
+      DBI::dbGetQuery(con, sprintf("
         SELECT DISTINCT touchstone.id
           FROM touchstone
           JOIN touchstone_name
             ON touchstone.touchstone_name = touchstone_name.id
          WHERE touchstone_name.id IN %s",
-                                         sql_in(tsn)))$id)
+               sql_in(tsn)))$id)
 
     eout <- list(touchstone_csv = e$touchstone_csv,
                   touchstone = db_get(con, "touchstone", "id", unique(ts)))
@@ -43,41 +43,40 @@ test_extract_touchstone <- function(e) {
   test_extract_touchstone_csv <- function(e) {
     ts <- e$touchstone_csv
     testthat::expect_equal(sort(names(ts)),
-                           sort(c("id", "touchstone_name", "version", "description",
-                                  "status", "comment")),
-                           label = "Correct columns in touchstone.csv")
+                 sort(c("id", "touchstone_name", "version", "description",
+                        "status", "comment")),
+      label = "Correct columns in touchstone.csv")
 
     testthat::expect_true(all(ts$touchstone_name %in%
-                                c(e[['touchstone_name_csv']]$id,
-                                  e[['touchstone_name']]$id)),
-                          label = "All touchstone.touchstone_name are known")
+                c(e[['touchstone_name_csv']]$id,
+                  e[['touchstone_name']]$id)),
+      label = "All touchstone.touchstone_name are known")
 
     testthat::expect_true(all(ts$id ==
-                                paste0(ts$touchstone_name, "-", ts$version)),
-                          label = "All touchstone.id are touchstone_name-version")
+        paste0(ts$touchstone_name, "-", ts$version)),
+      label = "All touchstone.id are touchstone_name-version")
 
     testthat::expect_true(all(ts$description == paste0(ts$touchstone_name,
-                                                       " (version ", ts$version,")")),
-                          label = "All touchstone.description are formatted correctly")
+                                               " (version ", ts$version,")")),
+      label = "All touchstone.description are formatted correctly")
 
     testthat::expect_false(any(duplicated(ts$id)),
-                           label = "No duplicate ids in touchstone.csv")
+      label = "No duplicate ids in touchstone.csv")
 
     testthat::expect_true(all(ts$status %in%
-                                c("in-preparation", "open", "finished")),
-                          label = "All touchstone.status are valid")
+      c("in-preparation", "open", "finished")),
+      label = "All touchstone.status are valid")
   }
 
   test_extract_touchstone_name_csv <- function(e) {
     tsn <- e$touchstone_name_csv
     testthat::expect_equal(sort(names(tsn)),
-                           sort(c("id", "description","comment")),
-                           label = "Correct columns in touchstone_name.csv")
+                 sort(c("id", "description","comment")),
+      label = "Correct columns in touchstone_name.csv")
 
     testthat::expect_false(any(duplicated(tsn$id)),
-                           label = "No duplicate ids in touchstone_name.csv")
+      label = "No duplicate ids in touchstone_name.csv")
   }
-
 
   if (!is.null(e$touchstone_csv)) {
     test_extract_touchstone_csv(e)
@@ -101,7 +100,6 @@ transform_touchstone <- function(e) {
     t <- c(t, copy_unique_flag(e, "touchstone_name"))
   }
 
-
   t
 }
 
@@ -123,7 +121,7 @@ load_touchstone_name <- function(transformed_data, con) {
       SELECT DISTINCT status
         FROM touchstone
        WHERE touchstone_name = $1",
-                              to_edit$id[r])$status
+        to_edit$id[r])$status
 
     # If there are no versions whatsoever, it's safe to edit.
 
@@ -136,9 +134,9 @@ load_touchstone_name <- function(transformed_data, con) {
       DBI::dbExecute(con, "
         UPDATE touchstone_name
            SET description = $1, comment = $2 WHERE id = $3",
-                     list(to_edit$description[r],
-                          to_edit$comment[r],
-                          to_edit$id[r]))
+         list(to_edit$description[r],
+              to_edit$comment[r],
+              to_edit$id[r]))
     } else {
 
       stop(paste0("Can't edit touchstone_name id ", to_edit$id[r], ". ",
@@ -162,8 +160,8 @@ load_touchstone <- function(transformed_data, con) {
     touch <- to_edit[r, ]
 
     if (all(unique(c(touch$status,
-                     existing_status$status[existing_status$id == touch$id]))
-            == 'in-preparation')) {
+                 existing_status$status[existing_status$id == touch$id]))
+        == 'in-preparation')) {
 
       DBI::dbExecute(con, "
         UPDATE touchstone

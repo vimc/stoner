@@ -27,20 +27,39 @@ compare_tdd_db_with_csv <- function(con, test_name) {
   expect_true(all(sort(db_tdd$mash) == sort(expected$mash)))
 }
 
-test_that("A new touchstone demographic dataset", {
+test_that("A new touchstone demographic dataset - existing touchstone", {
   res <- test_touchstone_demographic_dataset("new_tdd")
   compare_tdd_db_with_csv(res$con, "new_tdd")
 })
 
-# touchstone was added in same import
+test_that("A new touchstone demographic dataset - touchstone in same import", {
+  res <- test_touchstone_demographic_dataset("new_tdd_with_touchstone")
+  compare_tdd_db_with_csv(res$con, "new_tdd")
+})
+
+test_that("Touchstone demographic dataset - touchstone not exist", {
+  expect_error(test_touchstone_demographic_dataset("new_tdd_no_touchstone"),
+               "Touchstones in touchstone_demographic_dataset exist isn't true.",
+               class = "expectation_failure")
+})
+
+test_that("Touchstone demographic dataset - demographic source not exist", {
+  expect_error(test_touchstone_demographic_dataset("new_tdd_no_dsource"),
+               "demographic sources in touchstone_demographic_dataset exist isn't true.",
+               class = "expectation_failure")
+})
+
+test_that("Touchstone demographic dataset - demographic stat type not exist", {
+  expect_error(test_touchstone_demographic_dataset("new_tdd_no_dstype"),
+               "demographic statistic types in touchstone_demographic_dataset exist isn't true.",
+               class = "expectation_failure")
+})
+
 # dataset doesn't yet exist
 # exact entry already in db.
 
-# touchstone doesn't exist
 # touchstone exists with non in-prep status
 #   (we may want to override)
-# demographic_source invalid
-# demographic_statistic_type invalid
 # incorrect columns or types in input
 
 
