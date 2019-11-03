@@ -55,12 +55,44 @@ test_that("Touchstone demographic dataset - demographic stat type not exist", {
                class = "expectation_failure")
 })
 
-# dataset doesn't yet exist
-# exact entry already in db.
+test_that("Touchstone demographic dataset - demographic dataset not exist", {
+  expect_error(test_touchstone_demographic_dataset("new_tdd_no_dataset"),
+               "Demographic datasets already exist isn't true.",
+               class = "expectation_failure")
+})
+
+test_that("Touchstone demographic dataset - invalid csv format", {
+  expect_error(test_touchstone_demographic_dataset("invalid_cols"),
+               "Correct number of columns in touchstone_demographic_dataset.csv not equal to 5.(.*).",
+               class = "expectation_failure")
+  expect_error(test_touchstone_demographic_dataset("invalid_cols2"),
+               "Incorrect columns in touchstone_demographic_dataset.csv",
+               class = "simpleError")
+  expect_error(test_touchstone_demographic_dataset("invalid_cols3"),
+               "demographic_source in touchstone_demographic_dataset.csv must be character",
+               class = "simpleError")
+  expect_error(test_touchstone_demographic_dataset("invalid_cols4"),
+               "demographic_statistic_type in touchstone_demographic_dataset.csv must be character",
+               class = "simpleError")
+})
+
+test_that("Duplicate of db entry", {
+  res <- test_touchstone_demographic_dataset("new_tdd_dup")
+  compare_tdd_db_with_csv(res$con, "new_tdd_dup")
+})
+
+test_that("Update in-prep", {
+  res <- test_touchstone_demographic_dataset("update_tdd_inprep")
+  compare_tdd_db_with_csv(res$con, "update_tdd_inprep")
+})
+
+test_that("Update non in-prep", {
+  res <- test_touchstone_demographic_dataset("update_tdd_notinprep")
+  compare_tdd_db_with_csv(res$con, "update_tdd_notinprep")
+})
 
 # touchstone exists with non in-prep status
 #   (we may want to override)
-# incorrect columns or types in input
 
 
 

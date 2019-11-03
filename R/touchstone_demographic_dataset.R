@@ -44,6 +44,24 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
 
   if (!is.null(e[['touchstone_demographic_dataset_csv']])) {
 
+    # Test for columns, before it goes wrong.
+
+    if (any(sort(names(e$touchstone_demographic_dataset_csv)) !=
+            c("demographic_source", "demographic_statistic_type",
+              "touchstone"))) {
+      stop("Incorrect columns in touchstone_demographic_dataset.csv")
+    }
+
+    if (class(e$touchstone_demographic_dataset_csv$demographic_source)
+        != "character") {
+      stop("demographic_source in touchstone_demographic_dataset.csv must be character")
+    }
+
+    if (class(e$touchstone_demographic_dataset_csv$demographic_statistic_type)
+        != "character") {
+      stop("demographic_statistic_type in touchstone_demographic_dataset.csv must be character")
+    }
+
     # Lookup touchstone_demographic_dataset for any given rows, and
     # cbind with info about the demographic source, statistic type and dataset
 
@@ -114,17 +132,8 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
 test_extract_touchstone_demographic_dataset <- function(e) {
   if (!is.null(e$touchstone_demographic_dataset_csv)) {
 
-    expect_equal(length(names(e$touchstone_demographic_dataset_csv)), 5)
-    expect_equal(sort(names(e$touchstone_demographic_dataset_csv)),
-      c("demographic_source", "demographic_statistic_type", "ds_mash",
-        "mash", "touchstone"),
-      label = "Correct columns in touchstone_demographic_dataset.csv")
-
-    expect_type(e$touchstone_demographic_dataset_csv$touchstone, "character")
-
-    expect_type(e$touchstone_demographic_dataset_csv$demographic_source, "character")
-
-    expect_type(e$touchstone_demographic_dataset_csv$demographic_statistic_type, "character")
+    expect_equal(length(names(e$touchstone_demographic_dataset_csv)), 5,
+      label = "Correct number of columns in touchstone_demographic_dataset.csv")
 
     expect_true(all(e$touchstone_demographic_dataset_csv$demographic_source %in%
                     e$db_dsrc$code),
