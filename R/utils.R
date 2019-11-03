@@ -1,7 +1,7 @@
 read_meta <- function(path, filename) {
   if (meta_exists(path, filename)) {
     utils::read.csv(file.path(path, "meta", filename),
-                    stringsAsFactors = FALSE)
+           stringsAsFactors = FALSE)
   } else {
     NULL
   }
@@ -61,7 +61,7 @@ mash <- function(tab) {
 # occurs somewhere in table 2.
 
 line_occurs_in <- function(table1, table2) {
-  if (is.null(table2) || (nrow(table2) == 0)) {
+  if (nrow(table2) == 0) {
     rep(FALSE, nrow(table1))
   } else {
     mash(table1) %in% mash(table2)
@@ -110,4 +110,3 @@ add_return_edits <- function(table_name, transformed_data, con) {
 vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
-
