@@ -33,6 +33,11 @@ sql_in <- function(things) {
   }
 }
 
+next_id <- function(con, table, id_field = "id") {
+  1L + as.numeric(DBI::dbGetQuery(con,
+                  sprintf("SELECT max(%s) FROM %s", id_field, table)))
+}
+
 db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
   sql <- sprintf("SELECT %s FROM %s", select, table)
   if (!is.null(id_field)) {
@@ -103,3 +108,4 @@ add_return_edits <- function(table_name, transformed_data, con) {
 vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
+

@@ -1,7 +1,9 @@
 extract_touchstone_demographic_dataset <- function(e, path, con) {
 
-  e[['touchstone_demographic_dataset']] <- DBI::dbGetQuery(con, sprintf("
-    SELECT touchstone_demographic_dataset.id, touchstone, demographic_dataset,
+  if (!is.null(e[['touchstone_demographic_dataset']])) {
+
+    e[['touchstone_demographic_dataset']] <- DBI::dbGetQuery(con, sprintf("
+      SELECT touchstone_demographic_dataset.id, touchstone, demographic_dataset,
            demographic_source.code as dsource_code,
            demographic_statistic_type.code as dtype_code,
            demographic_source.id as dsource,
@@ -15,10 +17,10 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
         ON demographic_statistic_type.id = demographic_dataset.demographic_statistic_type
      WHERE touchstone IN %s", sql_in(e$touchstone_demographic_dataset_csv$touchstone)))
 
-  e$touchstone_demographic_dataset_next_id <-
-    next_id(con, "touchstone_demographic_dataset", "id")
+    e$touchstone_demographic_dataset_next_id <-
+      next_id(con, "touchstone_demographic_dataset", "id")
 
-  e <- c(e, list(
+    e <- c(e, list(
          demographic_source = db_get(con, "demographic_source", "code",
            unique(e$touchstone_demographic_dataset_csv$demographic_source)),
          demographic_statistic_type = db_get(con, "demographic_statistic_type",
@@ -26,14 +28,14 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
          tdd_touchstones = db_get(con, "touchstone", "id",
               unique(e$touchstone_demographic_dataset_csv$touchstone))
           )
-  )
+    )
 
   # For the sake of simplicity, below is a Slightly generous lookup for
   # demographic_dataset - looking for matches of
   # either source or type, rather than filtering to the exact combinations,
   # which would be a bit complicated at this point, and not worth much.
 
-  e <- c(e, list(demographic_dataset = DBI::dbGetQuery(con, sprintf("
+    e <- c(e, list(demographic_dataset = DBI::dbGetQuery(con, sprintf("
     SELECT demographic_dataset.demographic_source,
            demographic_dataset.demographic_statistic_type,
            demographic_source.code AS dsource_code,
@@ -53,17 +55,18 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
   # dataset, so will mash them together once here. Not exactly an extract, but
   # a very simple thing that saves some repetition later.
 
-  e$demographic_dataset$mash <- paste(
-    e$demographic_dataset$dsource_code,
-    e$demographic_dataset$dtype_code, sep = '#')
+    e$demographic_dataset$mash <- paste(
+      e$demographic_dataset$dsource_code,
+      e$demographic_dataset$dtype_code, sep = '#')
 
-  e$touchstone_demographic_dataset_csv$mash <- paste(
-    e$touchstone_demographic_dataset_csv$demographic_source,
-    e$touchstone_demographic_dataset_csv$demographic_statistic_type, sep = '#')
+    e$touchstone_demographic_dataset_csv$mash <- paste(
+      e$touchstone_demographic_dataset_csv$demographic_source,
+      e$touchstone_demographic_dataset_csv$demographic_statistic_type, sep = '#')
 
-  e$touchstone_demographic_dataset$mash <- paste(
-    e$touchstone_demographic_dataset$dsource_code,
-    e$touchstone_demographic_dataset$dtype_code, sep = '#')
+    e$touchstone_demographic_dataset$mash <- paste(
+      e$touchstone_demographic_dataset$dsource_code,
+      e$touchstone_demographic_dataset$dtype_code, sep = '#')
+  }
 
   e
 }
@@ -109,61 +112,66 @@ transform_touchstone_demographic_dataset <- function(e) {
 
   tdd <- e$touchstone_demographic_dataset_csv
 
-  tdd$demographic_dataset <- e$demographic_dataset$id[match(
+  if (!is.null(tdd)) {
+    tdd$demographic_dataset <- e$demographic_dataset$id[match(
       tdd$mash, e$demographic_dataset$mash)]
 
-  tdd$demographic_source_id <- e$demographic_source$id[match(
+    tdd$demographic_source_id <- e$demographic_source$id[match(
       tdd$demographic_source, e$demographic_source$code)]
 
-  tdd$demographic_statistic_type_id <- e$demographic_statistic_type$id[match(
+    tdd$demographic_statistic_type_id <- e$demographic_statistic_type$id[match(
       tdd$demographic_statistic_type, e$demographic_statistic_type$code)]
 
   # 1. Flag (touchstone,dataset) that already exist in touchstone_demographic_dataset db
 
-  tdd$mash <- paste(tdd$demographic_source, tdd$demographic_statistic_type, sep = '#')
-  tdd$already_exists_db <- tdd$mash %in% e$touchstone_demographic_dataset$mash
+    tdd$mash <- paste(tdd$demographic_source, tdd$demographic_statistic_type, sep = '#')
+    tdd$already_exists_db <- tdd$mash %in% e$touchstone_demographic_dataset$mash
 
   # 2. If (touchstone,dataset) isn't already there, then...
   #    Is there (touchstone,dataset) of same demographic_statistic_type?
   #       a. If so, this should be an update of that row.
   #       b. If not, then this should be an extra row to be added.
 
-  tdd$id <- e$touchstone_demographic_dataset$id[match(
-    tdd$demographic_dataset, e$touchstone_demographic_dataset$demographic_dataset)]
+    tdd$id <- e$touchstone_demographic_dataset$id[match(
+      tdd$demographic_dataset, e$touchstone_demographic_dataset$demographic_dataset)]
 
-  overwrites <- which(!tdd$already_exists_db)
+    overwrites <- which(!tdd$already_exists_db)
 
-  next_id <- e$touchstone_demographic_dataset_next_id
+    next_id <- e$touchstone_demographic_dataset_next_id
 
-  for (overwrite in overwrites) {
-    overwrite_id <- e$touchstone_demographic_dataset$id[
-      e$touchstone_demographic_dataset$dtype ==
-        tdd$demographic_statistic_type_id[overwrite] &
-      e$touchstone_demographic_dataset$touchstone ==
-        tdd$touchstone[overwrite]]
+    for (overwrite in overwrites) {
+      overwrite_id <- e$touchstone_demographic_dataset$id[
+        e$touchstone_demographic_dataset$dtype ==
+          tdd$demographic_statistic_type_id[overwrite] &
+        e$touchstone_demographic_dataset$touchstone ==
+          tdd$touchstone[overwrite]]
 
-    if (length(overwrite_id) == 0) {
-      overwrite_id <- next_id
-      next_id <- next_id + 1L
+      if (length(overwrite_id) == 0) {
+        overwrite_id <- next_id
+        next_id <- next_id + 1L
+      }
+      tdd$id[overwrite] <- overwrite_id
+      tdd$demographic_dataset[overwrite] <-
+        e$touchstone_demographic_dataset$demographic_dataset[
+          e$touchstone_demographic_dataset$id == overwrite_id]
     }
-    tdd$id[overwrite] <- overwrite_id
-    tdd$demographic_dataset[overwrite] <-
-      e$touchstone_demographic_dataset$demographic_dataset[
-        e$touchstone_demographic_dataset$id == overwrite_id]
+
+    tdd <- tdd[, c("already_exists_db", "demographic_dataset", "id", "touchstone")]
+    list(touchstone_demographic_dataset = tdd)
+  } else {
+    list()
   }
-
-  tdd <- tdd[, c("already_exists_db", "demographic_dataset", "id", "touchstone")]
-
-  list(touchstone_demographic_dataset = tdd)
 
 }
 
 test_transform_touchstone_demographic_dataset <- function(transformed_data) {
   tdd <- transformed_data$touchstone_demographic_dataset
-  expect_equal(0, sum(duplicated(tdd$demographic_dataset)))
-  expect_equal(0, sum(duplicated(tdd$id)))
-  expect_false(any(is.na(transformed_data$tocuhstone_demographic_dataset$id)))
-  expect_false(any(is.na(transformed_data$tocuhstone_demographic_dataset$demographic_dataset)))
+  if (!is.null(tdd)) {
+    expect_equal(0, sum(duplicated(tdd$demographic_dataset)))
+    expect_equal(0, sum(duplicated(tdd$id)))
+    expect_false(any(is.na(transformed_data$touchstone_demographic_dataset$id)))
+    expect_false(any(is.na(transformed_data$touchstone_demographic_dataset$demographic_dataset)))
+  }
 }
 
 ###############################################################################
@@ -175,26 +183,28 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
   # For each row in to_edit, do an SQL update, as long as the touchstone
   # being referred to is in the in-preparation state.
 
-  touchstone_status <- DBI::dbGetQuery(con, sprintf("
-    SELECT id, status
-      FROM touchstone
-     WHERE id IN %s", sql_in(unique(tdd$touchstone))))
+  if (nrow(to_edit)>0) {
+    touchstone_status <- DBI::dbGetQuery(con, sprintf("
+      SELECT id, status
+        FROM touchstone
+       WHERE id IN %s", sql_in(unique(to_edit$touchstone))))
 
-  for (r in seq_len(nrow(to_edit))) {
+    for (r in seq_len(nrow(to_edit))) {
 
-    entry <- to_edit[r, ]
-    if (touchstone_status$status[touchstone_status$id == entry$touchstone] !=
-        'in_preparation') {
-      stop(sprintf("Can't update touchstone_demographic_dataset - %s is not in-prep",
+      entry <- to_edit[r, ]
+      if (touchstone_status$status[touchstone_status$id == entry$touchstone] !=
+          'in_preparation') {
+        stop(sprintf("Can't update touchstone_demographic_dataset - %s is not in-prep",
                    entry$touchstone))
-    }
+      }
 
-    DBI::dbExecute(con, "
-      UPDATE touchstone_demographic_dataset
-         SET demographic_dataset = $1
-       WHERE id = $2
-         AND touchstone = $3",
-      list(entry$demographic_dataset, entry$id, entry$touchstone,)
-    )
+      DBI::dbExecute(con, "
+        UPDATE touchstone_demographic_dataset
+           SET demographic_dataset = $1
+         WHERE id = $2
+           AND touchstone = $3",
+        list(entry$demographic_dataset, entry$id, entry$touchstone,)
+      )
+    }
   }
 }
