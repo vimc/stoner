@@ -57,7 +57,7 @@ test_that("Update existing touchstone_name (in prep)", {
 
 test_that("Update existing touchstone details (in prep)", {
   res <- test_touchstone("update_touchstone_in_prep")
-   expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
 })
 
 test_that("Update and add touchstone and touchstone_name (in prep)", {

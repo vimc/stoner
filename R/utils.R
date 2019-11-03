@@ -34,8 +34,10 @@ sql_in <- function(things) {
 }
 
 next_id <- function(con, table, id_field = "id") {
-  1L + as.numeric(DBI::dbGetQuery(con,
+  max <- as.numeric(DBI::dbGetQuery(con,
                   sprintf("SELECT max(%s) FROM %s", id_field, table)))
+  if (is.na(max)) max <- 0L
+  1L + max
 }
 
 db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
@@ -59,7 +61,7 @@ mash <- function(tab) {
 # occurs somewhere in table 2.
 
 line_occurs_in <- function(table1, table2) {
-  if (nrow(table2) == 0) {
+  if (is.null(table2) || (nrow(table2) == 0)) {
     rep(FALSE, nrow(table1))
   } else {
     mash(table1) %in% mash(table2)
