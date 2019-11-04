@@ -87,8 +87,10 @@ test_that("Update in-prep", {
 })
 
 test_that("Update non in-prep", {
-  res <- test_touchstone_demographic_dataset("update_tdd_notinprep")
-  compare_tdd_db_with_csv(res$con, "update_tdd_notinprep")
+  expect_error(test_touchstone_demographic_dataset("update_tdd_notinprep"),
+               "Can't update touchstone_demographic_dataset - (.*) is not in-prep",
+               class = "simpleError")
+
 })
 
 # touchstone exists with non in-prep status

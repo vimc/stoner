@@ -229,7 +229,7 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
 
       entry <- to_edit[r, ]
       if (touchstone_status$status[touchstone_status$id == entry$touchstone] !=
-          'in_preparation') {
+          'in-preparation') {
         stop(sprintf("Can't update touchstone_demographic_dataset - %s is not in-prep",
                    entry$touchstone))
       }
@@ -239,7 +239,7 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
            SET demographic_dataset = $1
          WHERE id = $2
            AND touchstone = $3",
-        list(entry$demographic_dataset, entry$id, entry$touchstone,)
+        list(entry$demographic_dataset, entry$id, entry$touchstone)
       )
     }
   }
