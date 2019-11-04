@@ -51,7 +51,7 @@ test_that("Touchstone demographic dataset - demographic source not exist", {
 
 test_that("Touchstone demographic dataset - demographic stat type not exist", {
   expect_error(test_touchstone_demographic_dataset("new_tdd_no_dstype"),
-               "demographic statistic types in touchstone_demographic_dataset exist isn't true.",
+               "demog. statistic types in touchstone_demographic_dataset exist isn't true.",
                class = "expectation_failure")
 })
 
@@ -88,7 +88,7 @@ test_that("Update in-prep", {
 
 test_that("Update non in-prep", {
   expect_error(test_touchstone_demographic_dataset("update_tdd_notinprep"),
-               "Can't update touchstone_demographic_dataset - (.*) is not in-prep",
+               "Can't update touch-demo-dataset - (.*) is not in-prep",
                class = "simpleError")
 
 })
