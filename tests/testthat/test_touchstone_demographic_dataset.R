@@ -8,13 +8,13 @@ context("touchstone_demographic_dataset")
 
 test_touchstone_demographic_dataset <- function(test_name, ...) {
   con <- test_db_connection()
-  path <- test_path("touchstone_demographic_dataset", test_name)
+  path <- test_path("tdd", test_name)
   test_prepare(path, con)
   c(test_run_import(path, con, ...), con = con)
 }
 
 compare_tdd_db_with_csv <- function(con, test_name) {
-  path <- test_path("touchstone_demographic_dataset", test_name)
+  path <- test_path("tdd", test_name)
   expected <- read_meta(path, "expected_result.csv")
   db_tdd <- db_tdd_for_touchstones(con, unique(expected$touchstone))
   db_tdd$mash <- paste(db_tdd$dsource_code,

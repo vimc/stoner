@@ -8,13 +8,13 @@ context("scenario_description")
 test_scenario_description <- function(test_name, no_con = FALSE, ...) {
   con <- NULL
   if (!no_con) con <- test_db_connection()
-  path <- test_path("scenario_description", test_name)
+  path <- test_path("sd", test_name)
   test_prepare(path, con)
   c(test_run_import(path, con, ...), con = con)
 }
 
 test_that("A new scenario_description", {
-  res <- test_scenario_description("add_scenario_description")
+  res <- test_scenario_description("add_sd")
   test_compare_csv_db(res$con, res$e$scenario_description_csv,
                       "scenario_description")
 })
@@ -26,7 +26,7 @@ test_that("Invalid disease", {
 })
 
 test_that("Identical scenario_description", {
-  res <- test_scenario_description("identical_scenario_description")
+  res <- test_scenario_description("identical_sd")
   test_compare_csv_db(res$con, res$e$scenario_description_csv,
                       "scenario_description")
 })
