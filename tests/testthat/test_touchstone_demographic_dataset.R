@@ -92,10 +92,3 @@ test_that("Update non in-prep", {
                class = "simpleError")
 
 })
-
-# touchstone exists with non in-prep status
-#   (we may want to override)
-
-
-
-
