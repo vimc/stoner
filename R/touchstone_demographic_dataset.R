@@ -46,7 +46,7 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
 
     # Test for columns, before it goes wrong.
 
-    if (length(names(e$touchstone_demographic_dataset_csv)) !=5) {
+    if (length(names(e$touchstone_demographic_dataset_csv)) != 3) {
       stop("Incorrect column count in touchstone_demographic_dataset.csv")
     }
 
