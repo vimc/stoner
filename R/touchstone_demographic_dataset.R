@@ -186,21 +186,25 @@ transform_touchstone_demographic_dataset <- function(e) {
   #   source/type combo. (We assume this exists - part of demography
   #   update)
 
-    tdd$mash <- paste(tdd$touchstone, tdd$demographic_statistic_type,
+    if (nrow(tdd) > 0) {
+      tdd$mash <- paste(tdd$touchstone, tdd$demographic_statistic_type,
                       sep = '\r')
 
-    e$db_tdd$mash <- paste(e$db_tdd$touchstone,
-                           e$db_tdd$dtype_code, sep = '\r')
+      e$db_tdd$mash <- paste(e$db_tdd$touchstone,
+                             e$db_tdd$dtype_code, sep = '\r')
 
-    tdd$id <- e$db_tdd$id[match(tdd$mash, e$db_tdd$mash)]
+      tdd$id <- e$db_tdd$id[match(tdd$mash, e$db_tdd$mash)]
 
-    which_nas <- which(is.na(tdd$id))
-    tdd$id[which_nas] <- seq(from = e$tdd_next_id, by = 1,
-                             length.out = length(which_nas))
+      which_nas <- which(is.na(tdd$id))
+      tdd$id[which_nas] <- seq(from = e$tdd_next_id, by = 1,
+                               length.out = length(which_nas))
 
-    tdd[['already_exists_db']] <- FALSE
-    tdd <- tdd[, c("already_exists_db", "demographic_dataset", "id", "touchstone")]
-    list(touchstone_demographic_dataset = tdd)
+      tdd[['already_exists_db']] <- FALSE
+      tdd <- tdd[, c("already_exists_db", "demographic_dataset", "id", "touchstone")]
+      list(touchstone_demographic_dataset = tdd)
+    } else {
+      list()
+    }
   } else {
     list()
   }
