@@ -46,6 +46,10 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
 
     # Test for columns, before it goes wrong.
 
+    if (length(names(e$touchstone_demographic_dataset_csv)) !=5) {
+      stop("Incorrect column count in touchstone_demographic_dataset.csv")
+    }
+
     if (any(sort(names(e$touchstone_demographic_dataset_csv)) !=
             c("demographic_source", "demographic_statistic_type",
               "touchstone"))) {
@@ -132,8 +136,6 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
 test_extract_touchstone_demographic_dataset <- function(e) {
   if (!is.null(e$touchstone_demographic_dataset_csv)) {
 
-    expect_equal(length(names(e$touchstone_demographic_dataset_csv)), 5,
-      label = "Correct number of columns in touchstone_demographic_dataset.csv")
 
     expect_true(all(e$touchstone_demographic_dataset_csv$demographic_source %in%
                     e$db_dsrc$code),
