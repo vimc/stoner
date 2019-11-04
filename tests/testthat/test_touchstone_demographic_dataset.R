@@ -88,7 +88,7 @@ test_that("Update in-prep", {
 
 test_that("Update non in-prep", {
   expect_error(test_touchstone_demographic_dataset("update_tdd_notinprep"),
-               "Can't update touch-demo-dataset - (.*) is not in-prep",
+               "Can't update touch-demog-dataset - (.*) is not in-prep",
                class = "simpleError")
 
 })

@@ -227,7 +227,7 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
   # For each row in to_edit, do an SQL update, as long as the touchstone
   # being referred to is in the in-preparation state.
 
-  if (nrow(to_edit)>0) {
+  if (nrow(to_edit) > 0) {
     touchstone_status <- DBI::dbGetQuery(con, sprintf("
       SELECT id, status
         FROM touchstone
