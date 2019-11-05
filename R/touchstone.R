@@ -3,6 +3,8 @@ extract_touchstone <- function(e, path, con) {
   # Collect db rows for touchstones, and touchstone_names that
   # we are interested in. Start with the CSVs (if any)
 
+  eout <- list()
+
   ts <- e$touchstone_csv$id
   tsn <- unique(c(e$touchstone_name_csv$id,
                   e$touchstone_csv$touchstone_name))
@@ -20,17 +22,19 @@ extract_touchstone <- function(e, path, con) {
          WHERE touchstone_name.id IN %s",
                sql_in(tsn)))$id)
 
-    e <- c(e, list(touchstone = db_get(con, "touchstone", "id", unique(ts))))
+    eout <- list(touchstone_csv = e$touchstone_csv,
+                  touchstone = db_get(con, "touchstone", "id", unique(ts)))
   }
 
   # And also get the touchstone_name info itself
 
   if (!is.null(tsn)) {
-    e <- c(e, list(
+    eout <- c(eout, list(
+      touchstone_name_csv = e$touchstone_name_csv,
       touchstone_name = db_get(con, "touchstone_name", "id",
                                unique(tsn))))
   }
-  e
+  eout
 
 }
 
@@ -74,7 +78,6 @@ test_extract_touchstone <- function(e) {
       label = "No duplicate ids in touchstone_name.csv")
   }
 
-
   if (!is.null(e$touchstone_csv)) {
     test_extract_touchstone_csv(e)
   }
@@ -87,10 +90,17 @@ test_extract_touchstone <- function(e) {
 ###############################################################################
 
 transform_touchstone <- function(e) {
-  c(
-    copy_unique_flag(e, "touchstone"),
-    copy_unique_flag(e, "touchstone_name")
-  )
+  t <- list()
+
+  if (!is.null(e$touchstone_csv)) {
+    t <- c(t, copy_unique_flag(e, "touchstone"))
+  }
+
+  if (!is.null(e$touchstone_name_csv)) {
+    t <- c(t, copy_unique_flag(e, "touchstone_name"))
+  }
+
+  t
 }
 
 test_transform_touchstone <- function(transformed_data) {

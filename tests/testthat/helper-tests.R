@@ -3,7 +3,8 @@ test_path <- function(context, path) {
 }
 
 test_prepare <- function(path, con = NULL) {
-  db_tables <- c("touchstone_name", "touchstone")
+  db_tables <- c("touchstone_name", "touchstone", "disease",
+                 "scenario_description", "scenario")
   for (table in db_tables) {
     csv_file <- read_meta(path, paste0("db_", table, ".csv"))
     if (!is.null(csv_file)) {
@@ -27,12 +28,12 @@ test_compare_csv_db <- function(con, csv, db) {
               label = "DB Compare: Data matches")
 }
 
-test_run_import <- function(path, con = NULL) {
+test_run_import <- function(path, con = NULL, ...) {
   e <- stone_extract(path, con)
   stone_test_extract(e)
   t <- stone_transform(e)
   stone_test_transform(t)
-  l <- stone_load(t, con)
+  l <- stone_load(t, con, ...)
   list(e = e, t = t)
 }
 

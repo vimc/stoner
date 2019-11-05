@@ -42,7 +42,7 @@ db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") 
 }
 
 # Return a vector of characters for a table, each entry being all the fields
-# of that table mashed together, separated by '#'
+# of that table mashed together, separated by '\r'
 
 mash <- function(tab) {
   fields <- sort(names(tab))

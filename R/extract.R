@@ -16,7 +16,8 @@ stone_extract <- function(path, con) {
 
   e <- list(
     touchstone_csv = read_meta(path, "touchstone.csv"),
-    touchstone_name_csv = read_meta(path, "touchstone_name.csv")
+    touchstone_name_csv = read_meta(path, "touchstone_name.csv"),
+    scenario_description_csv = read_meta(path, "scenario_description.csv")
   )
 
   # Remove any NULLs
@@ -25,6 +26,9 @@ stone_extract <- function(path, con) {
 
   # Now we know what we need, extract from db
 
-  extract_touchstone(e, path, con)
+  c(
+    extract_touchstone(e, path, con),
+    extract_scenario_description(e, path, con)
+  )
 
 }

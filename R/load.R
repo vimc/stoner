@@ -7,9 +7,18 @@
 #' @param transformed_data The transformed data from the transform stage. In a
 #' form which adheres to the DB schema.
 #' @param con Active connection to the DB which the data will be loaded to.
+#' @param allow_overwrite_scenario_description If TRUE, then stoner will overwrite
+#' rows in the scenario_description table with rows from the CSV file, (matching id,
+#' different description or disease), even if there are open or finished touchstones
+#' that use this description. See the advanced section of the vignette for discussion
+#' on why this may be necessary.
 #'
 
-stone_load <- function(transformed_data, con) {
+stone_load <- function(transformed_data, con,
+                       allow_overwrite_scenario_description = FALSE) {
+
   load_touchstone_name(transformed_data, con)
   load_touchstone(transformed_data, con)
+  load_scenario_description(transformed_data, con,
+                            allow_overwrite_scenario_description)
 }
