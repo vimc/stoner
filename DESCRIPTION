@@ -2,7 +2,7 @@ Package: stoner
 Title: Support for building VIMC Montagu Touchstones, using dettl
 Version: 0.0.3
 Authors@R:
-    c(person("Wes", "Hinsley",role = c("aut", "cre", "itr"),
+    c(person("Wes", "Hinsley",role = c("aut", "cre", "dnc", "itr"),
            email = "w.hinsley@imperial.ac.uk"),
       person("Rich", "Fitzjohn", role = "aut"))       
 URL: https://github.com/vimc/stoner
