@@ -1,6 +1,6 @@
 extract_scenario_description <- function(e, path, con) {
   if (!is.null(e$scenario_description_csv)) {
-    e <- c(list(
+    list(
       scenario_description_csv = e$scenario_description_csv,
 
       scenario_description = db_get(con, "scenario_description", "id",
@@ -8,9 +8,7 @@ extract_scenario_description <- function(e, path, con) {
 
        disease = db_get(con, "disease", "id",
          unique(e$scenario_description_csv$disease), "id")
-    ))
-
-  e
+    )
 
   } else {
     list()
