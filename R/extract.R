@@ -11,7 +11,7 @@
 ##' @param con The active DBI connection for extracting any data.
 ##' @return A list of named data frames and/or named values representing the extracted data.
 stone_extract <- function(path, con) {
-
+  message("A code change - Travis, this could change everything!")
   # First get just the meta CSVs
 
   e <- list(
