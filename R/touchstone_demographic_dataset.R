@@ -78,11 +78,6 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
     e[['db_tdd']] <- db_tdd_for_touchstones(con,
       e$touchstone_demographic_dataset_csv$touchstone)
 
-    # Next id for adding rows to touchstone_demographic_dataset...
-
-    e[['tdd_next_id']] <-
-      next_id(con, "touchstone_demographic_dataset", "id")
-
     # Look up demographic_source, demographic_statistic_type and
     # touchstone info for all given CSV rows.
 
@@ -199,7 +194,7 @@ transform_touchstone_demographic_dataset <- function(e) {
       tdd$id <- e$db_tdd$id[match(tdd$mash, e$db_tdd$mash)]
 
       which_nas <- which(is.na(tdd$id))
-      tdd$id[which_nas] <- seq(from = e$tdd_next_id, by = 1,
+      tdd$id[which_nas] <- seq(from = -1, by = -1,
                                length.out = length(which_nas))
 
       tdd[['already_exists_db']] <- FALSE
@@ -221,21 +216,21 @@ test_transform_touchstone_demographic_dataset <- function(transformed_data) {
 ###############################################################################
 
 load_touchstone_demographic_dataset <- function(transformed_data, con) {
-  to_edit <- add_return_edits("touchstone_demographic_dataset",
-                              transformed_data, con)
+  res <- add_serial_rows("touchstone_demographic_dataset",
+                         transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as the touchstone
   # being referred to is in the in-preparation state.
 
-  if (nrow(to_edit) > 0) {
+  if (nrow(res$edits) > 0) {
     touchstone_status <- DBI::dbGetQuery(con, sprintf("
       SELECT id, status
         FROM touchstone
-       WHERE id IN %s", sql_in(unique(to_edit$touchstone))))
+       WHERE id IN %s", sql_in(unique(res$edits$touchstone))))
 
-    for (r in seq_len(nrow(to_edit))) {
+    for (r in seq_len(nrow(res$edits))) {
 
-      entry <- to_edit[r, ]
+      entry <- res$edits[r, ]
       if (touchstone_status$status[touchstone_status$id == entry$touchstone] !=
           'in-preparation') {
         stop(sprintf("Can't update touch-demog-dataset - %s is not in-prep",

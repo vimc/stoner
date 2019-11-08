@@ -46,7 +46,7 @@ test_transform_scenario_description <- function(transformed_data) {
 
 load_scenario_description <- function(transformed_data, con,
                     allow_overwrite_scenario_description = FALSE) {
-  to_edit <- add_return_edits("scenario_description", transformed_data, con)
+  to_edit <- add_non_serial_rows("scenario_description", transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as there is no
   # non in-preparation touchstone that refers to this scenario description.
