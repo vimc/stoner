@@ -109,7 +109,7 @@ add_serial_rows <- function(table_name, transformed_data, con, id_field = "id",
   to_add[[fake_id_field]] <- fake_ids
   to_add[[id_field]] <- rev(DBI::dbGetQuery(con, sprintf(
     "SELECT %s FROM %s ORDER BY %s DESC LIMIT %s",
-    id_field, table, id_field, nrow(to_add)))$id)
+    id_field, table_name, id_field, nrow(to_add)))$id)
 
   list(adds = to_add, edits = to_edit)
 }

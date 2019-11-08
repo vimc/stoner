@@ -14,6 +14,11 @@ test_prepare <- function(path, con = NULL) {
     if (!is.null(csv_file)) {
       DBI::dbWriteTable(con, table, csv_file, append = TRUE)
     }
+    if (("id" %in% names(csv_file)) &&
+       (is.numeric(csv_file$id))) {
+      DBI::dbExecute(con, sprintf("SELECT setval('%s_id_seq', %s)",
+        table, 1L + max(as.integer(csv_file$id))))
+    }
   }
 }
 
