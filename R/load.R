@@ -17,33 +17,6 @@
 stone_load <- function(transformed_data, con,
                        allow_overwrite_scenario_description = FALSE) {
 
-  faulty_serials <- function(con) {
-    df <- data_frame(sequence =
-                       DBI::dbGetQuery(con, "
-                                       SELECT *
-                                       FROM information_schema.sequences")$sequence_name)
-    df$table <- gsub("_id_seq", "", df$sequence)
-    df <- df[df$table %in% DBI::dbListTables(con), ]
-
-    df$maxes <- unlist(lapply(df$table, function(x)
-      as.numeric(DBI::dbGetQuery(con, sprintf("SELECT max(id) FROM %s", x)))))
-
-    df <- df[!is.na(df$maxes), ]
-
-    for (r in seq_len(nrow(df))) {
-      df$last_value[r] <- tryCatch({
-        x <- df$sequence[r]
-        as.numeric(DBI::dbGetQuery(con,
-                                   sprintf("SELECT last_value FROM %s", x))$last_value)
-
-      }, error = function(cond) { return(0) }
-      )
-    }
-
-    df[df$maxes>df$last_value, ]
-  }
-
-
   load_touchstone_name(transformed_data, con)
   load_touchstone(transformed_data, con)
   load_scenario_description(transformed_data, con,
@@ -55,6 +28,8 @@ stone_load <- function(transformed_data, con,
     if (nrow(df) > 0) {
       x <- print(df)
       stop("Error - db serial numbers were corrupted")
+    } else {
+      message("Tested faulty serials - OK!")
     }
   }
 }
