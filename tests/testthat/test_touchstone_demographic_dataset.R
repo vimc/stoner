@@ -32,6 +32,16 @@ test_that("A new touchstone demographic dataset - existing touchstone", {
   compare_tdd_db_with_csv(res$con, "new_tdd")
 })
 
+test_that("DB Serial Corruption is detected", {
+  con <- test_db_connection()
+  path <- test_path("tdd", "new_tdd")
+  test_prepare(path, con)
+  df <- data_frame(id = 3, code = 'source2', name = 'Name 2')
+  DBI::dbWriteTable(con, "demographic_source", df, append = TRUE)
+  c(test_run_import(path, con, ...), con = con)
+})
+
+
 test_that("A new touchstone demographic dataset - touchstone in same import", {
   res <- test_touchstone_demographic_dataset("new_tdd_with_touchstone")
   compare_tdd_db_with_csv(res$con, "new_tdd")
