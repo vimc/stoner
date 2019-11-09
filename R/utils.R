@@ -33,13 +33,6 @@ sql_in <- function(things) {
   }
 }
 
-next_id <- function(con, table, id_field = "id") {
-  max <- as.numeric(DBI::dbGetQuery(con,
-                  sprintf("SELECT max(%s) FROM %s", id_field, table)))
-  if (is.na(max)) max <- 0L
-  1L + max
-}
-
 db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
   sql <- sprintf("SELECT %s FROM %s", select, table)
   if (!is.null(id_field)) {
@@ -158,8 +151,7 @@ faulty_serials <- function(con) {
       as.numeric(DBI::dbGetQuery(con,
                                  sprintf("SELECT last_value FROM %s", x))$last_value)
 
-    }, error = function(cond) { return(0) }
-    )
+    })
   }
 
   df[df$maxes>df$last_value, ]
