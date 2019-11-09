@@ -36,9 +36,10 @@ test_that("DB Serial Corruption is detected", {
   con <- test_db_connection()
   path <- test_path("tdd", "new_tdd")
   test_prepare(path, con)
-  df <- data_frame(id = 3, code = 'source2', name = 'Name 2')
+  df <- data_frame(id = 2, code = 'source2', name = 'Name 2')
   DBI::dbWriteTable(con, "demographic_source", df, append = TRUE)
-  c(test_run_import(path, con, ...), con = con)
+  expect_error(test_run_import(path, con),
+               "Error - db serial numbers were corrupted")
 })
 
 
