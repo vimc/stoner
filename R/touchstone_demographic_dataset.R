@@ -1,6 +1,6 @@
 # Get all touchstone demographic dataset rows for a set
-# of touchstones, including id->code for demographic source
-# and statistic type
+# of touchstones. Also lookup both strings and numerical
+# ids for demographic source and statistic type.
 
 db_tdd_for_touchstones <- function(con, touchstones) {
   DBI::dbGetQuery(con, sprintf("
@@ -23,7 +23,9 @@ db_tdd_for_touchstones <- function(con, touchstones) {
 }
 
 # Get all demographic_dataset information to cover the given
-# types and sources (which are character)
+# types and sources (which are character). The query is a bit
+# generous - lookup all types and sources, not just the specific
+# combinations of those that we want.
 
 db_dd_info <- function(con, types, sources) {
   DBI::dbGetQuery(con, sprintf("
@@ -46,42 +48,41 @@ db_dd_info <- function(con, types, sources) {
 
 extract_touchstone_demographic_dataset <- function(e, path, con) {
 
-  if (!is.null(e[['touchstone_demographic_dataset_csv']])) {
+  # Do we have any touchstone_demographic_dataset work to do?
 
-    # Test columns are correct.
+  if (!is.null(e$touchstone_demographic_dataset_csv)) {
 
-    if (length(names(e$touchstone_demographic_dataset_csv)) != 3) {
+    e_tdd_csv <- e$touchstone_demographic_dataset_csv
+
+    # Test csv columns are correct.
+
+    if (length(names(e_tdd_csv)) != 3) {
       stop("Incorrect column count in touchstone_demographic_dataset.csv")
     }
 
-    if (any(sort(names(e$touchstone_demographic_dataset_csv)) !=
-            c("demographic_source", "demographic_statistic_type",
-              "touchstone"))) {
-      stop("Incorrect columns in touchstone_demographic_dataset.csv")
+    if (any(sort(names(e_tdd_csv)) !=
+      c("demographic_source", "demographic_statistic_type", "touchstone"))) {
+        stop("Incorrect columns in touchstone_demographic_dataset.csv")
     }
 
-    if (class(e$touchstone_demographic_dataset_csv$demographic_source)
-        != "character") {
+    if (class(e_tdd_csv$demographic_source) != "character") {
       stop(paste0("demographic_source in touchstone_demographic_dataset.csv ",
                   "must be character"))
     }
 
-    if (class(e$touchstone_demographic_dataset_csv$demographic_statistic_type)
-        != "character") {
+    if (class(e_tdd_csv$demographic_statistic_type) != "character") {
       stop(paste0("demographic_statistic_type in touchstone_demographic_",
                   "dataset.csv must be character"))
     }
 
-    # Lookup touchstone_demographic_dataset for any given rows, and
-    # cbind with info about the demographic source, statistic type and dataset
+    # Lookup any existing touchstone_demographic_datasets, for all
+    # touchstones in the csv. (also attaches info about the demographic
+    # source, statistic type and dataset for our lookups)
 
-    e[['db_tdd']] <- db_tdd_for_touchstones(con,
-      e$touchstone_demographic_dataset_csv$touchstone)
+    e$db_tdd <- db_tdd_for_touchstones(con, e_tdd_csv$touchstone)
 
-    # Look up demographic_source, demographic_statistic_type and
-    # touchstone info for all given CSV rows.
-
-    e_tdd_csv <- e$touchstone_demographic_dataset_csv
+    # Now lookup demographic_source, demographic_statistic_type and
+    # touchstone info for all given CSV rows that we might want to add.
 
     e <- c(e, list(
       db_dsrc = db_get(con, "demographic_source", "code",
@@ -94,10 +95,10 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
         unique(e_tdd_csv$touchstone))
     ))
 
-  # For the sake of simplicity, do a generous lookup for
-  # demographic_dataset - looking for matches of
-  # either source or type, rather than filtering to the exact combinations,
-  # which would be a bit complicated at this point, and not worth much.
+  # Now the demographic_dataset (which is source, type). For the sake of
+  # simplicity, look for matches of either source, or type, rather than
+  # filtering to the exact combinations, which would be a bit complicated
+  # at this point, and not worth much. There aren't very many of these.
 
     e <- c(e, list(db_dd = db_dd_info(con,
       e_tdd_csv$demographic_statistic_type,
@@ -109,7 +110,7 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
 
     # A mash to compare with existing touchstone_demographic_datasets
 
-    e[['touchstone_demographic_dataset_csv']]$mash <- paste(
+    e$touchstone_demographic_dataset_csv$mash <- paste(
       e_tdd_csv$touchstone, e_tdd_csv$demographic_source,
       e_tdd_csv$demographic_statistic_type, sep = '\r')
 
@@ -119,7 +120,7 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
 
     # A mash to compare with existing demographic_datasets
 
-    e[['touchstone_demographic_dataset_csv']]$ds_mash <- paste(
+    e$touchstone_demographic_dataset_csv$ds_mash <- paste(
       e_tdd_csv$demographic_source,
       e_tdd_csv$demographic_statistic_type,
       sep = '\r')
@@ -167,22 +168,16 @@ transform_touchstone_demographic_dataset <- function(e) {
   if (!is.null(tdd)) {
     tdd$demographic_dataset <- e$db_dd$id[match(tdd$ds_mash, e$db_dd$mash)]
 
-    tdd$demographic_source_id <- e$db_dsrc$id[match(
-      tdd$demographic_source, e$db_dsrc$code)]
-
-    tdd$demographic_statistic_type_id <- e$db_dstype$id[match(
-      tdd$demographic_statistic_type, e$db_dstype$code)]
-
   # If any (touchstone,dataset) already exist in db's
   # touchstone_demographic_dataset table, then they can be ignored.
 
     tdd <- tdd[!tdd$mash %in% e$db_tdd$mash, ]
 
   # If there is (touchstone,dataset) of same demographic_statistic_type
-  #   then this should be an update (ie, to a new demog. source)
-  #   and we need to look up demographic_dataset id for the updated
-  #   source/type combo. (We assume this exists - part of demography
-  #   update)
+  # then this should be an update (ie, to a new demog. source)
+  # and we need to look up demographic_dataset id for the updated
+  # source/type combo. (We assume this exists - part of demography
+  # update)
 
     if (nrow(tdd) > 0) {
       tdd$mash <- paste(tdd$touchstone, tdd$demographic_statistic_type,
@@ -197,7 +192,7 @@ transform_touchstone_demographic_dataset <- function(e) {
       tdd$id[which_nas] <- seq(from = -1, by = -1,
                                length.out = length(which_nas))
 
-      tdd[['already_exists_db']] <- FALSE
+      tdd$already_exists_db <- FALSE
       tdd <- tdd[, c("already_exists_db", "demographic_dataset",
                      "id", "touchstone")]
       list(touchstone_demographic_dataset = tdd)
@@ -246,4 +241,5 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
       )
     }
   }
+  res
 }
