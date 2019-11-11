@@ -74,7 +74,7 @@ test_that("Touchstone demographic dataset - demographic dataset not exist", {
 
 test_that("Touchstone demographic dataset - invalid csv format", {
   expect_error(test_touchstone_demographic_dataset("invalid_cols"),
-               "Incorrect column count in touchstone_demographic_dataset.csv",
+               "Incorrect columns in touchstone_demographic_dataset.csv",
                class = "simpleError")
   expect_error(test_touchstone_demographic_dataset("invalid_cols2"),
                "Incorrect columns in touchstone_demographic_dataset.csv",

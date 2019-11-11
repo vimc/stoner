@@ -44,8 +44,10 @@ db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") 
 # Return a vector of characters for a table, each entry being all the fields
 # of that table mashed together, separated by '\r'
 
-mash <- function(tab) {
-  fields <- sort(names(tab))
+mash <- function(tab, fields = NULL) {
+  if (!is.null(fields)) {
+    tab <- tab[, fields]
+  }
   df_args <- c(tab, sep = "\r")
   do.call(paste, df_args)
 }
@@ -132,7 +134,7 @@ vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
 
-faulty_serials <- function(con) {
+check_faulty_serials <- function(con) {
   df <- data_frame(sequence =
                      DBI::dbGetQuery(con, "
                                      SELECT *
@@ -154,5 +156,11 @@ faulty_serials <- function(con) {
     })
   }
 
-  df[df$maxes>df$last_value, ]
+  df <- df[df$maxes>df$last_value, ]
+  if (nrow(df) > 0) {
+    x <- print(df)
+    stop("Error - db serial numbers were corrupted")
+  } else {
+    message("Tested faulty serials - OK!")
+  }
 }

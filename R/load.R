@@ -23,13 +23,5 @@ stone_load <- function(transformed_data, con,
                             allow_overwrite_scenario_description)
   load_touchstone_demographic_dataset(transformed_data, con)
 
-  if (!is.null(con)) {
-    df <- faulty_serials(con)
-    if (nrow(df) > 0) {
-      x <- print(df)
-      stop("Error - db serial numbers were corrupted")
-    } else {
-      message("Tested faulty serials - OK!")
-    }
-  }
+  check_faulty_serials(con)
 }
