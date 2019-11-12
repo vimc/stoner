@@ -1,23 +1,35 @@
-###############################################################################
+extract_scenario_description <- function(e, path, con) {
+  if (!is.null(e$scenario_description_csv)) {
+    list(
+      scenario_description_csv = e$scenario_description_csv,
 
-extract_scenario_description <- function(path, con) {
-  e <- extract_table(path, con, "scenario_description", "id")
-  disease <- db_get(con, "disease", "id",
-                    unique(e$scenario_description_csv$disease), "id")
-  c(e, list(disease = disease))
+      scenario_description = db_get(con, "scenario_description", "id",
+        unique(e$scenario_description_csv$id)),
+
+       disease = db_get(con, "disease", "id",
+         unique(e$scenario_description_csv$disease), "id")
+    )
+
+  } else {
+    list()
+  }
 }
 
-test_extract_scenario_description <- function(extracted_data) {
+test_extract_scenario_description <- function(e) {
 
-  expect_true(all(unique(extracted_data[['scenario_description_csv']]$disease)
-                  %in% extracted_data[['disease']]$id),
+  testthat::expect_true(all(unique(e[['scenario_description_csv']]$disease)
+                  %in% e[['disease']]$id),
               label = "Diseases in scenario_description are valid")
 
-  expect_false(any(is.null(extracted_data[['scenario_description_csv']]$description)))
-  expect_false(any(is.na(extracted_data[['scenario_description_csv']]$description)))
-  expect_false(any(is.null(extracted_data[['scenario_description_csv']]$id)))
-  expect_false(any(is.na(extracted_data[['scenario_description_csv']]$id)))
+  testthat::expect_false(any(duplicated(e[['scenario_description_csv']]$id)),
+               label = "Duplicate ids in scenario_description.csv")
 
+  if (!is.null(e[['scenario_description_csv']])) {
+    testthat::expect_true(
+      identical(sort(names(e[['scenario_description_csv']])),
+                sort(c("id", "description", "disease"))),
+      label = "Column names correct in scenario_description.csv")
+  }
 }
 
 ###############################################################################
@@ -27,14 +39,14 @@ transform_scenario_description <- function(e) {
 }
 
 test_transform_scenario_description <- function(transformed_data) {
-  # Nothing really useful to do here.
+  # Nothing useful to do here.
 }
 
 ###############################################################################
 
 load_scenario_description <- function(transformed_data, con,
                     allow_overwrite_scenario_description = FALSE) {
-  to_edit <- add_return_edits("scenario_description", transformed_data, con)
+  to_edit <- add_non_serial_rows("scenario_description", transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as there is no
   # non in-preparation touchstone that refers to this scenario description.
@@ -69,7 +81,7 @@ load_scenario_description <- function(transformed_data, con,
 
       # If no results at all, then it's also ok to edit.
 
-      if (length(status == 0)) {
+      if (length(status) == 0) {
         status <- "in-preparation"
       }
     }
@@ -84,7 +96,8 @@ load_scenario_description <- function(transformed_data, con,
               to_edit$id[r]))
     } else {
 
-      stop(paste0("Can't edit scenario_description with id ", to_edit$id[r], ". ",
+      stop(paste0("Can't edit scenario_description with id ",
+                  to_edit$id[r], ". ",
                   "Already exists with open/finished touchstone versions."))
     }
   }
