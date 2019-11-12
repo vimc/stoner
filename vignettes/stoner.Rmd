@@ -33,16 +33,16 @@ clarifies things greatly, but at times, at the cost of brevity, where writing a 
 feel somewhat strenuous, compared to the simplicity of the actual task.
 
 `stoner` is in principle very similar to a [dettl](https://github.com/vimc/dettl) import; it has extract, transform and load
-phases, and tests on the extract and load phases. But it is specifically designed for a particular set of tasks, and relying
+phases, and tests on the extract and transform phases. It is specifically designed for a particular set of tasks, and relying
 on specific metadata, in order to do the specific tasks of incrementally building a touchstone. The aim is that the montagu-import
 for creating a new touchstone (or making edits to a touchstone that is in preparation), will consist of single-line functions for
 extract, transform and load, which stoner will take care of. The tests in the import will consist of a single-line call to stoner's
 tests, followed by tests that are specific to the metadata in the import.
 
-The review of a montagu-import that uses stoner, will therefore be a case of looking at the metadata, and the tests that are
-specific to the metadata, and all of the reproducible work will be separately reviewed, once for all, in the stoner package.
-Tests of `stoner` itself are done by running a docker instance of the montagu database, and a rack of tests for each 
-element of an import exist in `tests/testthat/examples`.
+The review of a montagu-import that uses stoner, will therefore be a case of reviewing the metadata, and the meta-data-specific
+tests; and all of the reproducible work will have been separately reviewed in the stoner package. Tests of `stoner` itself are 
+done by running a docker instance of the montagu database, and a rack of tests for each element of an import exist in 
+`tests/testthat/examples`. These tests are designed to mimic as closely as possible the shape of a montagu-import.
 
 
 ## Creating a montagu-import that uses stoner
@@ -75,6 +75,22 @@ The metadata files are expected to be in a folder called `meta`, within the impo
   * In the `extract-db` phase, read all matching rows from the scenario_description table.
   * Also lookup Montagu's `disease` table for ids that match `scenario_description_csv`$disease.
 
+#### touchstone_demographic_dataset
+
+  * In the `extract-csv` phase, read `meta/touchstone_demographic_dataset.csv` if it exists. 
+    This csv is pleasantly human readable - it uses string references instead of database ids. 
+    It therefore differs from how the `touchstone_demographic_dataset` table appears in the 
+    database, and we will need to extract more metadata to transform the strings into ids.
+  * Slightly out of place, but the extract code will all fail here untidily, if the columns are
+    incorrect. So a set of tidy tests is done here, to check the CSV columns and their types.
+  * In the `extract-db` phase, find any existing `touchstone_demographic_datasets` that refer to
+    touchstones that the CSV mentions.
+  * Also look up `demographic_source`, `demographic_statistic_type` and `touchstone` information
+    for any rows in the CSV.
+  * Lookup the `demographic_datasets` that refer to the above sources and types.
+  * For convenience, we do some mashes here for quickly comparing `(touchstone, source, type)`
+    triples for touchstone_demographic_datasets, and `(source, type`) pairs for `demographic dataset`.
+
 ### stone_test_extract
 
 #### touchstone and touchstone_name
@@ -88,6 +104,16 @@ The metadata files are expected to be in a folder called `meta`, within the impo
 
   * Test that all diseases in `scenario_description_csv`$disease are valid.
   * Test that there are no rows in `scenario_description_csv` with duplicate ids.
+
+#### touchstone_demographic_dataset
+  * Check that all the `demographic_source` and `demographic_statistic_type` entries in the CSV file
+    exist in the database. We don't create these in stoner; a demographic import must do that.
+  * Check that for each `(demographic_source, demographic_statistic_type)` pair in the CSV file, a
+    `demographic_dataset` already exists linking the two. Again, we don't create those (currently) in stoner.
+  * Check that all the touchstones referred to in the CSV file exist - either in the database, or in
+    the `touchstone.csv` file extracted. (`touchstone.id` is a string, so we do not need to worry about
+    database serial numbers here).
+  * Check there are no duplicate `(Touchstone, demographic_dataset)` pairs in the CSV.
 
 ### stone_transform
 
@@ -112,6 +138,19 @@ new, or have matching ids but differ in some other column to the database:
 
   * Use new/differing rows in `scenario_description_csv` as the transformed `scenario_description` table rows.
 
+#### touchstone_demographic_dataset
+
+  * Work out the `demographic_dataset` id for each new `touchstone_demographic_dataset` by comparing
+    the mashes created in the extract stage. Ignore any `(touchstone, demographic_dataset)` pairs that
+    already exactly exist in the db.
+  * For the remaining rows, some may match a `demographic_statistic_type`, but not a `demographic_source`
+    in that touchstone. For example, sometimes we have fixed an issue and put the result in a new
+    version of the `demographic_source`. For these rows, copy the `id` from the existing row for that 
+    `demographic_statistic_type` - since there is only ever one instance of each `demographic_statistic_type`
+    in a touchstone. We will want to update these rows in the load stage.
+  * Assign negative, and decrementing ids to each row for which no existing `demographic_statistic_type` 
+    matched the row for that touchstone. These are the new rows to be added.
+
 ### stone_test_transform
 
 `stoner::stone_test_transform(transformed_data)` should be called from test_transform.R in the montagu-import,
@@ -126,6 +165,10 @@ does not require them all to exist.
 
   * Nothing further to test here; all useful tests are in the extract stage.
 
+#### touchstone_demographic_dataset
+
+  * Nothing further to test here; all useful tests are in the extract stage.
+ 
 ### stone_load
 
 The montagu-import using stoner msut use a custom load, not an automatic one, since the first line of the
@@ -143,6 +186,25 @@ load should be `stoner::stone_load(transformed_data, con)`.
   * Rows with new ids are trivially appended.
   * Rows with the same id but differing other columns will be edited in-place, provided that
     the status of that touchstone is `in-preparation`.
+
+#### scenario_description
+
+  * Scenario descriptions with new ids are appended.
+  * Existing ids are edited if every touchstone that refers to that `scenario_description` is in the
+    `in-preparation` stage. However, we do want to improve scenario_descriptions (without changing
+    their meaning, or any data connected to them), or touchstones that are more recent. See the
+    Advanced Use section later.
+
+#### touchstone_demographic_dataset
+
+  * For all `touchstone_demographic_dataset` rows with a negative `id`, append the rows to the table,
+    preserving lookup information from the negative id, to the positive one that the database
+    assigns to each new row.
+    
+  * Where `id` was positive (and therefore already existing in the db table), check whether the 
+    `touchstone` for that row in the proposed `touchstone_demographic_dataset` is of status 
+    `in-preparation`. If not, then abort. If it is, then update the `demographic_dataset` for 
+    that `(id, touchstone)` entry to the new value.
 
 ### (test_load)
 

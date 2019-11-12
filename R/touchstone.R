@@ -110,7 +110,7 @@ test_transform_touchstone <- function(transformed_data) {
 ###############################################################################
 
 load_touchstone_name <- function(transformed_data, con) {
-  to_edit <- add_return_edits("touchstone_name", transformed_data, con)
+  to_edit <- add_non_serial_rows("touchstone_name", transformed_data, con)
 
   # For each row in to_edit, do an SQL update, as long as all versions
   # of this touchstone have status "in-preparation".
@@ -146,7 +146,7 @@ load_touchstone_name <- function(transformed_data, con) {
 }
 
 load_touchstone <- function(transformed_data, con) {
-  to_edit <- add_return_edits("touchstone", transformed_data, con)
+  to_edit <- add_non_serial_rows("touchstone", transformed_data, con)
 
   if (nrow(to_edit) > 0) {
     existing_status <- db_get(con, "touchstone", "id", to_edit$id,

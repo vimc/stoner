@@ -8,16 +8,15 @@ context("touchstone")
 # touchstone_name.csv
 # Cols: id, description, comment
 
-test_touchstone <- function(test_name, no_con = FALSE) {
-  con <- NULL
-  if (!no_con) con <- test_db_connection()
+test_touchstone <- function(test_name) {
+  con <- test_db_connection()
   path <- test_path("touchstone", test_name)
   test_prepare(path, con)
   c(test_run_import(path, con), con = con)
 }
 
 test_that("Empty import should succeed trivially without needing db", {
-  res <- test_touchstone("empty", no_con = TRUE)
+  res <- test_touchstone("empty")
   expect_equal(length(res$e), 0)
   expect_equal(length(res$t), 0)
 })
@@ -57,7 +56,7 @@ test_that("Update existing touchstone_name (in prep)", {
 
 test_that("Update existing touchstone details (in prep)", {
   res <- test_touchstone("update_touchstone_in_prep")
-   expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
+  expect_true(test_compare_csv_db(res$con, res$e$touchstone_csv, "touchstone"))
 })
 
 test_that("Update and add touchstone and touchstone_name (in prep)", {

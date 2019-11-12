@@ -5,9 +5,8 @@ context("scenario_description")
 # scenario_description.csv
 # Cols: id, description, disease
 
-test_scenario_description <- function(test_name, no_con = FALSE, ...) {
-  con <- NULL
-  if (!no_con) con <- test_db_connection()
+test_scenario_description <- function(test_name, ...) {
+  con <- test_db_connection()
   path <- test_path("sd", test_name)
   test_prepare(path, con)
   c(test_run_import(path, con, ...), con = con)

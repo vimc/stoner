@@ -4,11 +4,20 @@ test_path <- function(context, path) {
 
 test_prepare <- function(path, con = NULL) {
   db_tables <- c("touchstone_name", "touchstone", "disease",
-                 "scenario_description", "scenario")
+                 "scenario_description", "scenario",
+                 "demographic_variant", "demographic_source",
+                 "demographic_statistic_type",
+                 "demographic_dataset",
+                 "touchstone_demographic_dataset")
   for (table in db_tables) {
     csv_file <- read_meta(path, paste0("db_", table, ".csv"))
     if (!is.null(csv_file)) {
       DBI::dbWriteTable(con, table, csv_file, append = TRUE)
+    }
+    if (("id" %in% names(csv_file)) &&
+       (is.numeric(csv_file$id))) {
+      DBI::dbExecute(con, sprintf("SELECT setval('%s_id_seq', %s)",
+        table, max(as.integer(csv_file$id))))
     }
   }
 }
