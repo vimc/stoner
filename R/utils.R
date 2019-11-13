@@ -15,10 +15,6 @@ data_frame <- function(...) {
   data.frame(stringsAsFactors = FALSE, ...)
 }
 
-split_semi <- function(string) {
-  strsplit(string, ";")
-}
-
 sql_in_char <- function(strings) {
   sprintf("('%s')", paste(strings, collapse = "','"))
 }
@@ -26,6 +22,16 @@ sql_in_char <- function(strings) {
 sql_in_numeric <- function(numerics) {
   sprintf("(%s)", paste(numerics, collapse = ","))
 }
+
+split_by <- function(x, by) {
+  stopifnot(length(x) == 1)
+  strsplit(x, by)[[1]]
+}
+
+split_semi <- function(x) {
+  split_by(x, ";")
+}
+
 
 sql_in <- function(things) {
   if (is.character(things)) {
@@ -40,62 +46,19 @@ sql_in <- function(things) {
 db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
   sql <- sprintf("SELECT %s FROM %s", select, table)
   if (!is.null(id_field)) {
-    sql <- sprintf("%s WHERE %s IN %s", sql, id_field, sql_in(unique(id_values)))
+    sql <- sprintf("%s WHERE %s IN %s", sql, id_field, sql_in(id_values))
   }
   DBI::dbGetQuery(con, sql)
 }
 
-<<<<<<< HEAD
-next_id <- function(con, table, id_field = "id") {
-  1L + as.numeric(DBI::dbGetQuery(con,
-    sprintf("SELECT max(%s) FROM %s", id_field, table)))
-}
-
-# If a .csv file has been provided, then load that csv file,
-# the accompanying database table (filtered by id from the csv
-# file), and if the id is numeric, also find the first free
-# numerical id.
-#
-# Result: a list of <table>, <table>_csv and potentially <table>_next_id
-
-extract_table <- function(path, con, table, id_field = NULL) {
-
-  ret <- list()
-  if (meta_exists(path, paste0(table, ".csv"))) {
-
-    csv <- read_meta(path, paste0(table, ".csv"))
-    ret[[paste0(table, "_csv")]] <- csv
-
-    ids <- NULL
-    if (!is.null(id_field)) ids <- csv[[id_field]]
-
-    ret[[table]] <- db_get(con, table, id_field, ids)
-
-    if ((!is.null(id_field)) && (is.numeric(csv[[id_field]]))) {
-      ret[[paste0(table, "_next_id")]] <- next_id(con, table, id_field)
-    }
-  }
-  ret
-}
-
-
-=======
->>>>>>> origin/master
 # Return a vector of characters for a table, each entry being all the fields
 # of that table mashed together, separated by '\r'
 
-<<<<<<< HEAD
-mash <- function(tab, cols = NULL) {
-  if (is.null(cols)) cols <- names(tab)
-  fields <- sort(cols)
-  df_args <- c(tab[fields], sep = "#")
-=======
 mash <- function(tab, fields = NULL) {
   if (!is.null(fields)) {
     tab <- tab[, fields]
   }
   df_args <- c(tab, sep = "\r")
->>>>>>> origin/master
   do.call(paste, df_args)
 }
 
@@ -125,41 +88,6 @@ copy_unique_flag <- function(extracted_data, tab) {
   t
 }
 
-<<<<<<< HEAD
-# For each row in csv_table, if id_field is NA, then set it to
-# next available key.
-
-fill_in_keys <- function(table, next_id, id_field = "id") {
-
-  which_nas <- which(is.na(table[[id_field]]))
-  table[[id_field]][which_nas] <- seq(
-    from = next_id,
-    by = 1, length.out = length(which_nas))
-
-  table
-}
-
-# Add any rows in transformed_data[[table_name]] to the data where the id
-# does not already exist in that table. Return the leftovers, which are
-# edits to the table.
-
-add_return_edits <- function(table_name, transformed_data, con) {
-  data <- transformed_data[[table_name]]
-  ids_found <- db_get(con, table_name, "id", data$id, "id")$id
-  to_add <- data[!data$id %in% ids_found, ]
-
-  if (nrow(to_add) > 0) {
-    DBI::dbWriteTable(con, table_name, to_add, append = TRUE)
-  }
-
-  data[data$id %in% ids_found, ]
-}
-
-mash_id <- function(needle, haystack, fields, target_field = 'id') {
-  needle[['mash_the_id']] <- mash(needle, fields)
-  haystack[['mash_the_id']] <- mash(haystack, fields)
-  haystack[[target_field]][match(needle[['mash_the_id']], haystack[['mash_the_id']])]
-=======
 # For rows that contain a serial "id" column. Add all the rows with a negative id,
 # letting the db choose the idea. Move the given ids to "fake_ids", and record the
 # ids the database chose as 'id'. Return a list of the added rows (with the
@@ -245,5 +173,4 @@ check_faulty_serials <- function(con) {
   } else {
     message("Tested faulty serials - OK!")
   }
->>>>>>> origin/master
 }
