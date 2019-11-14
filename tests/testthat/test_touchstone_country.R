@@ -67,3 +67,21 @@ test_that("Append touchstone_countries - zero left", {
   res <- test_touchstone_country("add_t_app_zero")
   compare_tc_db_with_csv(res$con, "add_t_app_zero")
 })
+
+test_that("Dup entry in CSV", {
+  expect_error(test_touchstone_country("dup_csv"),
+    "No duplicated entries in expanded touchstone_country csv isn't false",
+    class = "expectation_failure")
+})
+
+test_that("Empty disease in CSV", {
+  expect_error(test_touchstone_country("empty_disease"),
+               "Empty disease entry in touchstone_country",
+               class = "simpleError")
+})
+
+test_that("Empty country in CSV", {
+  expect_error(test_touchstone_country("empty_country"),
+               "Empty country entry in touchstone_country",
+               class = "simpleError")
+})

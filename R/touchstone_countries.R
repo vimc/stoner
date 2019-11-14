@@ -10,13 +10,13 @@ extract_touchstone_country <- function(e, path, con) {
     stop("Invalid columns in touchstone_country.csv")
   }
 
+  diseases <- unlist(lapply(csv$diseases, split_semi))
+  countries <- unlist(lapply(csv$countries, split_semi))
+
   c(e, list(
-    tc_disease = db_get(con, "disease", "id",
-                        unique(unlist(split_semi(csv$diseases)))),
-    tc_country = db_get(con, "country", "id",
-                        unique(unlist(split_semi(csv$countries)))),
-    tc_touchstone = db_get(con, "touchstone", "id",
-                        unique(csv$touchstone)),
+    tc_disease = db_get(con, "disease", "id", unique(diseases)),
+    tc_country = db_get(con, "country", "id", unique(countries)),
+    tc_touchstone = db_get(con, "touchstone", "id",unique(csv$touchstone)),
     db_touchstone_country = db_get(con, "touchstone_country", "touchstone",
                                    unique(csv$touchstone))
   ))
@@ -39,10 +39,10 @@ test_extract_touchstone_country <- function(e) {
     stop("Empty country entry in touchstone_country")
   }
 
-  expect_true(all(unique(unlist(countries)) %in% e$tc_country$id),
+  testthat::expect_true(all(unique(unlist(countries)) %in% e$tc_country$id),
     label = "All countries in touchstone_country are recognised")
 
-  expect_true(all(unique(unlist(diseases)) %in% e$tc_disease$id),
+  testthat::expect_true(all(unique(unlist(diseases)) %in% e$tc_disease$id),
     label = "All diseases in touchstone_country are recognised")
 
   # Touchstones either already exist, or are in the touchstone_csv
@@ -51,7 +51,7 @@ test_extract_touchstone_country <- function(e) {
   all_touchstones <- unique(c(e$tc_touchstone$id,
                               e$touchstone_csv$id))
 
-  expect_true(all(unique(csv$touchstone) %in% all_touchstones),
+  testthat::expect_true(all(unique(csv$touchstone) %in% all_touchstones),
     label = "All touchstones in touchstone_country are recognised")
 }
 

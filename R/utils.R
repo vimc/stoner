@@ -144,10 +144,6 @@ vlapply <- function(X, FUN, ...) {
   vapply(X, FUN, logical(1), ...)
 }
 
-vcapply <- function(X, FUN, ...) {
-  vapply(X, FUN, character(1), ...)
-}
-
 check_faulty_serials <- function(con) {
   df <- data_frame(sequence =
                      DBI::dbGetQuery(con, "
