@@ -62,3 +62,8 @@ test_that("Append touchstone_countries", {
   res <- test_touchstone_country("add_t_append")
   compare_tc_db_with_csv(res$con, "add_t_append")
 })
+
+test_that("Append touchstone_countries - zero left", {
+  res <- test_touchstone_country("add_t_app_zero")
+  compare_tc_db_with_csv(res$con, "add_t_app_zero")
+})

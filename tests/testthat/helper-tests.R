@@ -8,7 +8,8 @@ test_prepare <- function(path, con = NULL) {
                  "demographic_variant", "demographic_source",
                  "demographic_statistic_type",
                  "demographic_dataset",
-                 "touchstone_demographic_dataset")
+                 "touchstone_demographic_dataset",
+                 "touchstone_country")
   for (table in db_tables) {
     csv_file <- read_meta(path, paste0("db_", table, ".csv"))
     if (!is.null(csv_file)) {
