@@ -66,10 +66,6 @@ transform_touchstone_country <- function(e) {
     return(list())
   }
 
-  if (nrow(csv) == 0) {
-    return(list())
-  }
-
   diseases <- lapply(csv$diseases, split_semi)
   countries <- lapply(csv$countries, split_semi)
 
