@@ -91,6 +91,13 @@ The metadata files are expected to be in a folder called `meta`, within the impo
   * For convenience, we do some mashes here for quickly comparing `(touchstone, source, type)`
     triples for touchstone_demographic_datasets, and `(source, type`) pairs for `demographic dataset`.
 
+#### touchstone_country
+
+  * In the `extract-csv` phase, read `meta/touchstone_country.csv` if it exists. This csv has columns
+    `(touchstone,diseases,countries)`, where `diseases` and `countries` can be semi-colon separated.
+  * The extract phase also queries the database for diseases, countries and touchstones referred to 
+    in the csv.
+
 ### stone_test_extract
 
 #### touchstone and touchstone_name
@@ -115,6 +122,13 @@ The metadata files are expected to be in a folder called `meta`, within the impo
     database serial numbers here).
   * Check there are no duplicate `(Touchstone, demographic_dataset)` pairs in the CSV.
 
+#### touchstone_country
+  * Check all diseases and countries in the CSV are known to the database. `stoner` does 
+    not currently support adding of new diseases or countries.
+  * Check that all touchstones referred to in the CSV exist either in the database, or that they will also
+    be added during the current update.
+  * Also check basic format of the CSV.
+    
 ### stone_transform
 
 The transform stage involves processing the `extracted_data` and returning a list of data.frames
@@ -151,6 +165,13 @@ new, or have matching ids but differ in some other column to the database:
   * Assign negative, and decrementing ids to each row for which no existing `demographic_statistic_type` 
     matched the row for that touchstone. These are the new rows to be added.
 
+#### touchstone_country
+  * For each row, all combinations of the (semi-colon-separated) countries and diseases are expanded into 
+    a proposed append to the `touchstone_country` database table.
+  * `id` is assigned - any combinations that already exist in the database table will inherit the `id` from
+    the database; new rows will be assigned a new negative id, and flagged as rows to be added.
+  * Any duplicates that are found within the incoming CSV will cause an abort.
+
 ### stone_test_transform
 
 `stoner::stone_test_transform(transformed_data)` should be called from test_transform.R in the montagu-import.
@@ -167,6 +188,10 @@ new, or have matching ids but differ in some other column to the database:
 #### touchstone_demographic_dataset
 
   * Nothing further to test here; all useful tests are in the extract stage.
+
+#### touchstone_country
+
+  * Nothing further to test here; all useful tests are in earlier code.
  
 ### stone_load
 
@@ -204,6 +229,11 @@ load should be `stoner::stone_load(transformed_data, con)`.
     `touchstone` for that row in the proposed `touchstone_demographic_dataset` is of status 
     `in-preparation`. If not, then abort. If it is, then update the `demographic_dataset` for 
     that `(id, touchstone)` entry to the new value.
+
+#### touchstone_country
+
+  * Add all new rows to the database. This is assumed to be an incremental update; it is not possible
+    to remove countries from the touchstone_country database with stoner at present.
 
 ### (test_load)
 
