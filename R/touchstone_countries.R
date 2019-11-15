@@ -72,7 +72,8 @@ transform_touchstone_country <- function(e) {
   }))
 
   expand_touchstones <- unlist(lapply(1:nrow(csv), function(x) {
-    rep(csv$touchstone[[x]], each = (length(diseases[[x]]) * length(countries[[x]])))
+    rep(csv$touchstone[[x]], each = (length(diseases[[x]]) *
+                                     length(countries[[x]])))
   }))
 
   touchstone_country <- data_frame(
@@ -80,28 +81,9 @@ transform_touchstone_country <- function(e) {
     disease = expand_diseases,
     country = expand_countries)
 
-  # Check for any duplicates in incoming CSV and error..
-
-  touchstone_country$mash <- mash(touchstone_country)
-  expect_false(any(duplicated(touchstone_country$mash)),
-   label = "No duplicated entries in expanded touchstone_country csv")
-
-  # Look up ids in db - record ids for rows that exist, or
-  # assign negative id for new rows.
-
-  tc_db <- e$db_touchstone_country
-  tc_db$mash <- mash(tc_db, c("touchstone", "disease", "country"))
-
-  touchstone_country$id <- tc_db$id[match(touchstone_country$mash, tc_db$mash)]
-  touchstone_country$mash <- NULL
-
-  # The id==NAs are the new rows
-
-  which_nas <- which(is.na(touchstone_country$id))
-  touchstone_country$already_exists_db <- !is.na(touchstone_country$id)
-
-  touchstone_country$id[which_nas] <- seq(from = -1, by = -1,
-                                          length.out = length(which_nas))
+  touchstone_country <- assign_serial_ids(touchstone_country,
+                                          e$db_touchstone_country,
+                                          "touchstone_country")
 
   list(touchstone_country = touchstone_country)
 }

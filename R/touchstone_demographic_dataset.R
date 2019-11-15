@@ -174,21 +174,13 @@ transform_touchstone_demographic_dataset <- function(e) {
     return(list())
   }
 
-  tdd$mash <- paste(tdd$touchstone, tdd$demographic_statistic_type,
-                    sep = '\r')
+  tdd <- assign_serial_ids(tdd, e$db_tdd, "touchstone_demographic_dataset",
+                           c("touchstone", "demographic_statistic_type"),
+                           c("touchstone", "dtype_code"))
 
-  e$db_tdd$mash <- paste(e$db_tdd$touchstone,
-                         e$db_tdd$dtype_code, sep = '\r')
-
-  tdd$id <- e$db_tdd$id[match(tdd$mash, e$db_tdd$mash)]
-
-  which_nas <- which(is.na(tdd$id))
-  tdd$id[which_nas] <- seq(from = -1, by = -1,
-                           length.out = length(which_nas))
-
-  tdd$already_exists_db <- FALSE
   tdd <- tdd[, c("already_exists_db", "demographic_dataset",
                  "id", "touchstone")]
+
   list(touchstone_demographic_dataset = tdd)
 }
 

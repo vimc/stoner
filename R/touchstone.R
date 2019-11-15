@@ -6,27 +6,26 @@ extract_touchstone <- function(e, path, con) {
   eout <- list()
 
   ts <- unique(c(e$touchstone_csv$id,
-                 e$touchstone_countries_csv$touchstone))
+                 e$touchstone_countries_csv$touchstone)) %||% ""
 
   tsn <- unique(c(e$touchstone_name_csv$id,
-                  e$touchstone_csv$touchstone_name))
+                  e$touchstone_csv$touchstone_name)) %||% ""
 
-  # Query DB for all touchstones that are connected with any
-  # touchstone_name in tsn.
+  # Query DB for all touchstones that are connected with touchstones
+  # or touchstone names.
 
-  if (!is.null(tsn)) {
-    ts <- c(ts,
-      DBI::dbGetQuery(con, sprintf("
-        SELECT DISTINCT touchstone.id
-          FROM touchstone
-          JOIN touchstone_name
-            ON touchstone.touchstone_name = touchstone_name.id
-         WHERE touchstone_name.id IN %s",
-               sql_in(tsn)))$id)
+  ts <- c(ts,
+    DBI::dbGetQuery(con, sprintf("
+      SELECT DISTINCT touchstone.id
+        FROM touchstone
+        JOIN touchstone_name
+          ON touchstone.touchstone_name = touchstone_name.id
+       WHERE touchstone_name.id IN %s
+          OR touchstone.id IN %s",
+             sql_in(tsn), sql_in(ts)))$id)
 
-    eout <- list(touchstone_csv = e$touchstone_csv,
-                  touchstone = db_get(con, "touchstone", "id", unique(ts)))
-  }
+  eout <- list(touchstone_csv = e$touchstone_csv,
+                touchstone = db_get(con, "touchstone", "id", unique(ts)))
 
   # And also get the touchstone_name info itself
 
