@@ -68,6 +68,7 @@ test_extract_touchstone <- function(e) {
     testthat::expect_true(all(ts$status %in%
       c("in-preparation", "open", "finished")),
       label = "All touchstone.status are valid")
+
   }
 
   test_extract_touchstone_name_csv <- function(e) {
@@ -87,6 +88,19 @@ test_extract_touchstone <- function(e) {
   if (!is.null(e$touchstone_name_csv)) {
     test_extract_touchstone_name_csv(e)
   }
+
+  # Touchstones are referred to in other CSV files. Test here
+  # whether they are in the DB, or in the touchstone_csv (if provided)
+
+  if (!is.null(e$touchstone_countries_csv)) {
+    all_touchstones <- unique(c(e[['touchstone']]$id,
+                                e[['touchstone_csv']]$id))
+
+    testthat::expect_true(all(unique(e$touchstone_countries_csv$touchstone)
+                              %in% all_touchstones),
+                          label = "All touchstones in touchstone_country are recognised")
+  }
+
 }
 
 ###############################################################################

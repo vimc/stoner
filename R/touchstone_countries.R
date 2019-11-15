@@ -16,7 +16,6 @@ extract_touchstone_country <- function(e, path, con) {
   c(e, list(
     tc_disease = db_get(con, "disease", "id", unique(diseases)),
     tc_country = db_get(con, "country", "id", unique(countries)),
-    tc_touchstone = db_get(con, "touchstone", "id",unique(csv$touchstone)),
     db_touchstone_country = db_get(con, "touchstone_country", "touchstone",
                                    unique(csv$touchstone))
   ))
@@ -45,14 +44,6 @@ test_extract_touchstone_country <- function(e) {
   testthat::expect_true(all(unique(unlist(diseases)) %in% e$tc_disease$id),
     label = "All diseases in touchstone_country are recognised")
 
-  # Touchstones either already exist, or are in the touchstone_csv
-  # added in this import.
-
-  all_touchstones <- unique(c(e$tc_touchstone$id,
-                              e$touchstone_csv$id))
-
-  testthat::expect_true(all(unique(csv$touchstone) %in% all_touchstones),
-    label = "All touchstones in touchstone_country are recognised")
 }
 
 ###############################################################################
