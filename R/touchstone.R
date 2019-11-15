@@ -67,7 +67,6 @@ test_extract_touchstone <- function(e) {
     testthat::expect_true(all(ts$status %in%
       c("in-preparation", "open", "finished")),
       label = "All touchstone.status are valid")
-
   }
 
   test_extract_touchstone_name_csv <- function(e) {
@@ -160,6 +159,26 @@ load_touchstone_name <- function(transformed_data, con) {
   }
 }
 
+test_in_prep <- function(transformed_data, con) {
+
+  # Having uploaded the CSV touchstones, now check status is in-prep
+  # for all other references to touchstones.
+
+  ts <- c(transformed_data$touchstone_demographic_dataset$touchstone,
+          transformed_data$touchstone_country$touchstone)
+
+  if (is.null(ts)) {
+    return()
+  }
+
+  db_ts <- db_get(con, "touchstone", "id", unique(ts))
+  db_ts <- db_ts[db_ts$status != "in-preparation", ]
+  if (nrow(db_ts) > 0) {
+    stop(paste(sprintf("Can't edit touchstone id %s.", sql_in(db_ts$id)),
+                       "Already exists with open/finished status."))
+  }
+}
+
 load_touchstone <- function(transformed_data, con) {
   to_edit <- add_non_serial_rows("touchstone", transformed_data, con)
 
@@ -192,4 +211,6 @@ load_touchstone <- function(transformed_data, con) {
                   "Already exists with open/finished status."))
     }
   }
+
+  test_in_prep(transformed_data, con)
 }

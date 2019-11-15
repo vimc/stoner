@@ -200,7 +200,6 @@ transform_touchstone_demographic_dataset <- function(e) {
 
   tdd <- tdd[, c("already_exists_db", "demographic_dataset",
                  "id", "touchstone")]
-
   list(touchstone_demographic_dataset = tdd)
 }
 
@@ -214,8 +213,7 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
   res <- add_serial_rows("touchstone_demographic_dataset",
                          transformed_data, con)
 
-  # For each row in to_edit, do an SQL update, as long as the touchstone
-  # being referred to is in the in-preparation state.
+  # For each row in to_edit, do an SQL update.
 
   if (nrow(res$edits) > 0) {
     touchstone_status <- DBI::dbGetQuery(con, sprintf("
@@ -226,12 +224,6 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
     for (r in seq_len(nrow(res$edits))) {
 
       entry <- res$edits[r, ]
-      if (touchstone_status$status[touchstone_status$id == entry$touchstone] !=
-          'in-preparation') {
-        stop(sprintf("Can't update touch-demog-dataset - %s is not in-prep",
-                   entry$touchstone))
-      }
-
       DBI::dbExecute(con, "
         UPDATE touchstone_demographic_dataset
            SET demographic_dataset = $1

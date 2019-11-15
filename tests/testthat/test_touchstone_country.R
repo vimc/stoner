@@ -85,3 +85,9 @@ test_that("Empty country in CSV", {
                "Empty country entry in touchstone_country",
                class = "simpleError")
 })
+
+test_that("Touchstone not in prep", {
+  expect_error(test_touchstone_country("not_in_prep"),
+               "Can't edit touchstone id (.*). Already exists with open/finished status.",
+               class = "simpleError")
+})

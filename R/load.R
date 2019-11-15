@@ -16,7 +16,6 @@
 
 stone_load <- function(transformed_data, con,
                        allow_overwrite_scenario_description = FALSE) {
-
   load_touchstone_name(transformed_data, con)
   load_touchstone(transformed_data, con)
   load_scenario_description(transformed_data, con,
@@ -25,5 +24,4 @@ stone_load <- function(transformed_data, con,
   load_touchstone_country(transformed_data, con)
 
   check_faulty_serials(con)
-
 }
