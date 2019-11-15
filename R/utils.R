@@ -70,17 +70,17 @@ assign_serial_ids <- function(new_table, db_table, table_name,
                               mash_fields_csv = NULL,
                               mash_fields_db = NULL) {
 
-  new_table$mash <- mash(new_table, mash_fields)
+  new_table$mash <- mash(new_table, mash_fields_csv)
   if (any(duplicated(new_table$mash))) {
-    stop(sprintf("Duplicated entries in new %s rows"))
+    stop(sprintf("Duplicated entries in new %s rows", table_name))
   }
 
   if (is.null(mash_fields_db)) {
     mash_fields_db <- names(db_table)
-    mash_fields_db <- mash_fields[mash_fields_db != 'id']
+    mash_fields_db <- mash_fields_db[mash_fields_db != 'id']
   }
 
-  db_table$mash <- mash(db_table, mash_fields)
+  db_table$mash <- mash(db_table, mash_fields_db)
   new_table$id <- db_table$id[match(new_table$mash, db_table$mash)]
   new_table$mash <- NULL
 

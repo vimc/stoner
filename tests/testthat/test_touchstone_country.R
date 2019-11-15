@@ -70,8 +70,8 @@ test_that("Append touchstone_countries - zero left", {
 
 test_that("Dup entry in CSV", {
   expect_error(test_touchstone_country("dup_csv"),
-    "No duplicated entries in expanded touchstone_country csv isn't false",
-    class = "expectation_failure")
+    "Duplicated entries in new touchstone_country rows",
+    class = "simpleError")
 })
 
 test_that("Empty disease in CSV", {

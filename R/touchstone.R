@@ -12,7 +12,7 @@ extract_touchstone <- function(e, path, con) {
                   e$touchstone_csv$touchstone_name)) %||% ""
 
   # Query DB for all touchstones that are connected with touchstones
-  # or touchstone names.
+  # or touchstone names
 
   ts <- c(ts,
     DBI::dbGetQuery(con, sprintf("

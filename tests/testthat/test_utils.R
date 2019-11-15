@@ -17,3 +17,12 @@ test_that("mash", {
   expect_equal(mash(car), "21.4\r4\r121\r109\r4.11\r2.78\r18.6\r1\r1\r4\r2")
   expect_equal(mash(car, c("mpg", "disp")), "21.4\r121")
 })
+
+test_that("assign_serial_id works", {
+  csv <- data_frame(letter = c("A","B","C"), number = c(1,4,7))
+  db <- data_frame(letter = c("C", "D","E"), number = c(7,8,9), id = c(1,2,3))
+  csv2 <- assign_serial_ids(csv,db)
+  csv2 <- csv2[order(csv2$id), ]
+  expect_equal(csv2$id, c(-2, -1, 1))
+  expect_equal(csv2$already_exists_db, c(FALSE, FALSE, TRUE))
+})

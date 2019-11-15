@@ -174,9 +174,29 @@ transform_touchstone_demographic_dataset <- function(e) {
     return(list())
   }
 
+  # First find complete matches of touchstone, source, type.
+
   tdd <- assign_serial_ids(tdd, e$db_tdd, "touchstone_demographic_dataset",
-                           c("touchstone", "demographic_statistic_type"),
-                           c("touchstone", "dtype_code"))
+    c("touchstone", "demographic_source", "demographic_statistic_type"),
+    c("touchstone", "dsource_code", "dtype_code"))
+
+  # Next find matches of touchstone and type, where we want to update
+  # the source. We then need to overwrite "already_exists_db", because
+  # we've done a partial mash - these are edits and aren't really
+  # in the db already.
+
+  tdd_extras <- tdd[!tdd$already_exists_db, ]
+
+  tdd_extras <- assign_serial_ids(tdd_extras, e$db_tdd,
+                                  "touchstone_demographic_dataset",
+    c("touchstone", "demographic_statistic_type"),
+    c("touchstone", "dtype_code"))
+
+  tdd_extras$already_exists_db <- FALSE
+
+  # Bind the existing rows, and the edits together
+
+  tdd <- rbind(tdd[tdd$already_exists_db, ], tdd_extras)
 
   tdd <- tdd[, c("already_exists_db", "demographic_dataset",
                  "id", "touchstone")]

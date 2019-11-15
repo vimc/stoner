@@ -17,10 +17,9 @@ compare_tdd_db_with_csv <- function(con, test_name) {
   path <- test_path("tdd", test_name)
   expected <- read_meta(path, "expected_result.csv")
   db_tdd <- db_tdd_for_touchstones(con, unique(expected$touchstone))
-  db_tdd$mash <- paste(db_tdd$dsource_code,
-                       db_tdd$dtype_code, sep = '\r')
-  expected$mash <- paste(expected$demographic_source,
-                         expected$demographic_statistic_type, sep = '\r')
+  db_tdd$mash <- mash(db_tdd, c("dsource_code", "dtype_code"))
+  expected$mash <- mash(expected, c("demographic_source",
+                                    "demographic_statistic_type"))
   match(expected$mash, db_tdd$mash)
 
   expect_equal(nrow(expected), nrow(db_tdd))
@@ -101,5 +100,4 @@ test_that("Update non in-prep", {
   expect_error(test_touchstone_demographic_dataset("update_tdd_notinprep"),
                "Can't update touch-demog-dataset - (.*) is not in-prep",
                class = "simpleError")
-
 })
