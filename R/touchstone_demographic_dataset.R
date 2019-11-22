@@ -174,19 +174,30 @@ transform_touchstone_demographic_dataset <- function(e) {
     return(list())
   }
 
-  tdd$mash <- paste(tdd$touchstone, tdd$demographic_statistic_type,
-                    sep = '\r')
+  # First find complete matches of touchstone, source, type.
 
-  e$db_tdd$mash <- paste(e$db_tdd$touchstone,
-                         e$db_tdd$dtype_code, sep = '\r')
+  tdd <- assign_serial_ids(tdd, e$db_tdd, "touchstone_demographic_dataset",
+    c("touchstone", "demographic_source", "demographic_statistic_type"),
+    c("touchstone", "dsource_code", "dtype_code"))
 
-  tdd$id <- e$db_tdd$id[match(tdd$mash, e$db_tdd$mash)]
+  # Next find matches of touchstone and type, where we want to update
+  # the source. We then need to overwrite "already_exists_db", because
+  # we've done a partial mash - these are edits and aren't really
+  # in the db already.
 
-  which_nas <- which(is.na(tdd$id))
-  tdd$id[which_nas] <- seq(from = -1, by = -1,
-                           length.out = length(which_nas))
+  tdd_extras <- tdd[!tdd$already_exists_db, ]
 
-  tdd$already_exists_db <- FALSE
+  tdd_extras <- assign_serial_ids(tdd_extras, e$db_tdd,
+                                  "touchstone_demographic_dataset",
+    c("touchstone", "demographic_statistic_type"),
+    c("touchstone", "dtype_code"))
+
+  tdd_extras$already_exists_db <- FALSE
+
+  # Bind the existing rows, and the edits together
+
+  tdd <- rbind(tdd[tdd$already_exists_db, ], tdd_extras)
+
   tdd <- tdd[, c("already_exists_db", "demographic_dataset",
                  "id", "touchstone")]
   list(touchstone_demographic_dataset = tdd)
@@ -202,8 +213,7 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
   res <- add_serial_rows("touchstone_demographic_dataset",
                          transformed_data, con)
 
-  # For each row in to_edit, do an SQL update, as long as the touchstone
-  # being referred to is in the in-preparation state.
+  # For each row in to_edit, do an SQL update.
 
   if (nrow(res$edits) > 0) {
     touchstone_status <- DBI::dbGetQuery(con, sprintf("
@@ -214,12 +224,6 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
     for (r in seq_len(nrow(res$edits))) {
 
       entry <- res$edits[r, ]
-      if (touchstone_status$status[touchstone_status$id == entry$touchstone] !=
-          'in-preparation') {
-        stop(sprintf("Can't update touch-demog-dataset - %s is not in-prep",
-                   entry$touchstone))
-      }
-
       DBI::dbExecute(con, "
         UPDATE touchstone_demographic_dataset
            SET demographic_dataset = $1

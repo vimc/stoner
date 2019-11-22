@@ -15,9 +15,8 @@ test_touchstone <- function(test_name) {
   c(test_run_import(path, con), con = con)
 }
 
-test_that("Empty import should succeed trivially without needing db", {
+test_that("Empty import should succeed trivially", {
   res <- test_touchstone("empty")
-  expect_equal(length(res$e), 0)
   expect_equal(length(res$t), 0)
 })
 

@@ -1,12 +1,12 @@
 Package: stoner
 Title: Support for building VIMC Montagu Touchstones, using dettl
-Version: 0.0.3
+Version: 0.0.4
 Authors@R:
-    c(person("Wes", "Hinsley",role = c("aut", "cre", "dnc", "itr"),
+    c(person("Wes", "Hinsley",role = c("aut", "cre", "dnc", "itr", "sng"),
            email = "w.hinsley@imperial.ac.uk"),
-      person("Rich", "Fitzjohn", role = "aut"))       
+      person("Rich", "Fitzjohn", role = c("aut", "sng")))
 URL: https://github.com/vimc/stoner
-BugReports: https://github.com/vimc/stoner/issues           
+BugReports: https://github.com/vimc/stoner/issues
 Description: For montagu-imports that create touchstones, or augment existing
     touchstones, allow the import to be as minimal as possible, towards  single
     line extract and transform calls, in order that the review for that import

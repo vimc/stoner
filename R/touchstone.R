@@ -5,26 +5,27 @@ extract_touchstone <- function(e, path, con) {
 
   eout <- list()
 
-  ts <- e$touchstone_csv$id
+  ts <- unique(c(e$touchstone_csv$id,
+                 e$touchstone_countries_csv$touchstone)) %||% ""
+
   tsn <- unique(c(e$touchstone_name_csv$id,
-                  e$touchstone_csv$touchstone_name))
+                  e$touchstone_csv$touchstone_name)) %||% ""
 
-  # Query DB for all touchstones that are connected with any
-  # touchstone_name in tsn.
+  # Query DB for all touchstones that are connected with touchstones
+  # or touchstone names
 
-  if (!is.null(tsn)) {
-    ts <- c(ts,
-      DBI::dbGetQuery(con, sprintf("
-        SELECT DISTINCT touchstone.id
-          FROM touchstone
-          JOIN touchstone_name
-            ON touchstone.touchstone_name = touchstone_name.id
-         WHERE touchstone_name.id IN %s",
-               sql_in(tsn)))$id)
+  ts <- c(ts,
+    DBI::dbGetQuery(con, sprintf("
+      SELECT DISTINCT touchstone.id
+        FROM touchstone
+        JOIN touchstone_name
+          ON touchstone.touchstone_name = touchstone_name.id
+       WHERE touchstone_name.id IN %s
+          OR touchstone.id IN %s",
+             sql_in(tsn), sql_in(ts)))$id)
 
-    eout <- list(touchstone_csv = e$touchstone_csv,
-                  touchstone = db_get(con, "touchstone", "id", unique(ts)))
-  }
+  eout <- list(touchstone_csv = e$touchstone_csv,
+                touchstone = db_get(con, "touchstone", "id", unique(ts)))
 
   # And also get the touchstone_name info itself
 
@@ -85,6 +86,19 @@ test_extract_touchstone <- function(e) {
   if (!is.null(e$touchstone_name_csv)) {
     test_extract_touchstone_name_csv(e)
   }
+
+  # Touchstones are referred to in other CSV files. Test here
+  # whether they are in the DB, or in the touchstone_csv (if provided)
+
+  if (!is.null(e$touchstone_countries_csv)) {
+    all_touchstones <- unique(c(e[['touchstone']]$id,
+                                e[['touchstone_csv']]$id))
+
+    testthat::expect_true(all(unique(e$touchstone_countries_csv$touchstone)
+                              %in% all_touchstones),
+                          label = "All touchstones in touchstone_country are recognised")
+  }
+
 }
 
 ###############################################################################
@@ -145,6 +159,26 @@ load_touchstone_name <- function(transformed_data, con) {
   }
 }
 
+test_in_prep <- function(transformed_data, con) {
+
+  # Having uploaded the CSV touchstones, now check status is in-prep
+  # for all other references to touchstones.
+
+  ts <- c(transformed_data$touchstone_demographic_dataset$touchstone,
+          transformed_data$touchstone_country$touchstone)
+
+  if (is.null(ts)) {
+    return()
+  }
+
+  db_ts <- db_get(con, "touchstone", "id", unique(ts))
+  db_ts <- db_ts[db_ts$status != "in-preparation", ]
+  if (nrow(db_ts) > 0) {
+    stop(paste(sprintf("Can't edit touchstone id %s.", sql_in(db_ts$id)),
+                       "Already exists with open/finished status."))
+  }
+}
+
 load_touchstone <- function(transformed_data, con) {
   to_edit <- add_non_serial_rows("touchstone", transformed_data, con)
 
@@ -177,4 +211,6 @@ load_touchstone <- function(transformed_data, con) {
                   "Already exists with open/finished status."))
     }
   }
+
+  test_in_prep(transformed_data, con)
 }

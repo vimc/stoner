@@ -23,6 +23,15 @@ sql_in_numeric <- function(numerics) {
   sprintf("(%s)", paste(numerics, collapse = ","))
 }
 
+split_by <- function(x, by) {
+  stopifnot(length(x) == 1)
+  strsplit(x, by)[[1]]
+}
+
+split_semi <- function(x) {
+  split_by(x, ";")
+}
+
 sql_in <- function(things) {
   if (is.character(things)) {
     sql_in_char(things)
@@ -50,6 +59,36 @@ mash <- function(tab, fields = NULL) {
   }
   df_args <- c(tab, sep = "\r")
   do.call(paste, df_args)
+}
+
+# Take a data frame of proposed rows for a new table.
+# Return copy of the new table with id column filled in:
+# -1, -2 ... for new rows, or a positive integer for rows
+# that already exist in the target table.
+
+assign_serial_ids <- function(new_table, db_table, table_name,
+                              mash_fields_csv = NULL,
+                              mash_fields_db = NULL) {
+
+  new_table$mash <- mash(new_table, mash_fields_csv)
+  if (any(duplicated(new_table$mash))) {
+    stop(sprintf("Duplicated entries in new %s rows", table_name))
+  }
+
+  if (is.null(mash_fields_db)) {
+    mash_fields_db <- names(db_table)
+    mash_fields_db <- mash_fields_db[mash_fields_db != 'id']
+  }
+
+  db_table$mash <- mash(db_table, mash_fields_db)
+  new_table$id <- db_table$id[match(new_table$mash, db_table$mash)]
+  new_table$mash <- NULL
+
+  which_nas <- which(is.na(new_table$id))
+  new_table$already_exists_db <- !is.na(new_table$id)
+  new_table$id[which_nas] <- seq(from = -1, by = -1,
+                                 length.out = length(which_nas))
+  new_table
 }
 
 # Return a vector of logicals, of whether each row in table1

@@ -1,3 +1,7 @@
+## 0.0.4
+
+Support for touchstone_countries.csv metadata
+
 ## 0.0.3
 
 Support for touchstone_demographic_dataset.csv metadata
