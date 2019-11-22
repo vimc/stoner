@@ -63,15 +63,15 @@ transform_touchstone_country <- function(e) {
   # Build a table that multiplies out countries and diseases...
   # for each touchstone.
 
-  expand_countries <- unlist(lapply(1:nrow(csv), function(x) {
+  expand_countries <- unlist(lapply(seq_len(nrow(csv)), function(x) {
     rep(countries[[x]], length(diseases[[x]]))
   }))
 
-  expand_diseases <- unlist(lapply(1:nrow(csv), function(x) {
+  expand_diseases <- unlist(lapply(seq_len(nrow(csv)), function(x) {
     rep(diseases[[x]], each = length(countries[[x]]))
   }))
 
-  expand_touchstones <- unlist(lapply(1:nrow(csv), function(x) {
+  expand_touchstones <- unlist(lapply(seq_len(nrow(csv)), function(x) {
     rep(csv$touchstone[[x]], each = (length(diseases[[x]]) *
                                      length(countries[[x]])))
   }))
