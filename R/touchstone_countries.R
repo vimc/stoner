@@ -1,55 +1,49 @@
 ###############################################################################
 
-extract_touchstone_country <- function(path, con) {
-  e <- list()
+extract_touchstone_country <- function(e, path, con) {
+  csv <- e$touchstone_countries_csv
+  if (is.null(csv)) {
+    return(e)
+  }
 
-  e$touchstone_countries_csv <- read_meta(path, "touchstone_countries.csv")
+  if (!setequal(names(csv), c("touchstone", "diseases", "countries"))) {
+    stop("Invalid columns in touchstone_country.csv")
+  }
 
-  all_diseases <- unique(unlist(
-    split_semi(e$touchstone_countries_csv$diseases)))
+  diseases <- unlist(lapply(csv$diseases, split_semi))
+  countries <- unlist(lapply(csv$countries, split_semi))
 
-  all_countries <- unique(unlist(
-    split_semi(e$touchstone_countries_csv$countries)))
-
-  all_touchstones <- unique(e$touchstone_countries_csv$touchstone)
-
-  e$disease <- DBI::dbGetQuery(con, sprintf("
-    SELECT * FROM disease WHERE id IN %s", sql_in(all_diseases)))
-
-  e$country <- DBI::dbGetQuery(con, sprintf("
-    SELECT * FROM country WHERE id IN %s", sql_in(all_countries)))
-
-  e[['touchstone_country']] <- DBI::dbGetQuery(con, sprintf("
-    SELECT * FROM touchstone_country WHERE touchstone IN %s",
-    sql_in(all_touchstones)))
-
-  e[['touchstone_country_touchstones']] <- DBI::dbGetQuery(con, sprintf("
-    SELECT id FROM touchstone WHERE id IN %s", sql_in(all_touchstones)))
-
-  e[['touchstone_country_db']] <- DBI::dbGetQuery(con, sprintf("
-    SELECT * FROM touchstone_country
-     WHERE touchstone IN %s", sql_in(all_touchstones)))
-
-  e[['touchstone_country_next_id']] <- next_id(con, "touchstone_country")
-
-  e
+  c(e, list(
+    tc_disease = db_get(con, "disease", "id", unique(diseases)),
+    tc_country = db_get(con, "country", "id", unique(countries)),
+    db_touchstone_country = db_get(con, "touchstone_country", "touchstone",
+                                   unique(csv$touchstone))
+  ))
 }
 
 test_extract_touchstone_country <- function(e) {
-  expect_true(all(unique(unlist(
-    split_semi(e$touchstone_countries_csv$countries))) %in% e$country$id),
+  csv <- e$touchstone_countries_csv
+  if (is.null(csv)) {
+    return()
+  }
+
+  diseases <- lapply(csv$diseases, split_semi)
+  countries <- lapply(csv$countries, split_semi)
+
+  if (any(lengths(diseases) < 1)) {
+    stop("Empty disease entry in touchstone_country")
+  }
+
+  if (any(lengths(countries) < 1)) {
+    stop("Empty country entry in touchstone_country")
+  }
+
+  testthat::expect_true(all(unique(unlist(countries)) %in% e$tc_country$id),
     label = "All countries in touchstone_country are recognised")
 
-  expect_true(all(unique(unlist(
-    split_semi(e$touchstone_countries_csv$diseases))) %in% e$disease$id),
+  testthat::expect_true(all(unique(unlist(diseases)) %in% e$tc_disease$id),
     label = "All diseases in touchstone_country are recognised")
 
-  all_touchstones <- unique(c(e$touchstone_country_touchstones$id,
-                              e$touchstone_csv$id))
-
-  expect_true(all(unique(e$touchstone_countries_csv$touchstone) %in%
-                all_touchstones),
-    label = "All touchstones in touchstone_country are recognised")
 }
 
 ###############################################################################
@@ -58,57 +52,48 @@ transform_touchstone_country <- function(e) {
 
   # CSV Format: touchstone,disease1;disease2,country1;country2;country3
 
-  disease <- split_semi(e$touchstone_countries_csv$diseases)
-
-  if (any(lengths(disease) < 1)) {
-    stop("Empty disease column in touchstone_country")
+  csv <- e$touchstone_countries_csv
+  if (is.null(csv)) {
+    return(list())
   }
 
-  countries <- rep(split_semi(e$touchstone_countries_csv$countries),
-                   lengths(disease))
+  diseases <- lapply(csv$diseases, split_semi)
+  countries <- lapply(csv$countries, split_semi)
 
-  touchstone <- lapply(1:length(disease), function(x)
-                  rep(e$touchstone_countries_csv$touchstone[x],
-                    length(disease[[x]])))
+  # Build a table that multiplies out countries and diseases...
+  # for each touchstone.
+
+  expand_countries <- unlist(lapply(seq_len(nrow(csv)), function(x) {
+    rep(countries[[x]], length(diseases[[x]]))
+  }))
+
+  expand_diseases <- unlist(lapply(seq_len(nrow(csv)), function(x) {
+    rep(diseases[[x]], each = length(countries[[x]]))
+  }))
+
+  expand_touchstones <- unlist(lapply(seq_len(nrow(csv)), function(x) {
+    rep(csv$touchstone[[x]], each = (length(diseases[[x]]) *
+                                     length(countries[[x]])))
+  }))
 
   touchstone_country <- data_frame(
-    touchstone = rep(unlist(touchstone), lengths(countries)),
-    disease = rep(unlist(disease), lengths(countries)),
-    country = unlist(countries))
+    touchstone = expand_touchstones,
+    disease = expand_diseases,
+    country = expand_countries)
 
-  e$touchstone_country_db$mash <- paste(e$touchstone_country_db$touchstone,
-                                        e$touchstone_country_db$disease,
-                                        e$touchstone_country_db$country,
-                                        sep = '#')
-
-  touchstone_country$mash <- paste(touchstone_country$touchstone,
-                                   touchstone_country$disease,
-                                   touchstone_country$country, sep='#')
-
-  if (any(duplicated(touchstone_country$mash))) {
-    stop("Duplicated entries in touchstone_country.csv")
-  }
-
-  touchstone_country$id <- e$touchstone_country_db$id[match(
-    touchstone_country$mash, e$touchstone_country_db$mash)]
-
-  touchstone_country$mash <- NULL
-  touchstone_country$already_exists_db <- !is.na(touchstone_country$id)
-
-  touchstone_country <- fill_in_keys(touchstone_country,
-                                     e$touchstone_country_next_id)
+  touchstone_country <- assign_serial_ids(touchstone_country,
+                                          e$db_touchstone_country,
+                                          "touchstone_country")
 
   list(touchstone_country = touchstone_country)
 }
 
 test_transform_touchstone_country <- function(transformed_data) {
-  expect_false(any(is.null(transformed_data$touchstone_country$touchstone)))
-  expect_false(any(is.null(transformed_data$touchstone_country$disease)))
-  expect_false(any(is.null(transformed_data$touchstone_country$country)))
+  # All good tests done in extract, and in stoner unit tests.
 }
 
 ###############################################################################
 
 load_touchstone_country <- function(transformed_data, con) {
-  add_return_edits("touchstone_country", transformed_data, con)
+  add_serial_rows("touchstone_country", transformed_data, con)
 }

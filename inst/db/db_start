@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -eu
+
+HERE=$(dirname $0)
+. $HERE/common
+
+
+docker network create $DB_NETWORK
+
+echo "Starting container"
+docker run -d -p 127.0.0.1:7777:5432 --rm --network=$DB_NETWORK --name $DB_CONTAINER $DB_IMAGE
+
+# Wait for things to become responsive
+docker exec $DB_CONTAINER montagu-wait.sh
+docker ps -l
+docker network ls
+
+# Do the migrations
+echo "Creating montagu schema"
+docker run --rm --network=$DB_NETWORK $DB_MIGRATE_IMAGE
+
+echo "Setting up utility scripts"
+
+docker cp $HERE/clear_schema.sql $DB_CONTAINER:/
