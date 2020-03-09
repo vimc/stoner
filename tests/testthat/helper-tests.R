@@ -2,6 +2,20 @@ test_path <- function(context, path) {
   file.path("examples", context, path)
 }
 
+empty_test_dir <- function() {
+  # Create stoner_test/meta in a temporary dir,
+  # and delete any existing files within it.
+
+  path <- tempdir()
+  res <- file.path(path, "stoner_test")
+  dir.create(res, showWarnings = FALSE)
+  inner <- file.path(res, "meta")
+  dir.create(inner, showWarnings = FALSE)
+  files <- dir(inner, full.names = TRUE)
+  file.remove(files)
+  res
+}
+
 test_prepare <- function(path, con = NULL) {
   db_tables <- c("touchstone_name", "touchstone", "disease",
                  "scenario_description", "scenario",
@@ -38,6 +52,17 @@ test_compare_csv_db <- function(con, csv, db) {
               label = "DB Compare: Data matches")
 }
 
+compare_csv <- function(res, tables) {
+  results <- lapply(seq_along(tables), function(ti) {
+    table <- tables[ti]
+    test_compare_csv_db(
+      res$con, res$e[[paste0(table, "_csv")]], table)})
+
+  DBI::dbRollback(res$con)
+  expect_true(all(unlist(results)))
+}
+
+
 test_run_import <- function(path, con = NULL, ...) {
   e <- stone_extract(path, con)
   stone_test_extract(e)
@@ -47,3 +72,6 @@ test_run_import <- function(path, con = NULL, ...) {
   list(e = e, t = t)
 }
 
+`%||%` <- function(a, b) {
+  if (is.null(a)) b else a
+}
