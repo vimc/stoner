@@ -17,5 +17,5 @@ stone_test_extract <- function(extracted_data) {
   test_extract_scenario_description(extracted_data)
   test_extract_touchstone_demographic_dataset(extracted_data)
   test_extract_touchstone_country(extracted_data)
-  test_extract_burden_estimate_expectation(extracted_data)
+  test_extract_responsibilities(extracted_data)
 }

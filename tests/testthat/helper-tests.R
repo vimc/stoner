@@ -3,13 +3,14 @@ test_path <- function(context, path) {
 }
 
 test_prepare <- function(path, con = NULL) {
+  browser()
   db_tables <- c("touchstone_name", "touchstone", "disease",
                  "scenario_description", "scenario",
                  "demographic_variant", "demographic_source",
                  "demographic_statistic_type",
                  "demographic_dataset",
                  "touchstone_demographic_dataset",
-                 "touchstone_country")
+                 "touchstone_country", "modelling_group")
   for (table in db_tables) {
     csv_file <- read_meta(path, paste0("db_", table, ".csv"))
     if (!is.null(csv_file)) {

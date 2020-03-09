@@ -4,7 +4,7 @@
 [![codecov.io](https://codecov.io/github/vimc/stoner/coverage.svg?branch=master)](https://codecov.io/github/vimc/stoner?branch=master)
 
 Stoner is a helper package for writing montagu-imports concerning touchstones and associated responsibilities and 
-expectations. It allows creation of, or changes to a touchstone to be specified by csv files.
+expectations. It allows creation of, or in some instances, changes to a touchstone to be specified by csv files.
 
 # Using stoner
 
