@@ -81,7 +81,11 @@ compare_csv <- function(res, tables) {
 mess_with <- function(path, csv, col, row, text) {
   data <- read.csv(file.path(path, "meta", csv),
                    stringsAsFactors = FALSE)
-  data[[col]][row] <- text
+  if (row == 0) {
+    names(csv)[names(csv) == col] <- text
+  } else {
+    data[[col]][row] <- text
+  }
   write.csv(data, file.path(path, "meta", csv), row.names = FALSE)
 }
 
@@ -160,25 +164,35 @@ create_ts_dds <- function(path, tstones, sources, types, db = FALSE) {
     row.names = FALSE)
 }
 
-standard_demography <- function(test) {
+standard_demography <- function(test, make_source = TRUE,
+                                      make_type = TRUE,
+                                      make_dataset = TRUE,
+                                      ) {
   vid <- DBI::dbGetQuery(test$con, "
     INSERT INTO demographic_variant (code, name) VALUES ('V1', 'Variant 1')
       RETURNING id")$id
-  src <- DBI::dbGetQuery(test$con, "
-    INSERT INTO demographic_source (code, name) VALUES ('S1', 'Source 1')
-      RETURNING id")$id
-  type <- DBI::dbGetQuery(test$con, "
-    INSERT INTO demographic_statistic_type
-      (code, age_interpretation, name, year_step_size, reference_date,
-       gender_is_applicable, demographic_value_unit, default_variant) VALUES
-      ('T1', 'age', 'Type 1', 5, '2017-01-01', FALSE, 1, $1)
-        RETURNING id", vid)$id
-
-  dset <- DBI::dbGetQuery(test$con, "
-    INSERT INTO demographic_dataset
-      (description, demographic_source, demographic_statistic_type) VALUES
-      ('D1', $1, $2) RETURNING id", list(src, type))$id
-
+  src <- NA
+  if (make_source) {
+    src <- DBI::dbGetQuery(test$con, "
+      INSERT INTO demographic_source (code, name) VALUES ('S1', 'Source 1')
+        RETURNING id")$id
+  }
+  type <- NA
+  if (make_type) {
+    type <- DBI::dbGetQuery(test$con, "
+      INSERT INTO demographic_statistic_type
+        (code, age_interpretation, name, year_step_size, reference_date,
+         gender_is_applicable, demographic_value_unit, default_variant) VALUES
+         ('T1', 'age', 'Type 1', 5, '2017-01-01', FALSE, 1, $1)
+         RETURNING id", vid)$id
+  }
+  dset <- NA
+  if (make_dataset & make_type & make_source) {
+    dset <- DBI::dbGetQuery(test$con, "
+      INSERT INTO demographic_dataset
+        (description, demographic_source, demographic_statistic_type) VALUES
+        ('D1', $1, $2) RETURNING id", list(src, type))$id
+  }
   list(variant_id = vid, source_id = src,
        type_id = type, dset_id = dset)
 }
