@@ -41,7 +41,7 @@ test_that("Duplicate ids in scenario_description.csv", {
 })
 
 test_that("Edit scenario description for in-prep touchstone", {
- test <- new_test()
+  test <- new_test()
   create_touchstone_name_csv(test$path, "nevis", db = TRUE)
   create_touchstone_csv(test$path, "nevis", 1, db = TRUE)
   create_disease_csv(test$path, "piles", "Elf Piles", db = TRUE)

@@ -82,7 +82,7 @@ mess_with <- function(path, csv, col, row, text) {
   data <- read.csv(file.path(path, "meta", csv),
                    stringsAsFactors = FALSE)
   if (row == 0) {
-    names(csv)[names(csv) == col] <- text
+    names(data)[names(data) == col] <- text
   } else {
     data[[col]][row] <- text
   }
@@ -97,16 +97,17 @@ db_file <- function(db, f) {
 create_touchstone_csv <- function(path, names, versions,
                                   descriptions = NULL,
                                   comments = NULL,
+                                  status = NULL,
                                   db = FALSE) {
   comments <- comments %||% paste0("Comment ", names, "-", versions)
   descriptions <- descriptions %||% paste(names,"description")
-
+  status <- status %||% "in-preparation"
   write.csv(data_frame(
     id = paste0(names, "-", versions),
     touchstone_name = names,
     version = versions,
     description = paste0(names, " (version ",versions, ")"),
-    status = "in-preparation",
+    status = status,
     comment = comments),
     file.path(path, "meta", db_file(db, "touchstone.csv")),
     row.names = FALSE)
@@ -160,38 +161,46 @@ create_ts_dds <- function(path, tstones, sources, types, db = FALSE) {
   write.csv(data_frame(
     touchstone = tstones, demographic_source = sources,
     demographic_statistic_type = types),
-    file.path(path, "meta", db_file(db, "touchstone_country.csv")),
+    file.path(path, "meta",
+      db_file(db, "touchstone_demographic_dataset.csv")),
     row.names = FALSE)
 }
 
 standard_demography <- function(test, make_source = TRUE,
                                       make_type = TRUE,
                                       make_dataset = TRUE,
-                                      ) {
+                                      rows = 1) {
   vid <- DBI::dbGetQuery(test$con, "
     INSERT INTO demographic_variant (code, name) VALUES ('V1', 'Variant 1')
       RETURNING id")$id
+
   src <- NA
   if (make_source) {
-    src <- DBI::dbGetQuery(test$con, "
-      INSERT INTO demographic_source (code, name) VALUES ('S1', 'Source 1')
-        RETURNING id")$id
+    src <- unlist(lapply(seq_len(rows), function(r) {
+      DBI::dbGetQuery(test$con, sprintf("
+        INSERT INTO demographic_source (code, name)
+             VALUES ('S%s', 'Source %s')
+          RETURNING id", r, r))$id }))
   }
   type <- NA
   if (make_type) {
-    type <- DBI::dbGetQuery(test$con, "
-      INSERT INTO demographic_statistic_type
-        (code, age_interpretation, name, year_step_size, reference_date,
-         gender_is_applicable, demographic_value_unit, default_variant) VALUES
-         ('T1', 'age', 'Type 1', 5, '2017-01-01', FALSE, 1, $1)
-         RETURNING id", vid)$id
+    type <- unlist(lapply(seq_len(rows), function(r) {
+      DBI::dbGetQuery(test$con, sprintf("
+        INSERT INTO demographic_statistic_type
+          (code, age_interpretation, name, year_step_size, reference_date,
+           gender_is_applicable, demographic_value_unit, default_variant) VALUES
+           ('T%s', 'age', 'Type %s', 5, '2017-01-01', FALSE, 1, $1)
+           RETURNING id", r, r), vid)$id }))
   }
   dset <- NA
   if (make_dataset & make_type & make_source) {
-    dset <- DBI::dbGetQuery(test$con, "
-      INSERT INTO demographic_dataset
-        (description, demographic_source, demographic_statistic_type) VALUES
-        ('D1', $1, $2) RETURNING id", list(src, type))$id
+    dset <- unlist(lapply(seq_len(rows), function(r) {
+      DBI::dbGetQuery(test$con, sprintf("
+        INSERT INTO demographic_dataset
+          (description, demographic_source,
+                        demographic_statistic_type) VALUES
+          ('D%s', $1, $2) RETURNING id", r),
+                      list(src[r], type[r]))$id }))
   }
   list(variant_id = vid, source_id = src,
        type_id = type, dset_id = dset)

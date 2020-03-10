@@ -1,8 +1,9 @@
 read_meta <- function(path, filename) {
   if (meta_exists(path, filename)) {
     utils::read.csv(file.path(path, "meta", filename),
-           stringsAsFactors = FALSE,
-           colClasses = "character")
+                         na.strings = "NA",
+           stringsAsFactors = FALSE)
+
   } else {
     NULL
   }
