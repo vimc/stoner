@@ -75,3 +75,11 @@ test_run_import <- function(path, con = NULL, ...) {
 `%||%` <- function(a, b) {
   if (is.null(a)) b else a
 }
+
+do_test <- function(path, con = NULL) {
+  con <- con %||% test_db_connection()
+  DBI::dbBegin(con)
+  test_prepare(path, con)
+  c(test_run_import(path, con), con = con)
+}
+

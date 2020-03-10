@@ -8,13 +8,6 @@ context("touchstone")
 # touchstone_name.csv
 # Cols: id, description, comment
 
-test_touchstone <- function(path, con = NULL) {
-  con <- con %||% test_db_connection()
-  DBI::dbBegin(con)
-  test_prepare(path, con)
-  c(test_run_import(path, con), con = con)
-}
-
 mess_with <- function(path, csv, col, row, text) {
   data <- read.csv(file.path(path, "meta", csv),
                    stringsAsFactors = FALSE)
@@ -67,7 +60,7 @@ create_touchstone_name_csv <- function(path, names,
 
 test_that("Empty import should succeed trivially", {
   con <- test_db_connection()
-  res <- test_touchstone(empty_test_dir(), con)
+  res <- do_test(empty_test_dir(), con)
   expect_equal(length(res$t), 0)
   DBI::dbRollback(con)
 })
@@ -76,7 +69,7 @@ test_that("A new touchstone and name", {
   path <- empty_test_dir()
   create_touchstone_csv(path, "nevis", 1)
   create_touchstone_name_csv(path, "nevis")
-  compare_csv(test_touchstone(path), c("touchstone", "touchstone_name"))
+  compare_csv(do_test(path), c("touchstone", "touchstone_name"))
 
 })
 
@@ -84,21 +77,21 @@ test_that("Two new touchstones and names", {
   path <- empty_test_dir()
   create_touchstone_csv(path, c("nevis", "kilimanjaro"), c(1, 1))
   create_touchstone_name_csv(path, c("nevis", "kilimanjaro"))
-  compare_csv(test_touchstone(path), c("touchstone", "touchstone_name"))
+  compare_csv(do_test(path), c("touchstone", "touchstone_name"))
 })
 
 test_that("Two new touchstones, one touchstone name", {
   path <- empty_test_dir()
   create_touchstone_csv(path, c("nevis", "nevis"), c(1, 2))
   create_touchstone_name_csv(path, "nevis")
-  compare_csv(test_touchstone(path), c("touchstone", "touchstone_name"))
+  compare_csv(do_test(path), c("touchstone", "touchstone_name"))
 })
 
 test_that("New touchstone, touchstone name in db, not csv", {
   path <- empty_test_dir()
   create_touchstone_csv(path, "kilimanjaro", 1)
   create_touchstone_name_csv(path, "kilimanjaro", db = TRUE)
-  compare_csv(test_touchstone(path), "touchstone")
+  compare_csv(do_test(path), "touchstone")
 })
 
 test_that("Update existing touchstone_name (no refs)", {
@@ -106,7 +99,7 @@ test_that("Update existing touchstone_name (no refs)", {
   create_touchstone_name_csv(path, "kilimanjaro", db = TRUE)
   create_touchstone_name_csv(path, "kilimanjaro",
                              descriptions = "Updated Description")
-  compare_csv(test_touchstone(path), "touchstone_name")
+  compare_csv(do_test(path), "touchstone_name")
 })
 
 test_that("Update existing touchstone_name (in prep)", {
@@ -115,7 +108,7 @@ test_that("Update existing touchstone_name (in prep)", {
   create_touchstone_name_csv(path, "nevis", db = TRUE)
   create_touchstone_name_csv(path, "nevis",
                              description = "Updated Description")
-  compare_csv(test_touchstone(path), "touchstone_name")
+  compare_csv(do_test(path), "touchstone_name")
 })
 
 test_that("Update existing touchstone details (in prep)", {
@@ -123,7 +116,7 @@ test_that("Update existing touchstone details (in prep)", {
   create_touchstone_csv(path, "nevis", 1, db = TRUE)
   create_touchstone_name_csv(path, "nevis", db = TRUE)
   create_touchstone_csv(path, "nevis", 1, comments = "Extra comment")
-  res <- test_touchstone(path)
+  res <- do_test(path)
   compare_csv(res, "touchstone")
 })
 
@@ -137,7 +130,7 @@ test_that("Update and add touchstone and touchstone_name (in prep)", {
   create_touchstone_csv(path, c("nevis", "kilimanjaro"), c(1, 1),
       comments = c("Updated comment", "first comment"))
 
-  compare_csv(test_touchstone(path), c("touchstone", "touchstone_name"))
+  compare_csv(do_test(path), c("touchstone", "touchstone_name"))
 })
 
 test_that("Exact match", {
@@ -146,7 +139,7 @@ test_that("Exact match", {
   create_touchstone_csv(path, "nevis", 1, db = TRUE)
   create_touchstone_name_csv(path, "nevis")
   create_touchstone_name_csv(path, "nevis", db = TRUE)
-  compare_csv(test_touchstone(path), c("touchstone", "touchstone_name"))
+  compare_csv(do_test(path), c("touchstone", "touchstone_name"))
 })
 
 ## Tests that should fail:
@@ -155,7 +148,7 @@ test_that("Add touchstone, name not found", {
   path <- empty_test_dir()
   create_touchstone_csv(path, "nevis", 1)
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
     "All touchstone.touchstone_name are known isn't true",
     class = "expectation_failure")
   DBI::dbRollback(con)
@@ -168,7 +161,7 @@ test_that("Add touchstone, bad version", {
   mess_with(path, "touchstone.csv", "description", 1, "nevis (version 1)")
   con <- test_db_connection()
 
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
     "All touchstone.description are formatted correctly isn't true",
                class = "expectation_failure")
   DBI::dbRollback(con)
@@ -182,7 +175,7 @@ test_that("Add touchstone, bad id format", {
   mess_with(path, "touchstone.csv", "id", 1, "nevis#1")
   con <- test_db_connection()
 
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
                "All touchstone.id are touchstone_name-version isn't true",
                class = "expectation_failure")
 })
@@ -194,7 +187,7 @@ test_that("Edit touchstone name - not in-preparation", {
   create_touchstone_name_csv(path, "nevis", descriptions = "Edited")
   mess_with(path, "db_touchstone.csv", "status", 1, "finished")
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
     paste0("Can't edit touchstone_name id (.*). ",
            "Already exists with open/finished touchstone versions"),
     class = "simpleError")
@@ -209,7 +202,7 @@ test_that("Edit touchstone - not in-preparation", {
   mess_with(path, "db_touchstone.csv", "status", 1, "finished")
   con <- test_db_connection()
 
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
     "Can't edit touchstone id (.*). Already exists with open/finished status.",
     class = "simpleError")
   DBI::dbRollback(con)
@@ -220,7 +213,7 @@ test_that("touchstone CSV invalid", {
   create_touchstone_csv(path, "nevis", 1)
   mess_with(path, "touchstone.csv", "haggis", 1, "yummy")
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
                "Correct columns in touchstone.csv not equal to (.*)",
                class = "expectation_failure")
   DBI::dbRollback(con)
@@ -231,7 +224,7 @@ test_that("touchstone_name CSV invalid", {
   create_touchstone_name_csv(path, "nevis", 1)
   mess_with(path, "touchstone_name.csv", "pie_balm", 1, "clogg_banting")
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
                "Correct columns in touchstone_name.csv not equal to (.*)",
                class = "expectation_failure")
   DBI::dbRollback(con)
@@ -242,7 +235,7 @@ test_that("Duplicate touchstone id in csv", {
   create_touchstone_csv(path, c("nevis", "nevis"), c(1, 1))
   create_touchstone_name_csv(path, "nevis")
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
                "No duplicate ids in touchstone.csv isn't false.",
                class = "expectation_failure")
   DBI::dbRollback(con)
@@ -253,7 +246,7 @@ test_that("Duplicate touchstone_name in csv", {
   create_touchstone_name_csv(path, c("nevis", "nevis"))
   create_touchstone_csv(path, "nevis", 1)
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
                "No duplicate ids in touchstone_name.csv isn't false.",
                class = "expectation_failure")
   DBI::dbRollback(con)
@@ -266,7 +259,7 @@ test_that("Add touchstone, bad status", {
   create_touchstone_csv(path, "nevis", 1)
   mess_with(path, "touchstone.csv", "status", 1, "half-baked")
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
                "All touchstone.status are valid isn't true.",
                class = "expectation_failure")
   DBI::dbRollback(con)
@@ -279,7 +272,7 @@ test_that("Edit touchstone, bad status", {
   create_touchstone_csv(path, "nevis", 1)
   mess_with(path, "touchstone.csv", "status", 1, "gooey")
   con <- test_db_connection()
-  expect_error(test_touchstone(path, con),
+  expect_error(do_test(path, con),
                "All touchstone.status are valid isn't true.",
                class = "expectation_failure")
   DBI::dbRollback(con)
