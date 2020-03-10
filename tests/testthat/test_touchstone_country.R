@@ -5,12 +5,6 @@ context("touchstone_country")
 # touchstone_country.csv
 # Cols: touchstone,countries,diseases
 
-standard_disease_touchstones <- function(test) {
-  create_disease_csv(test$path, "flu", "Elf flu", db = TRUE)
-  create_touchstone_csv(test$path, "nevis", 1, db = TRUE)
-  create_touchstone_name_csv(test$path, "nevis", db = TRUE)
-}
-
 test_touchstone_country <- function(test_name, ...) {
   con <- test_db_connection()
   path <- test_path("tc", test_name)
@@ -65,20 +59,21 @@ test_tcs <- function(test, countries) {
 
 test_that("Add touchstone_country - touchstone in db", {
   test <- new_test()
+  standard_disease_touchstones(test, db = TRUE)
   create_ts_country_csv(test$path, "nevis-1", "flu", "ZWE;ZMB")
   test_tcs(do_test(test), c("ZWE","ZMB"))
 })
 
 test_that("Add touchstone_country - touchstone in csv", {
   test <- new_test()
-  standard_disease_touchstones(test)
+  standard_disease_touchstones(test, db = FALSE)
   create_ts_country_csv(test$path, "nevis-1", "flu", "ZWE;ZMB")
   test_tcs(do_test(test), c("ZWE", "ZMB"))
 })
 
 test_that("Append touchstone_countries", {
   test <- new_test()
-  standard_disease_touchstones(test)
+  standard_disease_touchstones(test, db = TRUE)
   create_ts_country_csv(test$path, "nevis-1", "flu", "XK", db = TRUE)
   create_ts_country_csv(test$path, "nevis-1", "flu", "AFG")
   test_tcs(do_test(test), c("AFG", "XK"))
@@ -86,7 +81,7 @@ test_that("Append touchstone_countries", {
 
 test_that("Append touchstone_countries - zero left", {
   test <- new_test()
-  standard_disease_touchstones(test)
+  standard_disease_touchstones(test, db = TRUE)
   create_ts_country_csv(test$path, "nevis-1", "flu", c("ZMB","ZWE"), db = TRUE)
   create_ts_country_csv(test$path, "nevis-1", "flu", "ZMB;ZWE")
   test_tcs(do_test(test), c("ZMB", "ZWE"))

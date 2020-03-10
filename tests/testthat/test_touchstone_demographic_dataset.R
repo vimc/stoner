@@ -6,38 +6,29 @@ context("touchstone_demographic_dataset")
 # Cols: touchstone,demographic_source,demographic_statistic_type
 #       (all strings, not numerical ids)
 
-test_touchstone_demographic_dataset <- function(test_name, ...) {
-  con <- test_db_connection()
-  path <- test_path("tdd", test_name)
-  test_prepare(path, con)
-  c(test_run_import(path, con, ...), con = con)
-}
-
-compare_tdd_db_with_csv <- function(con, test_name) {
-  path <- test_path("tdd", test_name)
-  expected <- read_meta(path, "expected_result.csv")
-  db_tdd <- db_tdd_for_touchstones(con, unique(expected$touchstone))
-  db_tdd$mash <- mash(db_tdd, c("dsource_code", "dtype_code"))
-  expected$mash <- mash(expected, c("demographic_source",
-                                    "demographic_statistic_type"))
-  match(expected$mash, db_tdd$mash)
-
-  expect_equal(nrow(expected), nrow(db_tdd))
-  expect_true(all(sort(db_tdd$mash) == sort(expected$mash)))
-}
-
 test_that("A new touchstone demographic dataset - existing touchstone", {
-  res <- test_touchstone_demographic_dataset("new_tdd")
-  compare_tdd_db_with_csv(res$con, "new_tdd")
+  test <- new_test()
+  standard_disease_touchstones(test)
+  demog <- standard_demography(test)
+  create_ts_dds(test$path, "nevis-1", "S1", "T1")
+  res <- do_test(test)
+
+  new_dset <- DBI::dbGetQuery(res$con, "
+    SELECT * FROM touchstone_demographic_dataset
+     WHERE demographic_dataset = $1", demog$dset_id)
+
+  expect_equal(nrow(new_dset), 1)
+  expect_equal(new_dset$touchstone, "nevis-1")
 })
 
 test_that("DB Serial Corruption is detected", {
-  con <- test_db_connection()
-  path <- test_path("tdd", "new_tdd")
-  test_prepare(path, con)
-  df <- data_frame(id = 2, code = 'source2', name = 'Name 2')
-  DBI::dbWriteTable(con, "demographic_source", df, append = TRUE)
-  expect_error(test_run_import(path, con),
+  test <- new_test()
+  demog <- standard_demography(test)
+  DBI::dbExecute(test$con, "INSERT INTO demographic_source
+                 (id, code, name) VALUES ($1,$2,$3)",
+    list(demog$source_id + 5, "S2", "Source 2"))
+
+  expect_error(do_test(test),
                "Error - db serial numbers were corrupted")
 })
 

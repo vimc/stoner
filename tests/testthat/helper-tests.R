@@ -20,6 +20,11 @@ new_test <- function() {
   file.remove(files)
   cache_con <<- cache_con %||% test_db_connection()
   res$con <- cache_con
+  DBI::dbExecute(res$con, "DELETE FROM touchstone_demographic_dataset")
+  DBI::dbExecute(res$con, "DELETE FROM demographic_dataset")
+  DBI::dbExecute(res$con, "DELETE FROM demographic_statistic_type")
+  DBI::dbExecute(res$con, "DELETE FROM demographic_variant")
+  DBI::dbExecute(res$con, "DELETE FROM demographic_source")
   DBI::dbExecute(res$con, "DELETE FROM touchstone_country")
   DBI::dbExecute(res$con, "DELETE FROM scenario")
   DBI::dbExecute(res$con, "DELETE FROM scenario_description")
@@ -30,6 +35,7 @@ new_test <- function() {
 }
 
 test_prepare <- function(path, con = NULL) {
+
   db_tables <- c("touchstone_name", "touchstone", "disease",
                  "scenario_description", "scenario",
                  "demographic_variant", "demographic_source",
@@ -144,6 +150,43 @@ create_ts_country_csv <- function(path, tstones, diseases,
     touchstone = tstones, disease = diseases, country = countries),
     file.path(path, "meta", db_file(db, "touchstone_country.csv")),
     row.names = FALSE)
+}
+
+create_ts_dds <- function(path, tstones, sources, types, db = FALSE) {
+  write.csv(data_frame(
+    touchstone = tstones, demographic_source = sources,
+    demographic_statistic_type = types),
+    file.path(path, "meta", db_file(db, "touchstone_country.csv")),
+    row.names = FALSE)
+}
+
+standard_demography <- function(test) {
+  vid <- DBI::dbGetQuery(test$con, "
+    INSERT INTO demographic_variant (code, name) VALUES ('V1', 'Variant 1')
+      RETURNING id")$id
+  src <- DBI::dbGetQuery(test$con, "
+    INSERT INTO demographic_source (code, name) VALUES ('S1', 'Source 1')
+      RETURNING id")$id
+  type <- DBI::dbGetQuery(test$con, "
+    INSERT INTO demographic_statistic_type
+      (code, age_interpretation, name, year_step_size, reference_date,
+       gender_is_applicable, demographic_value_unit, default_variant) VALUES
+      ('T1', 'age', 'Type 1', 5, '2017-01-01', FALSE, 1, $1)
+        RETURNING id", vid)$id
+
+  dset <- DBI::dbGetQuery(test$con, "
+    INSERT INTO demographic_dataset
+      (description, demographic_source, demographic_statistic_type) VALUES
+      ('D1', $1, $2) RETURNING id", list(src, type))$id
+
+  list(variant_id = vid, source_id = src,
+       type_id = type, dset_id = dset)
+}
+
+standard_disease_touchstones <- function(test, db = TRUE) {
+  create_disease_csv(test$path, "flu", "Elf flu", db = TRUE)
+  create_touchstone_csv(test$path, "nevis", 1, db = db)
+  create_touchstone_name_csv(test$path, "nevis", db = db)
 }
 
 test_run_import <- function(path, con = NULL, ...) {
