@@ -20,6 +20,7 @@ new_test <- function() {
   file.remove(files)
   cache_con <<- cache_con %||% test_db_connection()
   res$con <- cache_con
+  DBI::dbExecute(res$con, "DELETE FROM touchstone_country")
   DBI::dbExecute(res$con, "DELETE FROM scenario")
   DBI::dbExecute(res$con, "DELETE FROM scenario_description")
   DBI::dbExecute(res$con, "DELETE FROM disease")
@@ -78,18 +79,17 @@ mess_with <- function(path, csv, col, row, text) {
   write.csv(data, file.path(path, "meta", csv), row.names = FALSE)
 }
 
+db_file <- function(db, f) {
+  if (!db) f
+  else paste0("db_", f)
+}
+
 create_touchstone_csv <- function(path, names, versions,
                                   descriptions = NULL,
                                   comments = NULL,
                                   db = FALSE) {
-  filename <- "touchstone.csv"
-  if (db) filename <- paste0("db_", filename)
   comments <- comments %||% paste0("Comment ", names, "-", versions)
   descriptions <- descriptions %||% paste(names,"description")
-
-  stopifnot(length(comments) == length(names))
-  stopifnot(length(names) == length(versions))
-  stopifnot(length(names) == length(descriptions))
 
   write.csv(data_frame(
     id = paste0(names, "-", versions),
@@ -98,63 +98,52 @@ create_touchstone_csv <- function(path, names, versions,
     description = paste0(names, " (version ",versions, ")"),
     status = "in-preparation",
     comment = comments),
-    file.path(path, "meta", filename), row.names = FALSE)
+    file.path(path, "meta", db_file(db, "touchstone.csv")),
+    row.names = FALSE)
 }
 
 create_touchstone_name_csv <- function(path, names,
                                        descriptions = NULL,
                                        comments = NULL,
                                        db = FALSE) {
-  filename <- "touchstone_name.csv"
-  if (db) filename <- paste0("db_", filename)
-
   descriptions <- descriptions %||% paste(names, "description")
   comments <- comments %||% paste(names, "comment")
-
-  stopifnot(length(names) == length(descriptions))
-  stopifnot(length(names) == length(comments))
 
   invisible(write.csv(data_frame(
     id = names,
     description = descriptions,
     comment = paste0(names, " comment")),
-    file.path(path, "meta", filename), row.names = FALSE))
+    file.path(path, "meta", db_file(db, "touchstone_name.csv")),
+    row.names = FALSE))
 }
 
 create_disease_csv <- function(path, ids, names, db = TRUE) {
-  filename <- "disease.csv"
-  if (db) filename <- paste0("db_", filename)
-
-  stopifnot(length(ids) == length(names))
-
   write.csv(data_frame(
     id = ids, name = names),
-    file.path(path, "meta", filename), row.names = FALSE)
+    file.path(path, "meta", db_file(db, "disease.csv")), row.names = FALSE)
 }
 
 create_scenario_csv <- function(path, ids, touchstones, sds, db = FALSE) {
-  filename <- "scenario.csv"
-  if (db) filename <- paste0("db_", filename)
-
-  stopifnot(length(ids) == length(touchstones))
-  stopifnot(length(sds) == length(touchstones))
-
   write.csv(data_frame(
     id = ids, touchstone = touchstones,
     scenario_description = sds, focal_coverage_set = NA),
-    file.path(path, "meta", filename), row.names = FALSE)
+    file.path(path, "meta", db_file(db, "scenario.csv")),
+    row.names = FALSE)
 }
 
 create_scen_desc_csv <- function(path, ids, descs, diseases, db = FALSE) {
-  filename <- "scenario_description.csv"
-  if (db) filename <- paste0("db_", filename)
-
-  stopifnot(length(ids) == length(descs))
-  stopifnot(length(ids) == length(diseases))
-
   write.csv(data_frame(
     id = ids, description = descs, disease = diseases),
-    file.path(path, "meta", filename), row.names = FALSE)
+    file.path(path, "meta", db_file(db, "scenario_description.csv")),
+    row.names = FALSE)
+}
+
+create_ts_country_csv <- function(path, tstones, diseases,
+                                  countries, db = FALSE) {
+  write.csv(data_frame(
+    touchstone = tstones, disease = diseases, country = countries),
+    file.path(path, "meta", db_file(db, "touchstone_country.csv")),
+    row.names = FALSE)
 }
 
 test_run_import <- function(path, con = NULL, ...) {
