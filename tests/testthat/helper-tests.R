@@ -2,17 +2,29 @@ test_path <- function(context, path) {
   file.path("examples", context, path)
 }
 
-empty_test_dir <- function() {
-  # Create stoner_test/meta in a temporary dir,
-  # and delete any existing files within it.
+cache_con <<- NULL
 
+new_test <- function() {
+  # Create stoner_test/meta in a temporary dir,
+  # delete any existing files within it.
+  # Also get new db connection, and
+  # empty any leftover rows from previous tests.
+
+  res <- list()
   path <- tempdir()
-  res <- file.path(path, "stoner_test")
-  dir.create(res, showWarnings = FALSE)
-  inner <- file.path(res, "meta")
+  res$path <- file.path(path, "stoner_test")
+  dir.create(res$path, showWarnings = FALSE)
+  inner <- file.path(res$path, "meta")
   dir.create(inner, showWarnings = FALSE)
   files <- dir(inner, full.names = TRUE)
   file.remove(files)
+  cache_con <<- cache_con %||% test_db_connection()
+  res$con <- cache_con
+  DBI::dbExecute(res$con, "DELETE FROM scenario")
+  DBI::dbExecute(res$con, "DELETE FROM scenario_description")
+  DBI::dbExecute(res$con, "DELETE FROM disease")
+  DBI::dbExecute(res$con, "DELETE FROM touchstone")
+  DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
   res
 }
 
@@ -53,15 +65,97 @@ test_compare_csv_db <- function(con, csv, db) {
 }
 
 compare_csv <- function(res, tables) {
-  results <- lapply(seq_along(tables), function(ti) {
+  expect_true(all(unlist(lapply(seq_along(tables), function(ti) {
     table <- tables[ti]
     test_compare_csv_db(
-      res$con, res$e[[paste0(table, "_csv")]], table)})
-
-  DBI::dbRollback(res$con)
-  expect_true(all(unlist(results)))
+      res$con, res$e[[paste0(table, "_csv")]], table)}))))
 }
 
+mess_with <- function(path, csv, col, row, text) {
+  data <- read.csv(file.path(path, "meta", csv),
+                   stringsAsFactors = FALSE)
+  data[[col]][row] <- text
+  write.csv(data, file.path(path, "meta", csv), row.names = FALSE)
+}
+
+create_touchstone_csv <- function(path, names, versions,
+                                  descriptions = NULL,
+                                  comments = NULL,
+                                  db = FALSE) {
+  filename <- "touchstone.csv"
+  if (db) filename <- paste0("db_", filename)
+  comments <- comments %||% paste0("Comment ", names, "-", versions)
+  descriptions <- descriptions %||% paste(names,"description")
+
+  stopifnot(length(comments) == length(names))
+  stopifnot(length(names) == length(versions))
+  stopifnot(length(names) == length(descriptions))
+
+  write.csv(data_frame(
+    id = paste0(names, "-", versions),
+    touchstone_name = names,
+    version = versions,
+    description = paste0(names, " (version ",versions, ")"),
+    status = "in-preparation",
+    comment = comments),
+    file.path(path, "meta", filename), row.names = FALSE)
+}
+
+create_touchstone_name_csv <- function(path, names,
+                                       descriptions = NULL,
+                                       comments = NULL,
+                                       db = FALSE) {
+  filename <- "touchstone_name.csv"
+  if (db) filename <- paste0("db_", filename)
+
+  descriptions <- descriptions %||% paste(names, "description")
+  comments <- comments %||% paste(names, "comment")
+
+  stopifnot(length(names) == length(descriptions))
+  stopifnot(length(names) == length(comments))
+
+  invisible(write.csv(data_frame(
+    id = names,
+    description = descriptions,
+    comment = paste0(names, " comment")),
+    file.path(path, "meta", filename), row.names = FALSE))
+}
+
+create_disease_csv <- function(path, ids, names, db = TRUE) {
+  filename <- "disease.csv"
+  if (db) filename <- paste0("db_", filename)
+
+  stopifnot(length(ids) == length(names))
+
+  write.csv(data_frame(
+    id = ids, name = names),
+    file.path(path, "meta", filename), row.names = FALSE)
+}
+
+create_scenario_csv <- function(path, ids, touchstones, sds, db = FALSE) {
+  filename <- "scenario.csv"
+  if (db) filename <- paste0("db_", filename)
+
+  stopifnot(length(ids) == length(touchstones))
+  stopifnot(length(sds) == length(touchstones))
+
+  write.csv(data_frame(
+    id = ids, touchstone = touchstones,
+    scenario_description = sds, focal_coverage_set = NA),
+    file.path(path, "meta", filename), row.names = FALSE)
+}
+
+create_scen_desc_csv <- function(path, ids, descs, diseases, db = FALSE) {
+  filename <- "scenario_description.csv"
+  if (db) filename <- paste0("db_", filename)
+
+  stopifnot(length(ids) == length(descs))
+  stopifnot(length(ids) == length(diseases))
+
+  write.csv(data_frame(
+    id = ids, description = descs, disease = diseases),
+    file.path(path, "meta", filename), row.names = FALSE)
+}
 
 test_run_import <- function(path, con = NULL, ...) {
   e <- stone_extract(path, con)
@@ -76,10 +170,8 @@ test_run_import <- function(path, con = NULL, ...) {
   if (is.null(a)) b else a
 }
 
-do_test <- function(path, con = NULL) {
-  con <- con %||% test_db_connection()
-  DBI::dbBegin(con)
-  test_prepare(path, con)
-  c(test_run_import(path, con), con = con)
+do_test <- function(test, ...) {
+  test_prepare(test$path, test$con)
+  c(test_run_import(test$path, test$con, ...), con = test$con)
 }
 
