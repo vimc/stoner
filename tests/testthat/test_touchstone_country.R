@@ -97,30 +97,23 @@ test_that("Dup entry in CSV", {
     class = "simpleError")
 })
 
-# For the next two tests, I need to work out how to read a single
-# line (plus header) CSV that contains both NA and "" - and I want
-# to keep the "" as "", and the NA as numerical NA. R seems to want
-# to convert "" to NA, unless I read.csv with colClasses='character'
-# but then it's a pain to convert "NA" back to NA again at specific
-# points. See read_meta in utils.R
+test_that("Empty disease in CSV", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  create_ts_country_csv(test$path, "nevis-1", "", "XK")
+  expect_error(do_test(test),
+    "Empty disease entry in touchstone_country",
+    class = "simpleError")
+})
 
-#test_that("Empty disease in CSV", {
-  #test <- new_test()
-  #standard_disease_touchstones(test)
-  #create_ts_country_csv(test$path, "nevis-1", "", "XK")
-  #expect_error(do_test(test),
-               #"Empty disease entry in touchstone_country",
-               #class = "simpleError")
-#})
-
-#test_that("Empty country in CSV", {
-  #test <- new_test()
-  #standard_disease_touchstones(test)
-  #create_ts_country_csv(test$path, "nevis-1", "flu", "")
-  #expect_error(do_test(test),
-   #            "Empty country entry in touchstone_country",
-               #class = "simpleError")
-#})
+test_that("Empty country in CSV", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  create_ts_country_csv(test$path, "nevis-1", "flu", "")
+  expect_error(do_test(test),
+    "Empty country entry in touchstone_country",
+    class = "simpleError")
+})
 
 test_that("Touchstone not in prep", {
   test <- new_test()

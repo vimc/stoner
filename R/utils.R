@@ -1,8 +1,22 @@
 read_meta <- function(path, filename) {
   if (meta_exists(path, filename)) {
+    thefile <- file.path(path, "meta", filename)
+    header <- utils::read.csv(thefile, nrows = 1, stringsAsFactors = FALSE)
+    cols <- rep(NA, length(names(header)))
+    names(cols) <- names(header)
+
+    # Default: auto-detect
+    cols[] <- NA
+
+    # These I want to fix...
+
+    cols[names(cols) == 'disease'] <- "character"
+    cols[names(cols) == 'country'] <- "character"
+    cols[names(cols) == 'focal_coverage_set'] <- "numeric"
+
     utils::read.csv(file.path(path, "meta", filename),
-                         na.strings = "NA",
-           stringsAsFactors = FALSE)
+                         colClasses = cols,
+                         stringsAsFactors = FALSE)
 
   } else {
     NULL

@@ -140,7 +140,7 @@ test_that("Duplicate of db entry", {
   test_dset(do_test(test), demog$dset_id, "nevis-1")
 })
 
-test_that("Update in-prep", {
+test_that("Append in-prep", {
   test <- new_test()
   create_disease_csv(test$path, "flu", "Elf flu", db = TRUE)
   create_touchstone_csv(test$path, "nevis", c(1, 2), db = TRUE)
@@ -153,11 +153,11 @@ test_that("Update in-prep", {
     file.path(test$path, "meta", "db_touchstone_demographic_dataset.csv"),
     row.names = FALSE)
 
-  create_ts_dds(test$path, "nevis-2", "S2", "T2", db = FALSE)
-  test_dset(do_test(test), demog$dset_id[2], "nevis-2")
+  create_ts_dds(test$path, "nevis-1", "S2", "T2", db = FALSE)
+  test_dset(do_test(test), demog$dset_id[2], "nevis-1")
 })
 
-test_that("Update non in-prep", {
+test_that("Append non in-prep", {
   test <- new_test()
   create_disease_csv(test$path, "flu", "Elf flu", db = TRUE)
   create_touchstone_csv(test$path, "nevis", c(1, 2),

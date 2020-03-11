@@ -2,7 +2,7 @@ test_path <- function(context, path) {
   file.path("examples", context, path)
 }
 
-cache_con <<- NULL
+cache <- new.env(parent = emptyenv())
 
 new_test <- function() {
   # Create stoner_test/meta in a temporary dir,
@@ -18,8 +18,8 @@ new_test <- function() {
   dir.create(inner, showWarnings = FALSE)
   files <- dir(inner, full.names = TRUE)
   file.remove(files)
-  cache_con <<- cache_con %||% test_db_connection()
-  res$con <- cache_con
+  cache$con <- cache$con %||% test_db_connection()
+  res$con <- cache$con
   DBI::dbExecute(res$con, "DELETE FROM touchstone_demographic_dataset")
   DBI::dbExecute(res$con, "DELETE FROM demographic_dataset")
   DBI::dbExecute(res$con, "DELETE FROM demographic_statistic_type")
@@ -90,8 +90,7 @@ mess_with <- function(path, csv, col, row, text) {
 }
 
 db_file <- function(db, f) {
-  if (!db) f
-  else paste0("db_", f)
+  if (!db) f else paste0("db_", f)
 }
 
 create_touchstone_csv <- function(path, names, versions,
