@@ -193,13 +193,16 @@ standard_demography <- function(test, make_source = TRUE,
   }
   dset <- NA
   if (make_dataset & make_type & make_source) {
-    dset <- unlist(lapply(seq_len(rows), function(r) {
+    dset <- unlist(lapply(seq_len(rows * rows), function(r) {
+      src_i <- 1 + ((r - 1) %/% rows)
+      type_i <- 1 + ((r - 1) %% rows)
+
       DBI::dbGetQuery(test$con, sprintf("
         INSERT INTO demographic_dataset
           (description, demographic_source,
                         demographic_statistic_type) VALUES
           ('D%s', $1, $2) RETURNING id", r),
-                      list(src[r], type[r]))$id }))
+                      list(src[src_i], type[type_i]))$id }))
   }
   list(variant_id = vid, source_id = src,
        type_id = type, dset_id = dset)

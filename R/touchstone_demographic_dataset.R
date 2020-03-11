@@ -210,10 +210,31 @@ test_transform_touchstone_demographic_dataset <- function(transformed_data) {
 ###############################################################################
 
 load_touchstone_demographic_dataset <- function(transformed_data, con) {
-  add_serial_rows("touchstone_demographic_dataset",
-                  transformed_data, con)
+  res <- add_serial_rows("touchstone_demographic_dataset",
+                         transformed_data, con)
 
-  # Updates to this table are always incremental, so there are never any
-  # edits to make.
+  # Updates to this table happen only when the touchstone_demographic_dataset
+  # is updated to a new *source* but the same *type*. This is an in-place
+  # change, so can only be done (currently) on an in-prep touchstone. (eg,
+  # when UNWPP changes in July, but IGME updates in September)
 
+  if (nrow(res$edits) > 0) {
+    touchstone_status <- DBI::dbGetQuery(con, sprintf("
+      SELECT id, status
+        FROM touchstone
+       WHERE id IN %s", sql_in(unique(res$edits$touchstone))))
+
+    for (r in seq_len(nrow(res$edits))) {
+
+      entry <- res$edits[r, ]
+      DBI::dbExecute(con, "
+        UPDATE touchstone_demographic_dataset
+           SET demographic_dataset = $1
+         WHERE id = $2
+           AND touchstone = $3",
+        list(entry$demographic_dataset, entry$id, entry$touchstone)
+      )
+    }
+  }
+  res
 }
