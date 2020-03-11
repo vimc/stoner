@@ -83,7 +83,10 @@ test_that("Edit scenario description for open touchstone - overide", {
 test_that("Edit scenario description for unused scenario description", {
   test <- new_test()
   create_disease_csv(test$path, "piles", "Elf Piles", db = TRUE)
-  create_scen_desc_csv(test$path, "hot_chocolate", "enhanced", "piles")
+  create_scen_desc_csv(test$path,
+    "hot_chocolate", "enhanced", "piles", db = TRUE)
+  create_scen_desc_csv(test$path,
+     "hot_chocolate", "doubly-enhanced", "piles", db = FALSE)
   compare_csv(do_test(test), "scenario_description")
 })
 
