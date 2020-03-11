@@ -51,7 +51,7 @@ test_that("Edit scenario description for in-prep touchstone", {
   compare_csv(do_test(test), "scenario_description")
 })
 
-test_that("Edit scenario description for open touchstone", {
+test_that("Edit scenario description for open touchstone - no overide", {
   test <- new_test()
   create_touchstone_name_csv(test$path, "nevis", db = TRUE)
   create_touchstone_csv(test$path, "nevis", 1, db = TRUE)
@@ -64,6 +64,20 @@ test_that("Edit scenario description for open touchstone", {
   expect_error(do_test(test,
            allow_overwrite_scenario_description = FALSE),
     "Can't edit scenario_description with id hot_chocolate. Already exists with open/finished touchstone versions.")
+})
+
+test_that("Edit scenario description for open touchstone - overide", {
+  test <- new_test()
+  create_touchstone_name_csv(test$path, "nevis", db = TRUE)
+  create_touchstone_csv(test$path, "nevis", 1, db = TRUE)
+  mess_with(test$path, "db_touchstone.csv", "status", 1, "open")
+  create_disease_csv(test$path, "piles", "Elf Piles", db = TRUE)
+  create_scen_desc_csv(test$path, "hot_chocolate", "campaign", "piles", db = TRUE)
+  create_scenario_csv(test$path, 1, "nevis-1", "hot_chocolate", db = TRUE)
+  create_scen_desc_csv(test$path, "hot_chocolate", "enhanced", "piles")
+
+  compare_csv(do_test(test, allow_overwrite_scenario_description = TRUE),
+              "scenario_description")
 })
 
 test_that("Edit scenario description for unused scenario description", {
