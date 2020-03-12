@@ -6,16 +6,16 @@ extract_touchstone_country <- function(e, path, con) {
     return(e)
   }
 
-  if (!setequal(names(csv), c("touchstone", "diseases", "countries"))) {
+  if (!setequal(names(csv), c("touchstone", "disease", "country"))) {
     stop("Invalid columns in touchstone_country.csv")
   }
 
-  diseases <- unlist(lapply(csv$diseases, split_semi))
-  countries <- unlist(lapply(csv$countries, split_semi))
+  disease <- unlist(lapply(csv$disease, split_semi))
+  country <- unlist(lapply(csv$country, split_semi))
 
   c(e, list(
-    tc_disease = db_get(con, "disease", "id", unique(diseases)),
-    tc_country = db_get(con, "country", "id", unique(countries)),
+    tc_disease = db_get(con, "disease", "id", unique(disease)),
+    tc_country = db_get(con, "country", "id", unique(country)),
     db_touchstone_country = db_get(con, "touchstone_country", "touchstone",
                                    unique(csv$touchstone))
   ))
@@ -27,8 +27,8 @@ test_extract_touchstone_country <- function(e) {
     return()
   }
 
-  diseases <- lapply(csv$diseases, split_semi)
-  countries <- lapply(csv$countries, split_semi)
+  diseases <- lapply(csv$disease, split_semi)
+  countries <- lapply(csv$country, split_semi)
 
   if (any(lengths(diseases) < 1)) {
     stop("Empty disease entry in touchstone_country")
@@ -57,8 +57,8 @@ transform_touchstone_country <- function(e) {
     return(list())
   }
 
-  diseases <- lapply(csv$diseases, split_semi)
-  countries <- lapply(csv$countries, split_semi)
+  diseases <- lapply(csv$disease, split_semi)
+  countries <- lapply(csv$country, split_semi)
 
   # Build a table that multiplies out countries and diseases...
   # for each touchstone.

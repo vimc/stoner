@@ -1,2 +1,0 @@
-id,code,age_interpretation,name,year_step_size,reference_date,gender_is_applicable,demographic_value_unit,default_variant
-1,type1,Age Interpretation,Statistic Type,5,2000-07-01,FALSE,1,1
