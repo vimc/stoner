@@ -14,8 +14,10 @@ test_that("sql_in works", {
 
 test_that("mash", {
   car <- mtcars[rownames(mtcars) == 'Volvo 142E', ]
-  expect_equal(mash(car), "21.4\r4\r121\r109\r4.11\r2.78\r18.6\r1\r1\r4\r2")
-  expect_equal(mash(car, c("mpg", "disp")), "21.4\r121")
+  expect_equal(mash(car), "1\r2\r4\r121\r4.11\r4\r109\r21.4\r18.6\r1\r2.78")
+  car2 <- car[, sort(names(car))]
+  expect_equal(mash(car), mash(car2))
+  expect_equal(mash(car, c("mpg", "disp")), "121\r21.4")
 })
 
 test_that("assign_serial_id works", {

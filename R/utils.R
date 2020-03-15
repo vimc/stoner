@@ -1,7 +1,23 @@
 read_meta <- function(path, filename) {
   if (meta_exists(path, filename)) {
+    thefile <- file.path(path, "meta", filename)
+    header <- utils::read.csv(thefile, nrows = 1, stringsAsFactors = FALSE)
+    cols <- rep(NA, length(names(header)))
+    names(cols) <- names(header)
+
+    # Default: auto-detect
+    cols[] <- NA
+
+    # These I want to fix...
+
+    cols[names(cols) == 'disease'] <- "character"
+    cols[names(cols) == 'country'] <- "character"
+    cols[names(cols) == 'focal_coverage_set'] <- "numeric"
+
     utils::read.csv(file.path(path, "meta", filename),
-           stringsAsFactors = FALSE)
+                         colClasses = cols,
+                         stringsAsFactors = FALSE)
+
   } else {
     NULL
   }
@@ -57,6 +73,7 @@ mash <- function(tab, fields = NULL) {
   if (!is.null(fields)) {
     tab <- tab[, fields]
   }
+  tab <- tab[, sort(names(tab))]
   df_args <- c(tab, sep = "\r")
   do.call(paste, df_args)
 }
@@ -76,7 +93,7 @@ assign_serial_ids <- function(new_table, db_table, table_name,
   }
 
   if (is.null(mash_fields_db)) {
-    mash_fields_db <- names(db_table)
+    mash_fields_db <- sort(names(db_table))
     mash_fields_db <- mash_fields_db[mash_fields_db != 'id']
   }
 

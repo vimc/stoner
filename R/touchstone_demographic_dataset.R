@@ -213,7 +213,10 @@ load_touchstone_demographic_dataset <- function(transformed_data, con) {
   res <- add_serial_rows("touchstone_demographic_dataset",
                          transformed_data, con)
 
-  # For each row in to_edit, do an SQL update.
+  # Updates to this table happen only when the touchstone_demographic_dataset
+  # is updated to a new *source* but the same *type*. This is an in-place
+  # change, so can only be done (currently) on an in-prep touchstone. (eg,
+  # when UNWPP changes in July, but IGME updates in September)
 
   if (nrow(res$edits) > 0) {
     touchstone_status <- DBI::dbGetQuery(con, sprintf("
