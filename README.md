@@ -3,6 +3,18 @@
 [![Travis-CI Build Status](https://travis-ci.org/vimc/stoner.svg?branch=master)](https://travis-ci.org/vimc/stoner)
 [![codecov.io](https://codecov.io/github/vimc/stoner/coverage.svg?branch=master)](https://codecov.io/github/vimc/stoner?branch=master)
 
+<pre>
+     .-'''-. ,---------.    ,-----.    ,---.   .--.    .-''-.  .-------.     
+    / _     \\          \ .'  .-,  '.  |    \  |  |  .'_ _   \ |  _ _   \    
+   (`' )/`--' `--.  ,---'/ ,-.|  \ _ \ |  ,  \ |  | / ( ` )   '| ( ' )  |    
+  (_ o _).       |   \  ;  \  '_ /  | :|  |\_ \|  |. (_ o _)  ||(_ o _) /    
+   (_,_). '.     :_ _:  |  _`,/ \ _/  ||  _( )_\  ||  (_,_)___|| (_,_).' __  
+  .---.  \  :    (_I_)  : (  '\_/ \   ;| (_ o _)  |'  \   .---.|  |\ \  |  | 
+  \    `-'  |   (_(=)_)  \ `"/  \  ) / |  (_,_)\  | \  `-'    /|  | \ `'   / 
+   \       /     (_I_)    '. \_/``".'  |  |    |  |  \       / |  |  \    /  
+    `-...-'      '---'      '-----'    '--'    '--'   `'-..-'  ''-'   `'-'  
+</pre>
+
 Stoner is a helper package for writing montagu-imports concerning touchstones and associated responsibilities and 
 expectations. It allows creation of, or in some instances, changes to a touchstone to be specified by csv files.
 
@@ -20,5 +32,3 @@ expectations. It allows creation of, or in some instances, changes to a touchsto
 The above is the simplest case. You should also write some load tests as usual,
 but these can now concentrate entirely on what rows the particularly import is
 expected to add. See the vignette for more detail.
-
-
