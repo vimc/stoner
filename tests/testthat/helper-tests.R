@@ -31,6 +31,7 @@ new_test <- function() {
   DBI::dbExecute(res$con, "DELETE FROM disease")
   DBI::dbExecute(res$con, "DELETE FROM touchstone")
   DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
+  DBI::dbExecute(res$con, "DELETE FROM modelling_group")
   res
 }
 
@@ -164,6 +165,18 @@ create_ts_dds <- function(path, tstones, sources, types, db = FALSE) {
     row.names = FALSE)
 }
 
+create_modelling_groups <- function(path, ids, institutions, pis, descriptions,
+                                    comments, replaced_bys, db = FALSE) {
+
+  write.csv(data_frame(id = ids, institution = institutions,
+                       pi = pis, description = descriptions,
+                       comment = comments, replaced_by = replaced_bys))
+
+  file.path(path, "meta", db_file(db, "modelling_group.csv"),
+            row.names = FALSE)
+}
+
+
 standard_demography <- function(test, make_source = TRUE,
                                       make_type = TRUE,
                                       make_dataset = TRUE,
@@ -211,6 +224,19 @@ standard_disease_touchstones <- function(test, db = TRUE) {
   create_disease_csv(test$path, "flu", "Elf flu", db = TRUE)
   create_touchstone_csv(test$path, "nevis", 1, db = db)
   create_touchstone_name_csv(test$path, "nevis", db = db)
+}
+
+standard_responsibilites <- function(test, db = TRUE) {
+  create_modelling_groups(test$path,
+    c("LAP-elf", "EBHQ-bunny"),
+    c("Lapland Epi Centre", "EBHQ"),
+    c("Santa Claus", "Easter Bunny"),
+    c("Lapland Epi (chief-elf)", "Easter Bunny Head Quarters (bunny-minion)"),
+    c(NA, NA),
+    c(NA, NA))
+
+  create_scen_desc_csv(test$path, "hot_chocolate", "campaign", "piles", db = TRUE)
+  create_scenario_csv(test$path, 1, "nevis-1", "hot_chocolate", db = TRUE)
 }
 
 test_run_import <- function(path, con = NULL, ...) {

@@ -1,4 +1,9 @@
 read_meta <- function(path, filename) {
+
+  meta_exists <- function(path, filename) {
+    file.exists(file.path(path, "meta", filename))
+  }
+
   if (meta_exists(path, filename)) {
     thefile <- file.path(path, "meta", filename)
     header <- utils::read.csv(thefile, nrows = 1, stringsAsFactors = FALSE)
@@ -23,20 +28,9 @@ read_meta <- function(path, filename) {
   }
 }
 
-meta_exists <- function(path, filename) {
-  file.exists(file.path(path, "meta", filename))
-}
 
 data_frame <- function(...) {
   data.frame(stringsAsFactors = FALSE, ...)
-}
-
-sql_in_char <- function(strings) {
-  sprintf("('%s')", paste(strings, collapse = "','"))
-}
-
-sql_in_numeric <- function(numerics) {
-  sprintf("(%s)", paste(numerics, collapse = ","))
 }
 
 split_by <- function(x, by) {
@@ -49,6 +43,15 @@ split_semi <- function(x) {
 }
 
 sql_in <- function(things) {
+
+  sql_in_char <- function(strings) {
+    sprintf("('%s')", paste(strings, collapse = "','"))
+  }
+
+  sql_in_numeric <- function(numerics) {
+    sprintf("(%s)", paste(numerics, collapse = ","))
+  }
+
   if (is.character(things)) {
     sql_in_char(things)
   } else if (is.numeric(things)) {

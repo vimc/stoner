@@ -6,7 +6,8 @@ extract_touchstone <- function(e, path, con) {
   eout <- list()
 
   ts <- unique(c(e$touchstone_csv$id,
-                 e$touchstone_countries_csv$touchstone)) %||% ""
+                 e$touchstone_countries_csv$touchstone,
+                 e$responsibilities_csv$touchstone)) %||% ""
 
   tsn <- unique(c(e$touchstone_name_csv$id,
                   e$touchstone_csv$touchstone_name)) %||% ""
