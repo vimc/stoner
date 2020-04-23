@@ -26,6 +26,11 @@ new_test <- function() {
   DBI::dbExecute(res$con, "DELETE FROM demographic_variant")
   DBI::dbExecute(res$con, "DELETE FROM demographic_source")
   DBI::dbExecute(res$con, "DELETE FROM touchstone_country")
+  DBI::dbExecute(res$con, "DELETE FROM responsibility")
+  DBI::dbExecute(res$con, "DELETE FROM responsibility_set")
+  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_country_expectation")
+  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_outcome_expectation")
+  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_expectation")
   DBI::dbExecute(res$con, "DELETE FROM scenario")
   DBI::dbExecute(res$con, "DELETE FROM scenario_description")
   DBI::dbExecute(res$con, "DELETE FROM disease")
@@ -42,7 +47,11 @@ test_prepare <- function(path, con = NULL) {
                  "demographic_statistic_type",
                  "demographic_dataset",
                  "touchstone_demographic_dataset",
-                 "touchstone_country", "modelling_group")
+                 "touchstone_country", "modelling_group",
+                 "responsibility_set", "burden_estimate_expectation",
+                 "responsibility", "burden_estimate_country_expectation",
+                 "burden_estimate_outcome_expectation")
+
   for (table in db_tables) {
     csv_file <- read_meta(path, paste0("db_", table, ".csv"))
     if (!is.null(csv_file)) {
@@ -166,14 +175,14 @@ create_ts_dds <- function(path, tstones, sources, types, db = FALSE) {
 }
 
 create_modelling_groups <- function(path, ids, institutions, pis, descriptions,
-                                    comments, replaced_bys, db = FALSE) {
+                                    comments, replaced_bys, db = TRUE) {
 
   write.csv(data_frame(id = ids, institution = institutions,
                        pi = pis, description = descriptions,
-                       comment = comments, replaced_by = replaced_bys))
+                       comment = comments, replaced_by = replaced_bys),
 
-  file.path(path, "meta", db_file(db, "modelling_group.csv"),
-            row.names = FALSE)
+    file.path(path, "meta", db_file(db, "modelling_group.csv")),
+              row.names = FALSE)
 }
 
 
@@ -235,7 +244,7 @@ standard_responsibilites <- function(test, db = TRUE) {
     c(NA, NA),
     c(NA, NA))
 
-  create_scen_desc_csv(test$path, "hot_chocolate", "campaign", "piles", db = TRUE)
+  create_scen_desc_csv(test$path, "hot_chocolate", "campaign", "flu", db = TRUE)
   create_scenario_csv(test$path, 1, "nevis-1", "hot_chocolate", db = TRUE)
 }
 

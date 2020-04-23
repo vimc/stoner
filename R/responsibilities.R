@@ -30,9 +30,7 @@ extract_responsibilities <- function(e, path, con) {
   if (is.null(e$responsibilities_csv)) return(NULL)
   if (nrow(e$responsibilities_csv) == 0) return(NULL)
 
-  touchstone_names <- e$
-
-  list(
+  res <- list(
 
     resp_scenarios = DBI::dbGetQuery(con, sprintf("
       SELECT * FROM scenario
@@ -49,7 +47,7 @@ extract_responsibilities <- function(e, path, con) {
       SELECT * FROM burden_outcome WHERE code IN %s",
         sql_in(unique(split_semi(e$responsibilities_csv$outcomes))))),
 
-    resp_modelling_groups = DBI::dbGetQuery(con, sprintf("
+    resp_modelling_group = DBI::dbGetQuery(con, sprintf("
       SELECT * FROM modelling_group WHERE id IN %s",
         sql_in(unique(split_semi(e$responsibilities_csv$modelling_group))))),
 
@@ -57,15 +55,21 @@ extract_responsibilities <- function(e, path, con) {
       SELECT * FROM responsibility_set
        WHERE modelling_group IN %s
          AND touchstone IN %s",
-           sql_in(unique(e$responibilities_csv$modelling_group)),
+           sql_in(unique(e$responsibilities_csv$modelling_group)),
            sql_in(unique(e$responsibilities_csv$touchstone)))),
 
-   resp_expectations = DBI::dbGetQuery(con, sprintf("
-      SELECT * FROM burden_estimate_expectation
-       WHERE version IN %s",
-         sql_in(unique(e$touchstone$touchstone_name[match(
-           e$responsibility_csv$touchstone, e$touchstone$id)]))))
+    resp_touchstone = DBI::dbGetQuery(con, sprintf("
+      SELECT DISTINCT touchstone_name FROM touchstone
+        WHERE id IN %s",
+      sql_in(unique(e$responsibilities_csv$touchstone))))$touchstone_name
   )
+
+  res$resp_expectations <- DBI::dbGetQuery(con, sprintf("
+    SELECT * FROM burden_estimate_expectation
+       WHERE version IN %s",
+         sql_in(res$resp_touchstone)))
+
+  res
 }
 
 test_extract_responsibilities <- function(e) {
@@ -104,14 +108,14 @@ test_extract_responsibilities <- function(e) {
                 "cohort_max_inclusive"))
   }
 
-  if (!all(e$responsibilities_csv$countries %in% e$resp_countries$nid)) {
-    errs <- which(!e$responsibilities_csv$countries %in% e$resp_countries$nid)
+  if (!all(e$responsibilities_csv$countries %in% e$resp_countries$id)) {
+    errs <- which(!e$responsibilities_csv$countries %in% e$resp_countries$id)
     countries <- paste(e$responsibilities_csv$countries[errs], sep = ", ")
     stop(sprintf("Unknown responsibility countries: %s",countries))
   }
 
   if (!all(e$responsibilities_csv$modelling_group %in%
-           e$resp_modelling_groups$id)) {
+           e$resp_modelling_group$id)) {
     errs <- which(!e$responsibilities_csv$modelling_group %in%
                    e$resp_modelling_group$id)
     groups <- paste(e$responsibilities_csv$modelling_group[errs], sep = ", ")
@@ -142,27 +146,28 @@ transform_responsibilities <- function(e, t_so_far) {
   # and which need creating.
 
   res$scenario <- NULL
+  rcsv <- e$responsibilities_csv
 
   for (r in seq_len(nrow(e$responsibilities_csv))) {
-    row <- e$responsibility_csv[r, ]
+    row <- rcsv[r, ]
 
     explode_scenarios <- split_semi(row$scenario)
 
     res$scenario <- rbind(res$scenario, data_frame(
       touchstone = row$touchstone,
-      scenario = explode_scenarios))
+      scenario_description = explode_scenarios))
   }
 
-  fields <- c("touchstone", "scenario")
-  res$scenario <- assign_serial_ids(scenario, res$scenario, "scenario",
+  fields <- c("touchstone", "scenario_description")
+  res$scenario <- assign_serial_ids(res$scenario, e$resp_scenarios, "scenario",
                                     fields, fields)
 
   # Now look up/add any responsibility_set
   # (modelling_group, touchstone)
 
   res$responsibility_set <- data_frame(
-    modelling_group = e$responsibility_csv$modelling_group,
-    touchstone = e$responsibility_csv$touchstone,
+    modelling_group = rcsv$modelling_group,
+    touchstone = rcsv$touchstone,
     status = "incomplete")
 
   fields <- c("modelling_group", "touchstone")
@@ -182,28 +187,26 @@ transform_responsibilities <- function(e, t_so_far) {
   # into one.
 
   res$burden_estimate_expectation <- data_frame(
-     age_max_inclusive = e$responsibility_csv$age_max_inclusive,
-     age_min_inclusive = e$responsibility_csv$age_min_inclusive,
-  cohort_max_inclusive = e$responsibility_csv$cohort_max_inclusive,
-  cohort_min_inclusive = e$responsibility_csv$cohort_min_inclusive,
-    year_max_inclusive = e$responsibility_csv$year_max_inclusive,
-    year_min_inclusive = e$responsibility_csv$year_min_inclusive,
-           description = paste(e$responsibility_csv$disease,
-                               e$responsibility_csv$modelling_group,
-                               e$responsibility_csv$scenario_type, sep = ':'),
+     age_max_inclusive = rcsv$age_max_inclusive,
+     age_min_inclusive = rcsv$age_min_inclusive,
+  cohort_max_inclusive = rcsv$cohort_max_inclusive,
+  cohort_min_inclusive = rcsv$cohort_min_inclusive,
+    year_max_inclusive = rcsv$year_max_inclusive,
+    year_min_inclusive = rcsv$year_min_inclusive,
+           description = paste(rcsv$disease,
+                               rcsv$modelling_group,
+                               rcsv$scenario_type, sep = ':'),
                version = e$touchstone$touchstone_name[match(
-                           e$responsibility_csv$touchstone, e$touchstone$id)],
-                row_no = seq_len(nrow(e$responsibility_csv))
-
+                           rcsv$touchstone, e$touchstone$id)]
   )
 
   fields <- c("age_max_inclusive", "age_min_inclusive", "cohort_max_inclusive",
-              "cohort_min_insluve", "year_max_inclusive", "year_min_inclusive",
-              "description", "version")
+              "cohort_min_inclusive", "year_max_inclusive",
+              "year_min_inclusive", "description", "version")
 
   res$burden_estimate_expectation <- assign_serial_ids(
-    res$burden_estimate_expectation, e$resp_expectation,
-    "burden_estimate_expectation", fields, fields)
+    res$burden_estimate_expectation, e$resp_expectations,
+      "burden_estimate_expectation", fields, fields)
 
   # Now we have burden estimate expectation ids, we can add countries
   # and outcomes. both can be semi-colon separated so need
@@ -212,25 +215,33 @@ transform_responsibilities <- function(e, t_so_far) {
   res$burden_estimate_country_expectation <- NULL
   res$burden_estimate_outcome_expectation <- NULL
 
-  for (r in seq_len(nrow(e$responsibility_csv))) {
-    row <- e$responsibility_csv[r, ]
-    explode_countries <- split_semi(row$countries)
+  for (r in seq_len(nrow(rcsv))) {
+    row_csv <- rcsv[r, ]
+    row_bee <- res$burden_estimate_expectation[r, ]
+
+    explode_countries <- split_semi(row_csv$countries)
 
     res$burden_estimate_country_expectation <- rbind(
       res$burden_estimate_country_expectation, data_frame(
-        burden_estimate_expectation = row$id,
+        burden_estimate_expectation = row_bee$id,
         country = explode_countries
       )
     )
 
-    explode_outcomes <- split_semi(row$outcomes)
+    explode_outcomes <- split_semi(row_csv$outcomes)
     res$burden_estimate_outcome_expectation <- rbind(
       res$burden_estimate_outcome_expectation, data_frame(
-        burden_estimate_expectation = row$id,
+        burden_estimate_expectation = row_bee$id,
         outcome = explode_outcomes
       )
     )
   }
+
+  # For now, assume none of these are in the db - we'll
+  # check and filter in the load stage when we have a con.
+
+  res$burden_estimate_country_expectation$already_exists_db <- FALSE
+  res$burden_estimate_outcome_expectation$already_exists_db <- FALSE
 
   res
 }
@@ -242,5 +253,13 @@ test_transform_responsibilities <- function(t) {
 ###############################################################################
 
 load_responsibilities <- function(transformed_data, con) {
+  browser()
+  res$burden_estimate_country_expectation <-
+    set_unique_flag(con, res$burden_estimate_country_expectation,
+                    "burden_estimate_country_expectation")
+  res$burden_estimate_outcome_expectation <-
+    set_unique_flag(con, res$burden_estimate_outcome_expectation,
+                    "burden_estimate_outcome_expectation")
+
   #add_serial_rows("burden_estimate_expectation", transformed_data, con)
 }

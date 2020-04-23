@@ -1,6 +1,6 @@
 ## 0.0.5
 
-Support for burden_estimate_expectations.csv metadata
+Support for responsibilities.csv metadata
 
 ## 0.0.4
 

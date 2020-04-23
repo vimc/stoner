@@ -137,6 +137,22 @@ copy_unique_flag <- function(extracted_data, tab) {
   t
 }
 
+# For tables with no id, set the already_exists_db flag
+
+set_unique_flag <- function(con, data, db_table) {
+  # Do a reasonably small query of combinations of fields.
+  data$mash <- mash(data)
+
+  sql <- paste0("SELECT (",
+           paste(names(data), sep="+'\r'+"), " FROM ", db_table)
+
+  db_mashes <- DBI::dbGetQuery(con, sql)
+
+  data$already_exists_db <- data$mash %in% db_mashes
+  data$mash <- NULL
+  data
+}
+
 # For rows that contain a serial "id" column. Add all the rows with a negative id,
 # letting the db choose the idea. Move the given ids to "fake_ids", and record the
 # ids the database chose as 'id'. Return a list of the added rows (with the
@@ -168,6 +184,10 @@ add_serial_rows <- function(table_name, transformed_data, con, id_field = "id",
   list(adds = to_add, edits = to_edit)
 }
 
+# For tables that have a unique id that is not serial, (eg,
+# touchstone, touchstone_name, sccnario_description), add the rows
+# that don't already exist.
+
 add_non_serial_rows <- function(table_name, transformed_data, con,
                                 id_field = "id") {
   if (!table_name %in% names(transformed_data)) {
@@ -175,7 +195,13 @@ add_non_serial_rows <- function(table_name, transformed_data, con,
   }
 
   data <- transformed_data[[table_name]]
+
+  # This is... SELECT [id_field] FROM [table_name]
+  #            WHERE [id_field] IN data[[id_field]]
+
   ids_found <- db_get(con, table_name, id_field, data[[id_field]], id_field)$id
+
+  # These are the rows that have no matching id in the database.
   to_add <- data[!data[[id_field]] %in% ids_found, ]
 
   if (nrow(to_add) > 0) {

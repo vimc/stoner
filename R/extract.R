@@ -23,7 +23,6 @@ stone_extract <- function(path, con) {
     responsibilities_csv = read_meta(path, "responsibilities.csv")
   )
 
-
   # Remove any NULLs
 
   e <- e[!vlapply(e, is.null)]

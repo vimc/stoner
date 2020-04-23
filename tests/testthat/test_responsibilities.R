@@ -19,6 +19,7 @@ create_responsibilities <- function(test, modelling_group, touchstone, scenario,
       modelling_group = modelling_group,
       touchstone = touchstone,
       scenario = scenario,
+      scenario_type = "standard",
       age_min_inclusive = age_min_inclusive,
       age_max_inclusive = age_max_inclusive,
       cohort_min_inclusive = cohort_min_inclusive,
@@ -45,6 +46,7 @@ test_responsibilities <- function(test_name, ...) {
 test_that("New responsibility", {
   test <- new_test()
   standard_disease_touchstones(test)
+  standard_responsibilites(test)
   create_responsibilities(test, "LAP-elf", "nevis-1", "hot_chocolate", 0, 100, 1900, 2100, 2000, 2100,
                           "AFG", "cases", "FLU:LAP-elf:standard", FALSE)
   do_test(test)
