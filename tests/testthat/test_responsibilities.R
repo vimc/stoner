@@ -47,7 +47,7 @@ test_that("New responsibility", {
   test <- new_test()
   standard_disease_touchstones(test)
   standard_responsibilites(test)
-  create_responsibilities(test, "LAP-elf", "nevis-1", "hot_chocolate", 0, 100, 1900, 2100, 2000, 2100,
+  create_responsibilities(test, "LAP-elf", "nevis-1", "pies", 0, 100, 1900, 2100, 2000, 2100,
                           "AFG", "cases", "FLU:LAP-elf:standard", FALSE)
   do_test(test)
 

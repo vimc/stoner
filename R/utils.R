@@ -141,22 +141,23 @@ copy_unique_flag <- function(extracted_data, tab) {
 
 set_unique_flag <- function(con, data, db_table) {
   # Do a reasonably small query of combinations of fields.
+
+
+  sql <- paste0("SELECT CONCAT(",
+          paste(names(data), collapse = ",'\r',"), ") AS mash FROM ", db_table)
+
   data$mash <- mash(data)
-
-  sql <- paste0("SELECT (",
-           paste(names(data), sep="+'\r'+"), " FROM ", db_table)
-
-  db_mashes <- DBI::dbGetQuery(con, sql)
+  db_mashes <- DBI::dbGetQuery(con, sql)$mash
 
   data$already_exists_db <- data$mash %in% db_mashes
   data$mash <- NULL
   data
 }
 
-# For rows that contain a serial "id" column. Add all the rows with a negative id,
-# letting the db choose the idea. Move the given ids to "fake_ids", and record the
-# ids the database chose as 'id'. Return a list of the added rows (with the
-# id fields), and a list of the rows that are edits.
+# For rows that contain a serial "id" column. Add all the rows with a negative
+# id, letting the db choose the id. Move the given ids to "fake_ids", and
+# record the ids the database chose as 'id'. Return a list of the added rows
+# (with the id fields), and a list of the rows that are edits.
 
 add_serial_rows <- function(table_name, transformed_data, con, id_field = "id",
                             fake_id_field = "fake_ids") {

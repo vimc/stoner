@@ -244,7 +244,10 @@ standard_responsibilites <- function(test, db = TRUE) {
     c(NA, NA),
     c(NA, NA))
 
-  create_scen_desc_csv(test$path, "hot_chocolate", "campaign", "flu", db = TRUE)
+  create_scen_desc_csv(test$path,
+    c("hot_chocolate", "pies"),
+    c("campaign", "routine"), "flu", db = TRUE)
+
   create_scenario_csv(test$path, 1, "nevis-1", "hot_chocolate", db = TRUE)
 }
 
