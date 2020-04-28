@@ -35,14 +35,6 @@ create_responsibilities <- function(test, modelling_group, touchstone, scenario,
   )
 }
 
-
-test_responsibilities <- function(test_name, ...) {
-  con <- test_db_connection()
-  path <- test_path("resp", test_name)
-  test_prepare(path, con)
-  c(test_run_import(path, con, ...), con = con)
-}
-
 test_that("New responsibility", {
   test <- new_test()
   standard_disease_touchstones(test)
@@ -50,6 +42,4 @@ test_that("New responsibility", {
   create_responsibilities(test, "LAP-elf", "nevis-1", "pies", 0, 100, 1900, 2100, 2000, 2100,
                           "AFG", "cases", "FLU:LAP-elf:standard", FALSE)
   do_test(test)
-
-
 })
