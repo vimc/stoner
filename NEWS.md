@@ -1,3 +1,7 @@
+## 0.0.5
+
+Allow dumping an existing touchstone into Stoner CSVs for edit/re-imprt
+
 ## 0.0.4
 
 Support for touchstone_countries.csv metadata
