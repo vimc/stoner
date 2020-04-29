@@ -131,22 +131,6 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
 
   dump_touchstone_demographic_datasets <- function() {
 
-    dump_demographic_statistic_type <- function(codes) {
-      write_csv(DBI::dbGetQuery(con, sprintf("
-        SELECT *
-          FROM demographic_statistic_type
-         WHERE code IN %s", sql_in(codes))),
-                file.path(path, "db_demographic_statistic_type.csv"))
-    }
-
-    dump_demographic_source <- function(codes) {
-      write_csv(DBI::dbGetQuery(con, sprintf("
-        SELECT *
-          FROM demographic_source
-         WHERE code IN %s", sql_in(codes))),
-                file.path(path, "db_demographic_source.csv"))
-    }
-
     # Format we want:
     # touchstone, demographic_source, demographic_statistic_type
     # where these are friendly strings, not ids.
