@@ -16,13 +16,14 @@
 </pre>
 
 Stoner is a helper package for writing montagu-imports concerning touchstones and associated responsibilities and 
-expectations. It allows creation of, or changes to a touchstone to be specified by csv files.
+expectations. It allows creation of or changes to a touchstone to be specified by CSV files.
 
 # Using stoner
 
 * `install.packages("stoner")`
 * Create a [montagu-import](https://github.com/vimc/montagu-imports).
-* Write csv files in a folder called `meta` inside that import folder.
+* Write CSV files in a folder called `meta` inside that import folder, or use `stoner::stone_dump(con, touchstone, path)` 
+to dump a set of CSVs for an existing touchstone, which you could (carefully) modify.
 * For your *extract* call `stoner::stone_extract(path, con)`
 * For your *test-extract* call `stoner::stone_test_extract(extracted_data)`
 * For your *transform* call `stoner::stone_transform(extracted_data)`
@@ -30,7 +31,5 @@ expectations. It allows creation of, or changes to a touchstone to be specified 
 * For your *load* call `stoner::stone_load(transformed_data, con)`
 
 The above is the simplest case. You should also write some load tests as usual,
-but these can now concentrate entirely on what rows the particularly import is
+but these can now concentrate entirely on what rows the particular import is
 expected to add. See the vignette for more detail.
-
-
