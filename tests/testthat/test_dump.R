@@ -23,11 +23,15 @@ initialise_with_demography <- function(test) {
 
 # Edit this when responsibilities are done properly
 initialise_with_fake_resps <- function(test) {
-  standard_disease_touchstones(test)
   standard_demography(test)
+  create_touchstone_csv(test$path, "nevis", 1)
+  create_touchstone_name_csv(test$path, "nevis")
   create_ts_dds(test$path, "nevis-1", "S1", "T1")
+  create_disease_csv(test$path, c("flu", "piles"),
+                                c("Elf flu", "Elf piles"), db = TRUE)
+
   create_scen_desc_csv(test$path, "pies", "campaign", "flu")
-  create_ts_country_csv(test$path, "nevis-1", "flu", "AFG;ZWE")
+  create_ts_country_csv(test$path, "nevis-1", c("flu", "piles"), "AFG;ZWE")
 
   do_test(test)
   DBI::dbExecute(test$con, "
@@ -139,7 +143,7 @@ test_dump_touchstone_country <- function(path) {
   expect_true(file.exists(f))
   data <- read.csv(f, stringsAsFactors = FALSE)
   expect_equal(nrow(data), 1)
-  expect_equal(data$disease, "flu")
+  expect_equal(data$disease, "flu;piles")
   expect_equal(data$country, "AFG;ZWE")
   expect_equal(data$touchstone, "nevis-1")
 }
@@ -187,13 +191,22 @@ test_dump_db_modelling_group <- function(path) {
   expect_true(is.na(data$replaced_by))
 }
 
-test_dump_db_disease <- function(path) {
+test_dump_db_disease <- function(path, id = "flu", name = "Elf") {
   f <- file.path(path, "db_disease.csv")
   expect_true(file.exists(f))
   data <- read.csv(f, stringsAsFactors = FALSE)
-  expect_equal(nrow(data), 1)
+  expect_equal(nrow(data), 2)
   expect_equal(data$id, "flu")
   expect_equal(data$name, "Elf flu")
+}
+
+test_dump_db_disease_extra <- function(path) {
+  f <- file.path(path, "db_disease.csv")
+  expect_true(file.exists(f))
+  data <- read.csv(f, stringsAsFactors = FALSE)
+  expect_equal(nrow(data), 2)
+  expect_equal(data$id, c("flu", "piles"))
+  expect_equal(data$name, c("Elf flu", "Elf piles"))
 }
 
 test_that("Dump non-existent Touchstone", {
@@ -252,6 +265,6 @@ test_that("Dump works (fake expectations)", {
   test_dump_db_demographic_source(tmp)
   test_dump_db_demographic_statistic_type(tmp)
   test_dump_db_modelling_group(tmp)
-  test_dump_db_disease(tmp)
+  test_dump_db_disease_extra(tmp)
   expect_equal(length(list.files(tmp)), 10)
 })
