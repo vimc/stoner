@@ -26,11 +26,17 @@ new_test <- function() {
   DBI::dbExecute(res$con, "DELETE FROM demographic_variant")
   DBI::dbExecute(res$con, "DELETE FROM demographic_source")
   DBI::dbExecute(res$con, "DELETE FROM touchstone_country")
+  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_country_expectation")
+  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_outcome_expectation")
+  DBI::dbExecute(res$con, "DELETE FROM responsibility")
+  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_expectation")
+  DBI::dbExecute(res$con, "DELETE FROM responsibility_set")
   DBI::dbExecute(res$con, "DELETE FROM scenario")
   DBI::dbExecute(res$con, "DELETE FROM scenario_description")
   DBI::dbExecute(res$con, "DELETE FROM disease")
   DBI::dbExecute(res$con, "DELETE FROM touchstone")
   DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
+  DBI::dbExecute(res$con, "DELETE FROM modelling_group")
   res
 }
 

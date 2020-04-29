@@ -25,7 +25,6 @@
 stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
 
   write_csv <- function(...) {
-
     write.csv(row.names = FALSE, quote = FALSE, ...)
   }
 
@@ -34,6 +33,7 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
         SELECT * FROM %s
          WHERE %s IN %s", table, id_field, sql_in(vals)))
     if (!is.null(remove_serial)) data[[remove_serial]] <- NULL
+    if (nrow(data) == 0) return()
     write_csv(data, file.path(path, paste0("db_", table, ".csv")))
   }
 
@@ -45,17 +45,21 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
         FROM touchstone
        WHERE id = $1", touchstone)
 
+    if (nrow(csv_touchstone) == 0) {
+      stop(sprintf("Touchstone not found - %s", touchstone))
+    }
+
     csv_touchstone_name <- DBI::dbGetQuery(con, "
       SELECT *
         FROM touchstone_name
        WHERE id = $1", csv_touchstone$touchstone_name)
+
 
     write_csv(csv_touchstone, file.path(path, "touchstone.csv"))
     write_csv(csv_touchstone_name, file.path(path, "touchstone_name.csv"))
   }
 
   #########################################################################
-
 
   dump_scenario_description <- function() {
 
@@ -70,11 +74,11 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
           ON scenario.scenario_description = scenario_description.id
        WHERE touchstone = $1", touchstone)
 
-    write_csv(csv_scenarios, file.path(path, "scenario_description.csv"))
+    if (nrow(csv_scenarios)>0)
+      write_csv(csv_scenarios, file.path(path, "scenario_description.csv"))
   }
 
   #########################################################################
-
 
   dump_touchstone_countries <- function() {
 
@@ -87,6 +91,8 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
         FROM touchstone_country
        WHERE touchstone = $1
        ORDER BY disease, country", touchstone)
+
+    if (nrow(touchstone_countries) == 0) return()
 
     # This will be hundreds of rows, so firstly factorise by disease...
 
@@ -114,7 +120,11 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
       tc_csv <- tc_csv[tc_csv$disease != tc_csv$disease[dup_row], ]
     }
 
-    write_csv(tc_csv, file.path(path, "touchstone_country.csv"))
+    tc_csv$touchstone <- touchstone
+
+    if (nrow(tc_csv) > 0) {
+      write_csv(tc_csv, file.path(path, "touchstone_country.csv"))
+    }
   }
 
   #########################################################################
@@ -163,9 +173,9 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
                  unique(tdd$demographic_source), "id")
     }
 
+    if (nrow(tdd) == 0) return()
     write_csv(tdd, file.path(path, "touchstone_demographic_dataset.csv"))
   }
-
 
   #########################################################################
 
@@ -201,6 +211,8 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
 
     expecs$scenario_type <-
       unlist(lapply(strsplit(expecs$expecdesc, ":"), "[[", 3))
+
+    if (nrow(expecs) == 0) return()
 
     # Now build the CSV in a nice column order, combining scenarios...
 
@@ -259,19 +271,21 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
        WHERE burden_estimate_expectation IN %s", sql_in(expecs$expecid)))
 
     csv$countries <- unlist(lapply(seq_len(nrow(csv)), function(x) {
-      paste(countries$country[countries$burden_estimate_expectation == x],
-            collapse = ';')
+      paste(
+        sort(countries$country[countries$burden_estimate_expectation == x]),
+        collapse = ';')
     }))
 
     csv$outcomes <- unlist(lapply(seq_len(nrow(csv)), function(x) {
-      paste(outcomes$outcome[outcomes$burden_estimate_expectation == x],
-            collapse = ';')
+      paste(
+        sort(outcomes$outcome[outcomes$burden_estimate_expectation == x]),
+        collapse = ';')
     }))
 
     # Done. Clean up.
 
     csv$expecid <- NULL
-
+    csv$touchstone <- touchstone
     if (include_deps) {
       dump_extra("modelling_group", "id", unique(csv$modelling_group), NULL)
     }
@@ -288,5 +302,5 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
   dump_touchstone_countries()
   dump_touchstone_demographic_datasets()
   dump_responsibilities()
-
+  invisible(NULL)
 }

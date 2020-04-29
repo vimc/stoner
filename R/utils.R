@@ -58,7 +58,8 @@ sql_in <- function(things) {
   }
 }
 
-db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
+db_get <- function(con, table, id_field = NULL,
+                   id_values = NULL, select = "*") {
   sql <- sprintf("SELECT %s FROM %s", select, table)
   if (!is.null(id_field)) {
     sql <- sprintf("%s WHERE %s IN %s", sql, id_field, sql_in(id_values))
@@ -129,15 +130,17 @@ copy_unique_flag <- function(extracted_data, tab) {
   if (tab %in% names(extracted_data) &&
       paste0(tab, "_csv") %in% names(extracted_data)) {
     t[[tab]] <- extracted_data[[paste0(tab, "_csv")]]
-    t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]], extracted_data[[tab]])
+    t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]],
+                                                 extracted_data[[tab]])
   }
   t
 }
 
-# For rows that contain a serial "id" column. Add all the rows with a negative id,
-# letting the db choose the idea. Move the given ids to "fake_ids", and record the
-# ids the database chose as 'id'. Return a list of the added rows (with the
-# id fields), and a list of the rows that are edits.
+# For rows that contain a serial "id" column. Add all the rows with a
+# negative id, letting the db choose the idea. Move the given ids to
+# "fake_ids", and record the ids the database chose as 'id'. Return a
+# list of the added rows (with the id fields), and a list of the rows that
+# are edits.
 
 add_serial_rows <- function(table_name, transformed_data, con, id_field = "id",
                             fake_id_field = "fake_ids") {
@@ -191,10 +194,8 @@ vlapply <- function(X, FUN, ...) {
 }
 
 check_faulty_serials <- function(con) {
-  df <- data_frame(sequence =
-                     DBI::dbGetQuery(con, "
-                                     SELECT *
-                                     FROM information_schema.sequences")$sequence_name)
+  df <- data_frame(sequence = DBI::dbGetQuery(con, "
+    SELECT * FROM information_schema.sequences")$sequence_name)
   df$table <- gsub("_id_seq", "", df$sequence)
   df <- df[df$table %in% DBI::dbListTables(con), ]
 
@@ -207,7 +208,7 @@ check_faulty_serials <- function(con) {
     df$last_value[r] <- tryCatch({
       x <- df$sequence[r]
       as.numeric(DBI::dbGetQuery(con,
-                                 sprintf("SELECT last_value FROM %s", x))$last_value)
+        sprintf("SELECT last_value FROM %s", x))$last_value)
 
     })
   }
@@ -216,7 +217,5 @@ check_faulty_serials <- function(con) {
   if (nrow(df) > 0) {
     x <- print(df)
     stop("Error - db serial numbers were corrupted")
-  } else {
-    message("Tested faulty serials - OK!")
   }
 }
