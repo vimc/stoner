@@ -25,7 +25,7 @@
 stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
 
   write_csv <- function(...) {
-    write.csv(row.names = FALSE, quote = FALSE, ...)
+    utils::write.csv(row.names = FALSE, quote = FALSE, ...)
   }
 
   dump_extra <- function(table, id_field, vals, remove_serial) {
