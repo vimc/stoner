@@ -1,7 +1,7 @@
 #' Query a database for all information relevant to a particular touchstone
 #' (including version), and write to CSV files, which would then be fit for
-#' stoner to use as its input to re-population the database with the same
-#' touchstone. This would be useful in a workflow where you wanted to
+#' stoner to use as its input to re-populate the database with the same
+#' touchstone data. This would be useful in a workflow where you wanted to
 #' clone a touchstone, alter a few things, and upload as a new version.
 #'
 #' Note that this is not "lossless"; only things that Stoner has the capability
@@ -16,7 +16,7 @@
 #' @title Dump touchstone from database to CSV.
 #' @export
 #' @param con Active connection to the DB which the data will be dumped from.
-#' @param touchstone the touchstone including version.
+#' @param touchstone the touchstone, including version
 #' @param path the path where output CSVs should be created.
 #' @param include_deps also dump db dependencies that Stoner can't
 #' currently add - db_disease.csv, db_modelling_group.csv,
