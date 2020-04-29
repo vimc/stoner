@@ -24,22 +24,27 @@
 
 stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
 
-  write_csv <- function(...) {
-    utils::write.csv(row.names = FALSE, quote = FALSE, ...)
-  }
+ dump_extra <- function(table, id_field, vals, remove_serial) {
 
-  dump_extra <- function(table, id_field, vals, remove_serial) {
     data <- DBI::dbGetQuery(con, sprintf("
         SELECT * FROM %s
          WHERE %s IN %s", table, id_field, sql_in(vals)))
-    if (!is.null(remove_serial)) data[[remove_serial]] <- NULL
-    if (nrow(data) == 0) return()
-    write_csv(data, file.path(path, paste0("db_", table, ".csv")))
+
+    if (!is.null(remove_serial)) {
+      data[[remove_serial]] <- NULL
+    }
+
+    if (nrow(data) == 0) {
+      return()
+    }
+
+    write_csv(data, file.path(path, sprintf("db_%s.csv", table)))
   }
 
   #########################################################################
 
   dump_touchstone <- function() {
+
     csv_touchstone <- DBI::dbGetQuery(con, "
       SELECT *
         FROM touchstone
@@ -53,7 +58,6 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
       SELECT *
         FROM touchstone_name
        WHERE id = $1", csv_touchstone$touchstone_name)
-
 
     write_csv(csv_touchstone, file.path(path, "touchstone.csv"))
     write_csv(csv_touchstone_name, file.path(path, "touchstone_name.csv"))
@@ -74,8 +78,9 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
           ON scenario.scenario_description = scenario_description.id
        WHERE touchstone = $1", touchstone)
 
-    if (nrow(csv_scenarios)>0)
+    if (nrow(csv_scenarios) > 0) {
       write_csv(csv_scenarios, file.path(path, "scenario_description.csv"))
+    }
   }
 
   #########################################################################
@@ -92,22 +97,27 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
        WHERE touchstone = $1
        ORDER BY disease, country", touchstone)
 
-    if (nrow(touchstone_countries) == 0) return()
+    if (nrow(touchstone_countries) == 0) {
+      return()
+    }
 
     # This will be hundreds of rows, so firstly factorise by disease...
 
     diseases <- unique(touchstone_countries$disease)
 
-    if (include_deps) dump_extra("disease", "id", diseases, NULL)
+    if (include_deps) {
+      dump_extra("disease", "id", diseases, NULL)
+    }
 
     tc_csv <- lapply(diseases, function(x) {
-      touchstone_countries[touchstone_countries$disease == x, ] })
+      touchstone_countries[touchstone_countries$disease == x, ]
+    })
 
     tc_csv <- data_frame(
       disease = diseases,
-      country = unlist(lapply(tc_csv,
-                              function(x) paste(x$country, collapse = ";")))
-    )
+      country = vapply(tc_csv,
+        function(x) paste(x$country, collapse = ";"), ""))
+
 
     # And we may have the same set of countries for the same diseases.
     # Combine these into disease1;disease2...,country1;country2...
@@ -157,7 +167,10 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
                  unique(tdd$demographic_source), "id")
     }
 
-    if (nrow(tdd) == 0) return()
+    if (nrow(tdd) == 0) {
+      return()
+    }
+
     write_csv(tdd, file.path(path, "touchstone_demographic_dataset.csv"))
   }
 
@@ -194,9 +207,11 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
     # which (should/will) always be in the form disease:modelling_group:type
 
     expecs$scenario_type <-
-      unlist(lapply(strsplit(expecs$expecdesc, ":"), "[[", 3))
+      vapply(strsplit(expecs$expecdesc, ":"), function(x) { x[[3]] }, "")
 
-    if (nrow(expecs) == 0) return()
+    if (nrow(expecs) == 0) {
+      return()
+    }
 
     # Now build the CSV in a nice column order, combining scenarios...
 
@@ -215,34 +230,35 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
       countries = "",
       outcomes = "")
 
-    csv$scenario <- unlist(lapply(seq_len(nrow(csv)), function(x) {
-      paste(sort(expecs$scenario[expecs$expecid == x]), collapse = ';')}))
+    csv$scenario <- vapply(seq_len(nrow(csv)), function(x) {
+      paste(sort(expecs$scenario[expecs$expecid == x]), collapse = ';')}, "")
 
-    ensure_same <- function(expecs, csv, name) {
-      unlist(lapply(seq_len(nrow(csv)), function(x) {
-        vals <- expecs[[name]][expecs$expecid == csv$expecid[x]]
-        stopifnot(sum(duplicated(vals)) == length(vals) - 1)
-        vals[1]
-      }))
+    ensure_same <- function(expecs, csv, name, vtype) {
+      vapply(seq_len(nrow(csv)),
+        function(x) {
+          vals <- expecs[[name]][expecs$expecid == csv$expecid[x]]
+          stopifnot(sum(duplicated(vals)) == length(vals) - 1)
+          vals[1]
+        }, vtype)
     }
 
-    csv$modelling_group <- ensure_same(expecs, csv, "modelling_group")
-    csv$disease <- ensure_same(expecs, csv, "disease")
+    csv$modelling_group <- ensure_same(expecs, csv, "modelling_group", "")
+    csv$disease <- ensure_same(expecs, csv, "disease", "")
 
     csv$age_min_inclusive <-
-      as.integer(ensure_same(expecs, csv, "age_min_inclusive"))
+      as.integer(ensure_same(expecs, csv, "age_min_inclusive", 0L))
     csv$age_max_inclusive <-
-      as.integer(ensure_same(expecs, csv, "age_max_inclusive"))
+      as.integer(ensure_same(expecs, csv, "age_max_inclusive", 0L))
     csv$year_min_inclusive <-
-      as.integer(ensure_same(expecs, csv, "year_min_inclusive"))
+      as.integer(ensure_same(expecs, csv, "year_min_inclusive", 0L))
     csv$year_max_inclusive <-
-      as.integer(ensure_same(expecs, csv, "year_max_inclusive"))
+      as.integer(ensure_same(expecs, csv, "year_max_inclusive", 0L))
     csv$cohort_min_inclusive <-
-      as.integer(ensure_same(expecs, csv, "cohort_min_inclusive"))
+      as.integer(ensure_same(expecs, csv, "cohort_min_inclusive", 0L))
     csv$cohort_max_inclusive <-
-      as.integer(ensure_same(expecs, csv, "cohort_max_inclusive"))
+      as.integer(ensure_same(expecs, csv, "cohort_max_inclusive", 0L))
 
-    csv$scenario_type <- ensure_same(expecs, csv, "scenario_type")
+    csv$scenario_type <- ensure_same(expecs, csv, "scenario_type", "")
 
     # Build countries and outcomes into semi-colon separated list
 
@@ -254,17 +270,19 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
       SELECT * FROM burden_estimate_outcome_expectation
        WHERE burden_estimate_expectation IN %s", sql_in(expecs$expecid)))
 
-    csv$countries <- unlist(lapply(seq_len(nrow(csv)), function(x) {
-      paste(
-        sort(countries$country[countries$burden_estimate_expectation == x]),
+    csv$countries <- vapply(seq_len(nrow(csv)),
+      function(x) {
+        paste(
+          sort(countries$country[countries$burden_estimate_expectation == x]),
         collapse = ';')
-    }))
+      }, "")
 
-    csv$outcomes <- unlist(lapply(seq_len(nrow(csv)), function(x) {
-      paste(
-        sort(outcomes$outcome[outcomes$burden_estimate_expectation == x]),
+    csv$outcomes <- vapply(seq_len(nrow(csv)),
+      function(x) {
+        paste(
+          sort(outcomes$outcome[outcomes$burden_estimate_expectation == x]),
         collapse = ';')
-    }))
+      }, "")
 
     # Done. Clean up.
 

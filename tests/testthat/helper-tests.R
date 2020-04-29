@@ -50,7 +50,7 @@ test_prepare <- function(path, con = NULL) {
                  "touchstone_demographic_dataset",
                  "touchstone_country")
   for (table in db_tables) {
-    csv_file <- read_meta(path, paste0("db_", table, ".csv"))
+    csv_file <- read_meta(path, sprintf("db_%s.csv", table))
     if (!is.null(csv_file)) {
       DBI::dbWriteTable(con, table, csv_file, append = TRUE)
     }
@@ -78,25 +78,24 @@ test_compare_csv_db <- function(con, csv, db) {
 }
 
 compare_csv <- function(res, tables) {
-  expect_true(all(unlist(lapply(seq_along(tables), function(ti) {
+  expect_true(all(vapply(seq_along(tables), function(ti) {
     table <- tables[ti]
     test_compare_csv_db(
-      res$con, res$e[[paste0(table, "_csv")]], table)}))))
+      res$con, res$e[[sprintf("%s_csv",table)]], table)}, FALSE)))
 }
 
 mess_with <- function(path, csv, col, row, text) {
-  data <- read.csv(file.path(path, "meta", csv),
-                   stringsAsFactors = FALSE)
+  data <- read_csv(file.path(path, "meta", csv))
   if (row == 0) {
     names(data)[names(data) == col] <- text
   } else {
     data[[col]][row] <- text
   }
-  write.csv(data, file.path(path, "meta", csv), row.names = FALSE)
+  write_csv(data, file.path(path, "meta", csv))
 }
 
 db_file <- function(db, f) {
-  if (!db) f else paste0("db_", f)
+  if (!db) f else sprintf("db_%s", f)
 }
 
 create_touchstone_csv <- function(path, names, versions,
@@ -104,71 +103,67 @@ create_touchstone_csv <- function(path, names, versions,
                                   comments = NULL,
                                   status = NULL,
                                   db = FALSE) {
-  comments <- comments %||% paste0("Comment ", names, "-", versions)
-  descriptions <- descriptions %||% paste(names,"description")
+
+  comments <- comments %||% sprintf("Comment %s-%s", names, versions)
+  descriptions <- descriptions %||% sprintf("%s description", names)
   status <- status %||% "in-preparation"
-  write.csv(data_frame(
-    id = paste0(names, "-", versions),
+  write_csv(data_frame(
+    id = sprintf("%s-%s", names, versions),
     touchstone_name = names,
     version = versions,
-    description = paste0(names, " (version ",versions, ")"),
+    description = sprintf("%s (version %s)", names, versions),
     status = status,
     comment = comments),
-    file.path(path, "meta", db_file(db, "touchstone.csv")),
-    row.names = FALSE)
+    file.path(path, "meta", db_file(db, "touchstone.csv")))
 }
 
 create_touchstone_name_csv <- function(path, names,
                                        descriptions = NULL,
                                        comments = NULL,
                                        db = FALSE) {
-  descriptions <- descriptions %||% paste(names, "description")
-  comments <- comments %||% paste(names, "comment")
 
-  invisible(write.csv(data_frame(
+  descriptions <- descriptions %||% sprintf("%s description", names)
+  comments <- comments %||% sprintf("%s comment", names)
+
+  invisible(write_csv(data_frame(
     id = names,
     description = descriptions,
-    comment = paste0(names, " comment")),
-    file.path(path, "meta", db_file(db, "touchstone_name.csv")),
-    row.names = FALSE))
+    comment = sprintf("%s comment", names)),
+    file.path(path, "meta", db_file(db, "touchstone_name.csv"))))
 }
 
 create_disease_csv <- function(path, ids, names, db = TRUE) {
-  write.csv(data_frame(
+  write_csv(data_frame(
     id = ids, name = names),
-    file.path(path, "meta", db_file(db, "disease.csv")), row.names = FALSE)
+    file.path(path, "meta", db_file(db, "disease.csv")))
 }
 
 create_scenario_csv <- function(path, ids, touchstones, sds, db = FALSE) {
-  write.csv(data_frame(
+  write_csv(data_frame(
     id = ids, touchstone = touchstones,
     scenario_description = sds, focal_coverage_set = NA),
-    file.path(path, "meta", db_file(db, "scenario.csv")),
-    row.names = FALSE)
+    file.path(path, "meta", db_file(db, "scenario.csv")))
 }
 
 create_scen_desc_csv <- function(path, ids, descs, diseases, db = FALSE) {
-  write.csv(data_frame(
+  write_csv(data_frame(
     id = ids, description = descs, disease = diseases),
-    file.path(path, "meta", db_file(db, "scenario_description.csv")),
-    row.names = FALSE)
+    file.path(path, "meta", db_file(db, "scenario_description.csv")))
 }
 
 create_ts_country_csv <- function(path, tstones, diseases,
                                   countries, db = FALSE) {
-  write.csv(data_frame(
+  write_csv(data_frame(
     touchstone = tstones, disease = diseases, country = countries),
-    file.path(path, "meta", db_file(db, "touchstone_country.csv")),
-    row.names = FALSE)
+    file.path(path, "meta", db_file(db, "touchstone_country.csv")))
 }
 
 create_ts_dds <- function(path, tstones, sources, types, db = FALSE) {
-  write.csv(data_frame(
+  write_csv(data_frame(
     touchstone = tstones, demographic_source = sources,
     demographic_statistic_type = types),
     file.path(path, "meta",
-      db_file(db, "touchstone_demographic_dataset.csv")),
-    row.names = FALSE)
+      db_file(db, "touchstone_demographic_dataset.csv")))
 }
 
 standard_demography <- function(test, make_source = TRUE,
@@ -181,25 +176,25 @@ standard_demography <- function(test, make_source = TRUE,
 
   src <- NA
   if (make_source) {
-    src <- unlist(lapply(seq_len(rows), function(r) {
+    src <- vapply(seq_len(rows), function(r) {
       DBI::dbGetQuery(test$con, sprintf("
         INSERT INTO demographic_source (code, name)
              VALUES ('S%s', 'Source %s')
-          RETURNING id", r, r))$id }))
+          RETURNING id", r, r))$id }, 0)
   }
   type <- NA
   if (make_type) {
-    type <- unlist(lapply(seq_len(rows), function(r) {
+    type <- vapply(seq_len(rows), function(r) {
       DBI::dbGetQuery(test$con, sprintf("
         INSERT INTO demographic_statistic_type
           (code, age_interpretation, name, year_step_size, reference_date,
            gender_is_applicable, demographic_value_unit, default_variant) VALUES
            ('T%s', 'age', 'Type %s', 5, '2017-01-01', FALSE, 1, $1)
-           RETURNING id", r, r), vid)$id }))
+           RETURNING id", r, r), vid)$id }, 0)
   }
   dset <- NA
   if (make_dataset & make_type & make_source) {
-    dset <- unlist(lapply(seq_len(rows * rows), function(r) {
+    dset <- vapply(seq_len(rows * rows), function(r) {
       src_i <- 1 + ((r - 1) %/% rows)
       type_i <- 1 + ((r - 1) %% rows)
 
@@ -208,7 +203,7 @@ standard_demography <- function(test, make_source = TRUE,
           (description, demographic_source,
                         demographic_statistic_type) VALUES
           ('D%s', $1, $2) RETURNING id", r),
-                      list(src[src_i], type[type_i]))$id }))
+                      list(src[src_i], type[type_i]))$id }, 0)
   }
   list(variant_id = vid, source_id = src,
        type_id = type, dset_id = dset)

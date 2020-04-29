@@ -90,7 +90,7 @@ initialise_with_fake_resps <- function(test) {
 test_dump_touchstone <- function(path) {
   f <- file.path(path, "touchstone.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$id, "nevis-1")
   expect_equal(data$touchstone_name, "nevis")
@@ -103,7 +103,7 @@ test_dump_touchstone <- function(path) {
 test_dump_touchstone_name <- function(path) {
   f <- file.path(path, "touchstone_name.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$id, "nevis")
   expect_equal(data$description, "nevis description")
@@ -113,7 +113,7 @@ test_dump_touchstone_name <- function(path) {
 test_dump_touchstone_dds <- function(path) {
   f <- file.path(path, "touchstone_demographic_dataset.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$touchstone, "nevis-1")
   expect_equal(data$demographic_source, "S1")
@@ -123,7 +123,7 @@ test_dump_touchstone_dds <- function(path) {
 test_dump_db_demographic_source <- function(path) {
   f <- file.path(path, "db_demographic_source.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$code, "S1")
   expect_equal(data$name, "Source 1")
@@ -132,7 +132,7 @@ test_dump_db_demographic_source <- function(path) {
 test_dump_db_demographic_statistic_type <- function(path) {
   f <- file.path(path, "db_demographic_statistic_type.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$code, "T1")
   expect_equal(data$name, "Type 1")
@@ -141,7 +141,7 @@ test_dump_db_demographic_statistic_type <- function(path) {
 test_dump_touchstone_country <- function(path) {
   f <- file.path(path, "touchstone_country.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$disease, "flu;piles")
   expect_equal(data$country, "AFG;ZWE")
@@ -151,7 +151,7 @@ test_dump_touchstone_country <- function(path) {
 test_dump_scenario_description <- function(path) {
   f <- file.path(path, "scenario_description.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$id, "pies")
   expect_equal(data$description, "campaign")
@@ -161,7 +161,7 @@ test_dump_scenario_description <- function(path) {
 test_dump_responsibilities <- function(path) {
   f <- file.path(path, "responsibilities.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$modelling_group, "LAP-elf")
   expect_equal(data$disease, "flu")
@@ -181,7 +181,7 @@ test_dump_responsibilities <- function(path) {
 test_dump_db_modelling_group <- function(path) {
   f <- file.path(path, "db_modelling_group.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$id, "LAP-elf")
   expect_equal(data$institution, "Lapland Epi Centre")
@@ -194,7 +194,7 @@ test_dump_db_modelling_group <- function(path) {
 test_dump_db_disease <- function(path, id = "flu", name = "Elf") {
   f <- file.path(path, "db_disease.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 2)
   expect_equal(data$id, "flu")
   expect_equal(data$name, "Elf flu")
@@ -203,7 +203,7 @@ test_dump_db_disease <- function(path, id = "flu", name = "Elf") {
 test_dump_db_disease_extra <- function(path) {
   f <- file.path(path, "db_disease.csv")
   expect_true(file.exists(f))
-  data <- read.csv(f, stringsAsFactors = FALSE)
+  data <- read_csv(f)
   expect_equal(nrow(data), 2)
   expect_equal(data$id, c("flu", "piles"))
   expect_equal(data$name, c("Elf flu", "Elf piles"))

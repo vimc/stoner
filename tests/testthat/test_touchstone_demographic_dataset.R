@@ -130,11 +130,10 @@ test_that("Duplicate of db entry", {
   # Bit messy this one - have to mimic what's in the db table,
   # which has integer demographic_dataset
 
-  write.csv(
+  write_csv(
     data_frame(touchstone = "nevis-1",
                demographic_dataset = demog$dset_id),
-    file.path(test$path, "meta", "db_touchstone_demographic_dataset.csv"),
-    row.names = FALSE)
+    file.path(test$path, "meta", "db_touchstone_demographic_dataset.csv"))
 
   create_ts_dds(test$path, "nevis-1", "S1", "T1", db = FALSE)
   test_dset(do_test(test), demog$dset_id, "nevis-1")
@@ -147,11 +146,10 @@ test_that("Update in-prep", {
   create_touchstone_name_csv(test$path, "nevis", db = TRUE)
 
   demog <- standard_demography(test, rows = 2)
-  write.csv(
+  write_csv(
     data_frame(touchstone = "nevis-1",
                demographic_dataset = demog$dset_id[1]),
-    file.path(test$path, "meta", "db_touchstone_demographic_dataset.csv"),
-    row.names = FALSE)
+    file.path(test$path, "meta", "db_touchstone_demographic_dataset.csv"))
 
   create_ts_dds(test$path, "nevis-1", "S2", "T1", db = FALSE)
   test_dset(do_test(test), demog$dset_id[3], "nevis-1")
@@ -165,11 +163,10 @@ test_that("Update non in-prep", {
   create_touchstone_name_csv(test$path, "nevis", db = TRUE)
 
   demog <- standard_demography(test, rows = 2)
-  write.csv(
+  write_csv(
     data_frame(touchstone = "nevis-1",
                demographic_dataset = demog$dset_id[1]),
-    file.path(test$path, "meta", "db_touchstone_demographic_dataset.csv"),
-    row.names = FALSE)
+    file.path(test$path, "meta", "db_touchstone_demographic_dataset.csv"))
 
   create_ts_dds(test$path, "nevis-2", "S2", "T1", db = FALSE)
 
