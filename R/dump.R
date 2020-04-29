@@ -231,7 +231,8 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
       outcomes = "")
 
     csv$scenario <- vapply(seq_len(nrow(csv)), function(x) {
-      paste(sort(expecs$scenario[expecs$expecid == x]), collapse = ';')}, "")
+      paste(sort(expecs$scenario[expecs$expecid == csv$expecid[x]]),
+            collapse = ';')}, "")
 
     ensure_same <- function(expecs, csv, name, vtype) {
       vapply(seq_len(nrow(csv)),
@@ -273,14 +274,16 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
     csv$countries <- vapply(seq_len(nrow(csv)),
       function(x) {
         paste(
-          sort(countries$country[countries$burden_estimate_expectation == x]),
+          sort(countries$country[countries$burden_estimate_expectation ==
+                                   csv$expecid[x]]),
         collapse = ';')
       }, "")
 
     csv$outcomes <- vapply(seq_len(nrow(csv)),
       function(x) {
         paste(
-          sort(outcomes$outcome[outcomes$burden_estimate_expectation == x]),
+          sort(outcomes$outcome[outcomes$burden_estimate_expectation ==
+                                  csv$expecid[x]]),
         collapse = ';')
       }, "")
 
