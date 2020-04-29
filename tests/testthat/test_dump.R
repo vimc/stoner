@@ -243,11 +243,15 @@ test_that("Dump works (fake expectations)", {
   test_dump_responsibilities(tmp)
   expect_equal(length(list.files(tmp)), 6)
   stoner::stone_dump(test$con, "nevis-1", tmp, TRUE)
+  test_dump_touchstone(tmp)
+  test_dump_touchstone_name(tmp)
+  test_dump_touchstone_dds(tmp)
+  test_dump_touchstone_country(tmp)
+  test_dump_scenario_description(tmp)
+  test_dump_responsibilities(tmp)
   test_dump_db_demographic_source(tmp)
   test_dump_db_demographic_statistic_type(tmp)
   test_dump_db_modelling_group(tmp)
   test_dump_db_disease(tmp)
   expect_equal(length(list.files(tmp)), 10)
-
 })
-
