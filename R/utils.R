@@ -1,3 +1,11 @@
+write_csv <- function(...) {
+  utils::write.csv(row.names = FALSE, quote = FALSE, ...)
+}
+
+read_csv <- function(...) {
+  utils::read.csv(stringsAsFactors = FALSE, ...)
+}
+
 read_meta <- function(path, filename) {
 
   meta_exists <- function(path, filename) {
@@ -19,15 +27,13 @@ read_meta <- function(path, filename) {
     cols[names(cols) == 'country'] <- "character"
     cols[names(cols) == 'focal_coverage_set'] <- "numeric"
 
-    utils::read.csv(file.path(path, "meta", filename),
-                         colClasses = cols,
-                         stringsAsFactors = FALSE)
+    read_csv(file.path(path, "meta", filename),
+                         colClasses = cols)
 
   } else {
     NULL
   }
 }
-
 
 data_frame <- function(...) {
   data.frame(stringsAsFactors = FALSE, ...)
@@ -222,14 +228,14 @@ vlapply <- function(X, FUN, ...) {
 
 check_faulty_serials <- function(con) {
   df <- data_frame(sequence =
-                     DBI::dbGetQuery(con, "
-                                     SELECT *
-                                     FROM information_schema.sequences")$sequence_name)
+    DBI::dbGetQuery(con, "
+      SELECT *
+        FROM information_schema.sequences")$sequence_name)
   df$table <- gsub("_id_seq", "", df$sequence)
   df <- df[df$table %in% DBI::dbListTables(con), ]
 
-  df$maxes <- unlist(lapply(df$table, function(x)
-    as.numeric(DBI::dbGetQuery(con, sprintf("SELECT max(id) FROM %s", x)))))
+  df$maxes <- vapply(df$table, function(x)
+    as.numeric(DBI::dbGetQuery(con, sprintf("SELECT max(id) FROM %s", x))), 0)
 
   df <- df[!is.na(df$maxes), ]
 
@@ -237,8 +243,7 @@ check_faulty_serials <- function(con) {
     df$last_value[r] <- tryCatch({
       x <- df$sequence[r]
       as.numeric(DBI::dbGetQuery(con,
-                                 sprintf("SELECT last_value FROM %s", x))$last_value)
-
+        sprintf("SELECT last_value FROM %s", x))$last_value)
     })
   }
 

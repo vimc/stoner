@@ -1,6 +1,10 @@
-## 0.0.5
+## 0.0.6
 
 Support for responsibilities.csv metadata
+
+## 0.0.5
+
+Allow dumping an existing touchstone into Stoner CSVs for edit/re-imprt
 
 ## 0.0.4
 
