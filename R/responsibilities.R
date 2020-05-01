@@ -234,9 +234,7 @@ transform_responsibilities <- function(e, t_so_far) {
   cohort_min_inclusive = ecsv$cohort_min_inclusive,
     year_max_inclusive = ecsv$year_max_inclusive,
     year_min_inclusive = ecsv$year_min_inclusive,
-           description = paste(ecsv$disease,
-                               ecsv$modelling_group,
-                               ecsv$scenario_type, sep = ':'),
+           description = ecsv$description,
                version = e$touchstone$touchstone_name[match(
                            ecsv$touchstone, e$touchstone$id)]
   )
@@ -304,7 +302,13 @@ test_transform_responsibilities <- function(t) {
 load_responsibilities <- function(transformed_data, con) {
 
   load_scenarios <- function(t, con) {
-    if (nrow(t$scenario) == 0) return(NULL)
+    if (is.null(t[['scenario']])) {
+      return(t)
+    }
+
+    if (nrow(t$scenario) == 0) {
+      return(t)
+    }
 
     res <- add_serial_rows("scenario", t, con)
 
@@ -322,7 +326,14 @@ load_responsibilities <- function(transformed_data, con) {
   ###################################################
 
   load_responsibility_sets <- function(t, con) {
-    if (nrow(t$responsibility_set) == 0) return(NULL)
+
+    if (is.null(t$responsibility_set)) {
+      return(t)
+    }
+
+    if (nrow(t$responsibility_set) == 0) {
+      return(t)
+    }
     res <- add_serial_rows("responsibility_set", t, con)
 
     # Replace fake ids with real ids in responsibility.scenario
@@ -341,7 +352,14 @@ load_responsibilities <- function(transformed_data, con) {
   # Update burden_estimate_country_expectations with ids
 
   load_expectations <- function(t, con) {
-    if (nrow(t$burden_estimate_expectation) == 0) return(NULL)
+    if (is.null(t$burden_estimate_expectation)) {
+      return(t)
+    }
+
+    if (nrow(t$burden_estimate_expectation) == 0) {
+      return(t)
+    }
+
     res <- add_serial_rows("burden_estimate_expectation", t, con)
 
     # Replace fake ids with real ids in
@@ -378,6 +396,13 @@ load_responsibilities <- function(transformed_data, con) {
 
   # Update burden_estimate_country_expectation.burden_estimate_expectation id
   load_exp_countries <- function(t, con) {
+    if (is.null(t$burden_estimate_country_expectation)) {
+      return(t)
+    }
+    if (nrow(t$burden_estimate_country_expectation) == 0) {
+      return(t)
+    }
+
     t$burden_estimate_country_expectation <-
       set_unique_flag(con, t$burden_estimate_country_expectation,
                       "burden_estimate_country_expectation")
@@ -396,6 +421,13 @@ load_responsibilities <- function(transformed_data, con) {
 
   # Update burden_estimate_outcome_expectation.burden_estimate_expectation id
   load_exp_outcomes <- function(t, con) {
+    if (is.null(t$burden_estimate_outcome_expectation)) {
+      return(t)
+    }
+    if (nrow(t$burden_estimate_outcome_expectation) == 0) {
+      return(t)
+    }
+
     t$burden_estimate_outcome_expectation <-
       set_unique_flag(con, t$burden_estimate_outcome_expectation,
                       "burden_estimate_outcome_expectation")
