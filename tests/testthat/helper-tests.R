@@ -264,3 +264,13 @@ do_test <- function(test, ...) {
   c(test_run_import(test$path, test$con, ...), con = test$con)
 }
 
+# Create a new, empty stoner_dump temp folder.
+
+empty_dump <- function() {
+  tmp <- file.path(tempdir(), "stoner_dump")
+  unlink(tmp, recursive = TRUE)
+  dir.create(tmp, showWarnings = FALSE)
+  tmp
+}
+
+
