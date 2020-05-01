@@ -40,6 +40,11 @@ new_test <- function() {
   res
 }
 
+clear_files <- function(test) {
+  files <- list.files(file.path(test$path, "meta"))
+  unlink(file.path(test$path, "meta", files))
+}
+
 test_prepare <- function(path, con = NULL) {
   db_tables <- c("touchstone_name", "touchstone", "disease",
                  "scenario_description", "scenario",

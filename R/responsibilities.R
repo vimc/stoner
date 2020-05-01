@@ -75,8 +75,8 @@ extract_responsibilities <- function(e, path, con) {
          sql_in(ts)))
 
   rsid <- (-1)
-  if (length(res$responsibility_set$id) >0) {
-    rsid <- res$responsibility_set$id
+  if (length(res$resp_responsibility_set$id) >0) {
+    rsid <- res$resp_responsibility_set$id
   }
 
   res[['resp_responsibility']] <- DBI::dbGetQuery(con, sprintf("
@@ -250,7 +250,7 @@ transform_responsibilities <- function(e, t_so_far) {
   res$responsibility$expectations <-
     res$burden_estimate_expectation$id[res$responsibility$expectations]
 
-  fields <- c("responsibility_set", "scenario", "expectations")
+  fields <- c("responsibility_set", "scenario")
   res$responsibility <- assign_serial_ids(res$responsibility,
                                           e$resp_responsibility,
                                           "responsibility", fields, fields)

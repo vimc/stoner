@@ -112,7 +112,7 @@ test_responsibilities <- function(test, modelling_group, touchstone, scenario,
 }
 
 
-test_that("New responsibility", {
+test_that("New responsibility - standard", {
   test <- new_test()
   standard_disease_touchstones(test)
   standard_responsibilites(test)
@@ -124,4 +124,32 @@ test_that("New responsibility", {
                           0, 100, 1900, 2100, 2000, 2100,
                           "AFG;ZWE", "cases;deaths", "FLU:LAP-elf:standard")
 
+})
+
+test_that("Add countries and outcomes to existing expectations", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibilites(test)
+  create_responsibilities(test, "LAP-elf", "nevis-1", "pies",
+                          0, 100, 1900, 2100, 2000, 2100,
+                          "AFG", "cases", "FLU:LAP-elf:standard")
+  do_test(test)
+
+  # Now clear up all the csvs (including the db_ pre-install ones)
+  # and add another country and outcome...
+
+  clear_files(test)
+
+  create_responsibilities(test, "LAP-elf", "nevis-1", "pies",
+                          0, 100, 1900, 2100, 2000, 2100,
+                          "ZWE", "deaths", "FLU:LAP-elf:standard")
+  do_test(test)
+
+  test_responsibilities(test, "LAP-elf", "nevis-1", "pies",
+                        0, 100, 1900, 2100, 2000, 2100,
+                        "AFG;ZWE", "cases;deaths", "FLU:LAP-elf:standard")
+
+})
+
+test_that("Add new responsibility to responsibility_set", {
 })
