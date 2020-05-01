@@ -9,7 +9,7 @@ stone_dump(con, touchstone, path, include_deps = FALSE)
 \arguments{
 \item{con}{Active connection to the DB which the data will be dumped from.}
 
-\item{touchstone}{the touchstone including version.}
+\item{touchstone}{the touchstone, including version}
 
 \item{path}{the path where output CSVs should be created.}
 
@@ -20,8 +20,8 @@ db_demographic_statistic_type.csv and db_demographic_source.csv.}
 \description{
 Query a database for all information relevant to a particular touchstone
 (including version), and write to CSV files, which would then be fit for
-stoner to use as its input to re-population the database with the same
-touchstone. This would be useful in a workflow where you wanted to
+stoner to use as its input to re-populate the database with the same
+touchstone data. This would be useful in a workflow where you wanted to
 clone a touchstone, alter a few things, and upload as a new version.
 }
 \details{

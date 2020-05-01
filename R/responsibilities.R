@@ -91,20 +91,20 @@ test_extract_responsibilities <- function(e) {
   if (is.null(ecsv)) return(NULL)
   if (nrow(ecsv) == 0) return(NULL)
 
-  expect_equal(sort(names(ecsv)),
+  testthat::expect_equal(sort(names(ecsv)),
     c("age_max_inclusive", "age_min_inclusive", "cohort_max_inclusive",
       "cohort_min_inclusive", "countries", "description", "modelling_group",
       "outcomes", "scenario", "scenario_type", "touchstone",
       "year_max_inclusive", "year_min_inclusive"),
     label = "Columns in burden_estimate_expectation.csv")
 
-  expect_type(ecsv$age_max_inclusive, "integer")
-  expect_type(ecsv$age_min_inclusive, "integer")
-  expect_type(ecsv$cohort_max_inclusive, "integer")
-  expect_type(ecsv$cohort_min_inclusive, "integer")
-  expect_type(ecsv$year_max_inclusive, "integer")
-  expect_type(ecsv$year_min_inclusive, "integer")
-  expect_type(ecsv$scenario_type, "character")
+  testthat::expect_type(ecsv$age_max_inclusive, "integer")
+  testthat::expect_type(ecsv$age_min_inclusive, "integer")
+  testthat::expect_type(ecsv$cohort_max_inclusive, "integer")
+  testthat::expect_type(ecsv$cohort_min_inclusive, "integer")
+  testthat::expect_type(ecsv$year_max_inclusive, "integer")
+  testthat::expect_type(ecsv$year_min_inclusive, "integer")
+  testthat::expect_type(ecsv$scenario_type, "character")
 
   if (any(ecsv$year_min_inclusive >
           ecsv$year_max_inclusive)) {
