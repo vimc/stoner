@@ -1,14 +1,5 @@
 context("dump")
 
-# Create a new, empty stoner_dump temp folder.
-
-empty_dump <- function() {
-  tmp <- file.path(tempdir(), "stoner_dump")
-  unlink(tmp, recursive = TRUE)
-  dir.create(tmp, showWarnings = FALSE)
-  tmp
-}
-
 # Populate db with a touchstone and touchstone name.
 
 initialise_touchstones <- function(test) {
