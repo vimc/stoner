@@ -256,8 +256,8 @@ check_faulty_serials <- function(con) {
   }
 }
 
-mash_id <- function(needle, haystack, fields, target_field = 'id') {
-  needle[['mash_the_id']] <- mash(needle, fields)
-  haystack[['mash_the_id']] <- mash(haystack, fields)
-  haystack[[target_field]][match(needle[['mash_the_id']], haystack[['mash_the_id']])]
-}
+# mash_id <- function(needle, haystack, fields, target_field = 'id') {
+#   needle[['mash_the_id']] <- mash(needle, fields)
+#   haystack[['mash_the_id']] <- mash(haystack, fields)
+#   haystack[[target_field]][match(needle[['mash_the_id']], haystack[['mash_the_id']])]
+# }
