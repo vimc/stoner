@@ -15,6 +15,10 @@ extract_touchstone <- function(e, path, con) {
   # Query DB for all touchstones that are connected with touchstones
   # or touchstone names
 
+  if (length(ts) == 0) {
+    return(eout)
+  }
+
   ts <- c(ts,
     DBI::dbGetQuery(con, sprintf("
       SELECT DISTINCT touchstone.id

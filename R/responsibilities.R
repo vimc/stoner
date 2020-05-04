@@ -116,28 +116,39 @@ test_extract_responsibilities <- function(e) {
     stop("Responsibility year_min_inclusive must be before year_max_inclusive")
   }
 
-  if (any(e$ecsv$age_min_inclusive >
-          e$ecsv$age_max_inclusive)) {
+  if (any(ecsv$age_min_inclusive >
+          ecsv$age_max_inclusive)) {
     stop("Responsibility age_min_inclusive must be before age_max_inclusive")
   }
 
-  if (any(e$ecsv$cohort_min_inclusive >
-          e$ecsv$cohort_max_inclusive)) {
+  if (any(ecsv$cohort_min_inclusive >
+          ecsv$cohort_max_inclusive)) {
     stop(paste0("Responsibility cohort_min_inclusive must be before ",
                 "cohort_max_inclusive"))
   }
 
-  if (!all(e$ecsv$countries %in% e$resp_countries$id)) {
-    errs <- which(!e$ecsv$countries %in% e$resp_countries$id)
-    countries <- paste(e$ecsv$countries[errs], sep = ", ")
+  all_countries <- unlist(lapply(ecsv$countries, split_semi))
+
+  if (!all(all_countries %in% e$resp_countries$id)) {
+    errs <- which(!ecsv$countries %in% e$resp_countries$id)
+    countries <- paste(ecsv$countries[errs], sep = ", ")
     stop(sprintf("Unknown responsibility countries: %s",countries))
   }
 
-  if (!all(e$ecsv$modelling_group %in%
-           e$resp_modelling_group$id)) {
-    errs <- which(!e$ecsv$modelling_group %in%
+  all_outcomes <- unlist(lapply(ecsv$outcomes, split_semi))
+
+  if (!all(all_outcomes %in% e$resp_outcomes$code)) {
+    errs <- which(!ecsv$outcomes %in% e$resp_outcomes$code)
+    outcomes <- paste(ecsv$outcomes[errs], sep = ", ")
+    stop(sprintf("Unknown responsibility outcomes: %s",outcomes))
+  }
+
+  all_mgs <- unlist(lapply(ecsv$modelling_group, split_semi))
+
+  if (!all(all_mgs %in% e$resp_modelling_group$id)) {
+    errs <- which(!ecsv$modelling_group %in%
                    e$resp_modelling_group$id)
-    groups <- paste(e$ecsv$modelling_group[errs], sep = ", ")
+    groups <- paste(ecsv$modelling_group[errs], sep = ", ")
     stop(sprintf("Unknown responsibility modelling_groups: %s", groups))
   }
 

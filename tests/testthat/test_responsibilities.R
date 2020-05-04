@@ -10,21 +10,25 @@ context("responsibility")
 #
 
 create_responsibilities <- function(test, resp, db = FALSE) {
-  write.csv(
-    data_frame(
-      modelling_group = resp$modelling_group,
-      touchstone = resp$touchstone,
-      scenario = resp$scenario,
-      scenario_type = "standard",
-      age_min_inclusive = resp$age_min_inclusive,
-      age_max_inclusive = resp$age_max_inclusive,
-      cohort_min_inclusive = resp$cohort_min_inclusive,
-      cohort_max_inclusive = resp$cohort_max_inclusive,
-      year_min_inclusive = resp$year_min_inclusive,
-      year_max_inclusive = resp$year_max_inclusive,
-      countries = resp$countries,
-      outcomes = resp$outcomes,
-      description = resp$description),
+  df <- data_frame(
+    modelling_group = resp$modelling_group,
+    touchstone = resp$touchstone,
+    scenario = resp$scenario,
+    age_min_inclusive = resp$age_min_inclusive,
+    age_max_inclusive = resp$age_max_inclusive,
+    cohort_min_inclusive = resp$cohort_min_inclusive,
+    cohort_max_inclusive = resp$cohort_max_inclusive,
+    year_min_inclusive = resp$year_min_inclusive,
+    year_max_inclusive = resp$year_max_inclusive,
+    countries = resp$countries,
+    outcomes = resp$outcomes,
+    description = resp$description)
+
+  if (nrow(df) > 0) {
+    df$scenario_type <- "standard"
+  }
+
+  write.csv(df,
     file.path(test$path, "meta",
       db_file(db, "responsibilities.csv")),
     row.names = FALSE
@@ -173,6 +177,8 @@ test_that("Add multiple responsibilities in one go, separate csv lines", {
 
   # Additionally check that they used the same expectation.
 
+  expect_equal(1, length(DBI::dbGetQuery(test$con, "
+    SELECT DISTINCT expectations FROM responsibility")$expectations))
 })
 
 test_that("Add new responsibility to existing responsibility_set", {
@@ -197,8 +203,79 @@ test_that("Add new responsibility to existing responsibility_set", {
   expect_equal(1, length(DBI::dbGetQuery(test$con, "
     SELECT DISTINCT expectations FROM responsibility")$expectations))
 
-
-
 })
 
+test_that("OK with No rows in responsibility file", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp <- resp[resp$scenario == 'potato', ]
+  create_responsibilities(test, resp)
+  do_test(test)
+  expect_equal(0, nrow(DBI::dbReadTable(test$con, "responsibility")))
+  expect_equal(0, nrow(DBI::dbReadTable(test$con, "burden_estimate_expectation")))
+})
 
+test_that("Invalid country detected", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$countries[1] <- "Slough"
+  create_responsibilities(test, resp)
+  expect_error(do_test(test), "Unknown responsibility countries:")
+})
+
+test_that("Invalid outcomes", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$outcomes[1] <- "Incorrect Outcomes"
+  create_responsibilities(test, resp)
+  expect_error(do_test(test), "Unknown responsibility outcomes:")
+})
+
+test_that("Invalid modelling group detected", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$modelling_group[1] <- "Unknown Modelling Group"
+  create_responsibilities(test, resp)
+  expect_error(do_test(test), "Unknown responsibility modelling_groups:")
+})
+
+test_that("Incorrect age_min_inclusive/age_max_inclusive", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$age_min_inclusive <- 100
+  resp$age_max_inclusive <- 0
+  create_responsibilities(test, resp)
+  expect_error(do_test(test), "Responsibility age_min_inclusive must be before age_max_inclusive")
+})
+
+test_that("Incorrect cohort_min_inclusive/cohort_max_inclusive", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$cohort_min_inclusive <- 100
+  resp$cohort_max_inclusive <- 0
+  create_responsibilities(test, resp)
+  expect_error(do_test(test), "Responsibility cohort_min_inclusive must be before cohort_max_inclusive")
+})
+
+test_that("Incorrect year_min_inclusive/year_max_inclusive", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$year_min_inclusive <- 100
+  resp$year_max_inclusive <- 0
+  create_responsibilities(test, resp)
+  expect_error(do_test(test), "Responsibility year_min_inclusive must be before year_max_inclusive")
+})
