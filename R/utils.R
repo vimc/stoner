@@ -91,15 +91,16 @@ mash <- function(tab, fields = NULL) {
 # Return copy of the new table with id column filled in:
 # -1, -2 ... for new rows, or a positive integer for rows
 # that already exist in the target table.
+#
+# Allow duplicates, assigning the same serial ids to them.
 
 assign_serial_ids <- function(new_table, db_table, table_name,
                               mash_fields_csv = NULL,
                               mash_fields_db = NULL) {
 
   new_table$mash <- mash(new_table, mash_fields_csv)
-  if (any(duplicated(new_table$mash))) {
-    stop(sprintf("Duplicated entries in new %s rows", table_name))
-  }
+
+  non_dup_table <- new_table[!duplicated(new_table$mash), ]
 
   if (is.null(mash_fields_db)) {
     mash_fields_db <- sort(names(db_table))
@@ -107,14 +108,18 @@ assign_serial_ids <- function(new_table, db_table, table_name,
   }
 
   db_table$mash <- mash(db_table, mash_fields_db)
-  new_table$id <- db_table$id[match(new_table$mash, db_table$mash)]
-  new_table$mash <- NULL
+  non_dup_table$id <- db_table$id[match(non_dup_table$mash, db_table$mash)]
 
-  which_nas <- which(is.na(new_table$id))
-  new_table$already_exists_db <- !is.na(new_table$id)
-  new_table$id[which_nas] <- seq(from = -1, by = -1,
+  which_nas <- which(is.na(non_dup_table$id))
+  non_dup_table$already_exists_db <- !is.na(non_dup_table$id)
+  non_dup_table$id[which_nas] <- seq(from = -1, by = -1,
                                  length.out = length(which_nas))
+  new_table$id <- non_dup_table$id[match(new_table$mash, non_dup_table$mash)]
+  new_table$already_exists_db <-
+    non_dup_table$already_exists_db[match(new_table$mash, non_dup_table$mash)]
+  new_table$mash <- NULL
   new_table
+
 }
 
 # Return a vector of logicals, of whether each row in table1

@@ -235,7 +235,7 @@ standard_disease_touchstones <- function(test, db = TRUE) {
   create_touchstone_name_csv(test$path, "nevis", db = db)
 }
 
-standard_responsibilites <- function(test, db = TRUE) {
+standard_responsibility_support <- function(test, db = TRUE) {
   create_modelling_groups(test$path,
     c("LAP-elf", "EBHQ-bunny"),
     c("Lapland Epi Centre", "EBHQ"),

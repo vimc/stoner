@@ -92,9 +92,7 @@ test_that("Dup entry in CSV", {
   standard_disease_touchstones(test)
   create_ts_country_csv(test$path, "nevis-1", "flu",
                         c("ZMB;ZWE", "AFG;ZMB"))
-  expect_error(do_test(test),
-    "Duplicated entries in new touchstone_country rows",
-    class = "simpleError")
+  test_tcs(do_test(test), c("AFG", "ZMB", "ZWE"))
 })
 
 test_that("Empty disease in CSV", {

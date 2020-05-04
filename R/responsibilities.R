@@ -41,22 +41,27 @@ extract_responsibilities <- function(e, path, con) {
 
     resp_countries = DBI::dbGetQuery(con, sprintf("
       SELECT * FROM country WHERE id IN %s",
-        sql_in(unique(split_semi(e$responsibilities_csv$countries))))),
+        sql_in(unique(unlist(lapply(e$responsibilities_csv$countries,
+                                    split_semi)))))),
 
     resp_outcomes = DBI::dbGetQuery(con, sprintf("
       SELECT * FROM burden_outcome WHERE code IN %s",
-        sql_in(unique(split_semi(e$responsibilities_csv$outcomes))))),
+        sql_in(unique(unlist(lapply(e$responsibilities_csv$outcomes,
+                                    split_semi)))))),
 
     resp_modelling_group = DBI::dbGetQuery(con, sprintf("
       SELECT * FROM modelling_group WHERE id IN %s",
-        sql_in(unique(split_semi(e$responsibilities_csv$modelling_group))))),
+        sql_in(unique(unlist(lapply(e$responsibilities_csv$modelling_group,
+                                    split_semi)))))),
 
     resp_responsibility_set = DBI::dbGetQuery(con, sprintf("
       SELECT * FROM responsibility_set
        WHERE modelling_group IN %s
          AND touchstone IN %s",
-           sql_in(unique(e$responsibilities_csv$modelling_group)),
-           sql_in(unique(e$responsibilities_csv$touchstone)))),
+           sql_in(unique(unlist(lapply(e$responsibilities_csv$modelling_group,
+                                       split_semi)))),
+           sql_in(unique(unlist(lapply(e$responsibilities_csv$touchstone,
+                                       split_semi)))))),
 
     resp_touchstone = DBI::dbGetQuery(con, sprintf("
       SELECT DISTINCT touchstone_name FROM touchstone
@@ -141,6 +146,7 @@ test_extract_responsibilities <- function(e) {
 ###############################################################################
 
 transform_responsibilities <- function(e, t_so_far) {
+
   ecsv <- e$responsibilities_csv
   if (is.null(ecsv)) return(list())
   if (nrow(ecsv) == 0) return(list())
@@ -205,15 +211,16 @@ transform_responsibilities <- function(e, t_so_far) {
     res$responsibility_set, e$resp_responsibility_set, "responsibility_set",
     fields, fields)
 
-  # Population res$responsibility$responsibility_set with ids
+  # Populate res$responsibility$responsibility_set with ids
 
   for (r in seq_len(nrow(ecsv))) {
     row <- ecsv[r, ]
+
     res$responsibility$responsibility_set[
       res$responsibility$expectations == r] <-
-        res$responsibility_set$id[
+        unique(res$responsibility_set$id[
           res$responsibility_set$modelling_group == row$modelling_group &
-          res$responsibility_set$touchstone == row$touchstone]
+          res$responsibility_set$touchstone == row$touchstone])
   }
 
   # Next burden_estimate_expectation. The other tables (responsibility,
@@ -290,6 +297,9 @@ transform_responsibilities <- function(e, t_so_far) {
   res$burden_estimate_country_expectation$already_exists_db <- FALSE
   res$burden_estimate_outcome_expectation$already_exists_db <- FALSE
 
+  # Final duplicate removal
+
+  res <- lapply(res, function(x) x[!duplicated(x), ])
   res
 }
 
