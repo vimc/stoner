@@ -30,44 +30,53 @@ extract_responsibilities <- function(e, path, con) {
   if (is.null(e$responsibilities_csv)) return(NULL)
   if (nrow(e$responsibilities_csv) == 0) return(NULL)
 
-  res <- list(
+  res <- list()
 
-    resp_scenarios = DBI::dbGetQuery(con, sprintf("
+
+  res$resp_scenarios <- DBI::dbGetQuery(con, sprintf("
       SELECT * FROM scenario
        WHERE touchstone IN %s OR
              scenario_description IN %s",
        sql_in(unique(e$responsibilities_csv$touchstone)),
-       sql_in(unique(e$responsibilities_csv$scenario)))),
+       sql_in(unique(e$responsibilities_csv$scenario))))
 
-    resp_countries = DBI::dbGetQuery(con, sprintf("
+  e$responsibilities_csv$countries[
+    is.na(e$responsibility_csv$countries)] <- ""
+
+  all_countries <- unique(unlist(lapply(e$responsibilities_csv$countries,
+                   split_semi)))
+
+  res$resp_countries <- DBI::dbGetQuery(con, sprintf("
       SELECT * FROM country WHERE id IN %s",
-        sql_in(unique(unlist(lapply(e$responsibilities_csv$countries,
-                                    split_semi)))))),
+        sql_in(all_countries)))
 
-    resp_outcomes = DBI::dbGetQuery(con, sprintf("
+  e$responsibilities_csv$outcomes[is.na(e$responsibilities_csv$outcomes)] <- ""
+    all_outcomes <- unique(unlist(lapply(e$responsibilities_csv$outcomes,
+                                          split_semi)))
+
+  res$resp_outcomes <- DBI::dbGetQuery(con, sprintf("
       SELECT * FROM burden_outcome WHERE code IN %s",
-        sql_in(unique(unlist(lapply(e$responsibilities_csv$outcomes,
-                                    split_semi)))))),
+        sql_in(all_outcomes)))
 
-    resp_modelling_group = DBI::dbGetQuery(con, sprintf("
+  res$resp_modelling_group <- DBI::dbGetQuery(con, sprintf("
       SELECT * FROM modelling_group WHERE id IN %s",
         sql_in(unique(unlist(lapply(e$responsibilities_csv$modelling_group,
-                                    split_semi)))))),
+                                    split_semi))))))
 
-    resp_responsibility_set = DBI::dbGetQuery(con, sprintf("
+  res$resp_responsibility_set <- DBI::dbGetQuery(con, sprintf("
       SELECT * FROM responsibility_set
        WHERE modelling_group IN %s
          AND touchstone IN %s",
            sql_in(unique(unlist(lapply(e$responsibilities_csv$modelling_group,
                                        split_semi)))),
            sql_in(unique(unlist(lapply(e$responsibilities_csv$touchstone,
-                                       split_semi)))))),
+                                       split_semi))))))
 
-    resp_touchstone = DBI::dbGetQuery(con, sprintf("
+  res$resp_touchstone <- DBI::dbGetQuery(con, sprintf("
       SELECT DISTINCT touchstone_name FROM touchstone
         WHERE id IN %s",
       sql_in(unique(e$responsibilities_csv$touchstone))))$touchstone_name
-  )
+
 
   ts <- "non_existent_touchstone"
   if (length(res$resp_touchstone) > 0) {
@@ -127,20 +136,24 @@ test_extract_responsibilities <- function(e) {
                 "cohort_max_inclusive"))
   }
 
-  all_countries <- unlist(lapply(ecsv$countries, split_semi))
-
-  if (!all(all_countries %in% e$resp_countries$id)) {
-    errs <- which(!ecsv$countries %in% e$resp_countries$id)
-    countries <- paste(ecsv$countries[errs], sep = ", ")
-    stop(sprintf("Unknown responsibility countries: %s",countries))
+  if (any(!is.na(ecsv$countries))) {
+    all_countries <- ecsv$countries[!is.na(ecsv$countries)]
+    all_countries <- unlist(lapply(all_countries, split_semi))
+    if (!all(all_countries %in% e$resp_countries$id)) {
+      errs <- which(!ecsv$countries %in% e$resp_countries$id)
+      countries <- paste(ecsv$countries[errs], sep = ", ")
+      stop(sprintf("Unknown responsibility countries: %s",countries))
+    }
   }
 
-  all_outcomes <- unlist(lapply(ecsv$outcomes, split_semi))
-
-  if (!all(all_outcomes %in% e$resp_outcomes$code)) {
-    errs <- which(!ecsv$outcomes %in% e$resp_outcomes$code)
-    outcomes <- paste(ecsv$outcomes[errs], sep = ", ")
-    stop(sprintf("Unknown responsibility outcomes: %s",outcomes))
+  if (any(!is.na(ecsv$outcomes))) {
+    all_outcomes <- ecsv$outcomes[!is.na(ecsv$outcomes)]
+    all_outcomes <- unlist(lapply(all_outcomes, split_semi))
+    if (!all(all_outcomes %in% e$resp_outcomes$code)) {
+      errs <- which(!ecsv$outcomes %in% e$resp_outcomes$code)
+      outcomes <- paste(ecsv$outcomes[errs], sep = ", ")
+      stop(sprintf("Unknown responsibility outcomes: %s",outcomes))
+    }
   }
 
   all_mgs <- unlist(lapply(ecsv$modelling_group, split_semi))
@@ -284,29 +297,38 @@ transform_responsibilities <- function(e, t_so_far) {
     row_csv <- ecsv[r, ]
     row_bee <- res$burden_estimate_expectation[r, ]
 
-    explode_countries <- split_semi(row_csv$countries)
+    if (!is.na(row_csv$countries)) {
+      explode_countries <- split_semi(row_csv$countries)
 
-    res$burden_estimate_country_expectation <- rbind(
-      res$burden_estimate_country_expectation, data_frame(
-        burden_estimate_expectation = row_bee$id,
-        country = explode_countries
+      res$burden_estimate_country_expectation <- rbind(
+        res$burden_estimate_country_expectation, data_frame(
+          burden_estimate_expectation = row_bee$id,
+          country = explode_countries
+        )
       )
-    )
+    }
 
-    explode_outcomes <- split_semi(row_csv$outcomes)
-    res$burden_estimate_outcome_expectation <- rbind(
-      res$burden_estimate_outcome_expectation, data_frame(
-        burden_estimate_expectation = row_bee$id,
-        outcome = explode_outcomes
+    if (!is.na(row_csv$outcomes)) {
+      explode_outcomes <- split_semi(row_csv$outcomes)
+      res$burden_estimate_outcome_expectation <- rbind(
+        res$burden_estimate_outcome_expectation, data_frame(
+          burden_estimate_expectation = row_bee$id,
+          outcome = explode_outcomes
+        )
       )
-    )
+    }
   }
 
   # For now, assume none of these are in the db - we'll
   # check and filter in the load stage when we have a con.
 
-  res$burden_estimate_country_expectation$already_exists_db <- FALSE
-  res$burden_estimate_outcome_expectation$already_exists_db <- FALSE
+  if (!is.null(res$burden_estimate_country_expectation)) {
+    res$burden_estimate_country_expectation$already_exists_db <- FALSE
+  }
+
+  if (!is.null(res$burden_estimate_outcome_expectation)) {
+    res$burden_estimate_outcome_expectation$already_exists_db <- FALSE
+  }
 
   # Final duplicate removal
 

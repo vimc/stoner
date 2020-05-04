@@ -136,6 +136,23 @@ test_that("New responsibility - standard", {
   create_responsibilities(test, resp)
   do_test(test)
   test_responsibilities(test, resp)
+})
+
+test_that("New responsibility - no countries or outcomes first", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$countries <- ""
+  resp$outcomes <- ""
+  create_responsibilities(test, resp)
+  do_test(test)
+  test_responsibilities(test, resp)
+  clear_files(test)
+  resp$countries <- "AFG;ZWE"
+  resp$outcomes <- "cases;deaths"
+  create_responsibilities(test, resp)
+  do_test(test)
 
 })
 
