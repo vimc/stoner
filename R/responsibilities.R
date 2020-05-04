@@ -399,10 +399,6 @@ load_responsibilities <- function(transformed_data, con) {
       return(t)
     }
 
-    if (nrow(t$burden_estimate_expectation) == 0) {
-      return(t)
-    }
-
     res <- add_serial_rows("burden_estimate_expectation", t, con)
 
     # Replace fake ids with real ids in
@@ -439,10 +435,8 @@ load_responsibilities <- function(transformed_data, con) {
 
   # Update burden_estimate_country_expectation.burden_estimate_expectation id
   load_exp_countries <- function(t, con) {
+
     if (is.null(t$burden_estimate_country_expectation)) {
-      return(t)
-    }
-    if (nrow(t$burden_estimate_country_expectation) == 0) {
       return(t)
     }
 
