@@ -1,19 +1,13 @@
 context("responsibility")
 
-# Here, we do tests on:
-
-# burden_estimate_expectation.csv
-# Cols: year_min_inclusive, year_max_inclusive
-#       age_min_inclusive, age_max_inclusive
-#       cohort_min_inclusive, cohort_max_inclusive
-#       description, version
-#
-
 create_responsibilities <- function(test, resp, db = FALSE) {
+
   df <- data_frame(
     modelling_group = resp$modelling_group,
+    disease = resp$disease,
     touchstone = resp$touchstone,
     scenario = resp$scenario,
+    scenario_type = resp$scenario_type,
     age_min_inclusive = resp$age_min_inclusive,
     age_max_inclusive = resp$age_max_inclusive,
     cohort_min_inclusive = resp$cohort_min_inclusive,
@@ -21,12 +15,8 @@ create_responsibilities <- function(test, resp, db = FALSE) {
     year_min_inclusive = resp$year_min_inclusive,
     year_max_inclusive = resp$year_max_inclusive,
     countries = resp$countries,
-    outcomes = resp$outcomes,
-    description = resp$description)
-
-  if (nrow(df) > 0) {
-    df$scenario_type <- "standard"
-  }
+    outcomes = resp$outcomes
+  )
 
   write.csv(df,
     file.path(test$path, "meta",
@@ -94,7 +84,7 @@ test_responsibilities <- function(test, resp) {
     expect_true(scen$id %in% res$scenario)
 
     # But all expectations should be in same responsibility set, so
-    # this sohuld end up with 1 entry.
+    # this should end up with 1 entry.
 
     resp_set <- unique(res$responsibility_set)
     expect_length(resp_set, 1)
@@ -106,6 +96,9 @@ test_responsibilities <- function(test, resp) {
 
   }
 
+  resp$description <- paste(
+    resp$disease, resp$modelling_group, resp$scenario_type, sep = ':')
+
   for (i in seq_len(nrow(resp))) {
     test_single(resp[i, ])
   }
@@ -114,8 +107,10 @@ test_responsibilities <- function(test, resp) {
 default_responsibility <- function() {
   data_frame(
     modelling_group = "LAP-elf",
+    disease = "flu",
     touchstone = "nevis-1",
     scenario = "pies",
+    scenario_type = "standard",
     age_min_inclusive = 0,
     age_max_inclusive = 100,
     cohort_min_inclusive = 1900,
@@ -123,8 +118,7 @@ default_responsibility <- function() {
     year_min_inclusive = 2000,
     year_max_inclusive = 2100,
     countries = "AFG;ZWE",
-    outcomes = "cases;deaths",
-    description = "FLU:LAP-elf:standard"
+    outcomes = "cases;deaths"
   )
 }
 
@@ -296,3 +290,19 @@ test_that("Incorrect year_min_inclusive/year_max_inclusive", {
   create_responsibilities(test, resp)
   expect_error(do_test(test), "Responsibility year_min_inclusive must be before year_max_inclusive")
 })
+
+test_that("Multiple modelling groups should have different exepcations", {
+  # Different responsibility_sets should have different expectations - even
+  # if they look the same.
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp2 <- default_responsibility()
+  resp2$modelling_group <- "EBHQ-bunny"
+  resp <- rbind(resp, resp2)
+  create_responsibilities(test, resp)
+  do_test(test)
+  test_responsibilities(test, resp)
+})
+
