@@ -70,7 +70,7 @@ extract_responsibilities <- function(e, path, con) {
         FROM scenario
        WHERE CONCAT(touchstone, '\r', scenario_description) IN %s",
         sql_in(unique(paste(e$responsibilities_csv$touchstone,
-                            e$responsibilities_csv$scenario, sep = 'r')))))
+                            e$responsibilities_csv$scenario, sep = '\r')))))
 
   # Countries can be left blank, in which case they'll be NA in the
   # csv file. Replace with "" so we can query, and look up all the
@@ -121,7 +121,6 @@ extract_responsibilities <- function(e, path, con) {
   # Now look up all expectations that are in the existing responsibility_sets
   # and the responsibility rows too. Initialise with a zero row table, to
   # avoid some issues later...
-
 
   if (nrow(res$resp_responsibility_set) > 0) {
     responsibility_ids <- DBI::dbGetQuery(con, sprintf("
@@ -404,14 +403,30 @@ transform_responsibilities <- function(e, t_so_far) {
 
   for (r in seq_len(nrow(ecsv))) {
     row_csv <- ecsv[r, ]
-    row_bee <- res$burden_estimate_expectation[r, ]
+    exp_id <- res$burden_estimate_expectation$id[match(
+        paste(row_csv$age_max_inclusive,
+              row_csv$age_min_inclusive,
+              row_csv$cohort_max_inclusive,
+              row_csv$cohort_min_inclusive,
+              row_csv$year_max_inclusive,
+              row_csv$year_min_inclusive,
+              row_csv$description,
+              row_csv$version, sep = '\r'),
+        paste(res$burden_estimate_expectation$age_max_inclusive,
+              res$burden_estimate_expectation$age_min_inclusive,
+              res$burden_estimate_expectation$cohort_max_inclusive,
+              res$burden_estimate_expectation$cohort_min_inclusive,
+              res$burden_estimate_expectation$year_max_inclusive,
+              res$burden_estimate_expectation$year_min_inclusive,
+              res$burden_estimate_expectation$description,
+              res$burden_estimate_expectation$version, sep = '\r'))]
 
     if (!is.na(row_csv$countries)) {
       explode_countries <- split_semi(row_csv$countries)
 
       res$burden_estimate_country_expectation <- rbind(
         res$burden_estimate_country_expectation, data_frame(
-          burden_estimate_expectation = row_bee$id,
+          burden_estimate_expectation = exp_id,
           country = explode_countries
         )
       )
@@ -421,7 +436,7 @@ transform_responsibilities <- function(e, t_so_far) {
       explode_outcomes <- split_semi(row_csv$outcomes)
       res$burden_estimate_outcome_expectation <- rbind(
         res$burden_estimate_outcome_expectation, data_frame(
-          burden_estimate_expectation = row_bee$id,
+          burden_estimate_expectation = exp_id,
           outcome = explode_outcomes
         )
       )
@@ -445,7 +460,9 @@ transform_responsibilities <- function(e, t_so_far) {
     res$burden_estimate_outcome_expectation$already_exists_db <- FALSE
   }
 
-  # Final duplicate removal
+  # Final duplicate removal (this will do countries and outcomes, since
+  # we don't need to select particular fields - we want the whole rows
+  # to be non-duplicates.
 
   res <- lapply(res, function(x) x[!duplicated(x), ])
   res

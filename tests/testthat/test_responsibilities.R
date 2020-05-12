@@ -44,6 +44,7 @@ test_responsibilities <- function(test, resp) {
   }
 
   expect_multi <- function(con, table, fields, values, result_field, compare) {
+
     where_clause <- paste(paste(fields, values, sep = "="), collapse = " OR ")
     res <- DBI::dbGetQuery(test$con, sprintf(
       "SELECT %s FROM %s
@@ -147,7 +148,7 @@ test_that("New responsibility - no countries or outcomes first", {
   resp$outcomes <- "cases;deaths"
   create_responsibilities(test, resp)
   do_test(test)
-
+  test_responsibilities(test, resp)
 })
 
 test_that("Add countries and outcomes to existing expectations", {
