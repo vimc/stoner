@@ -277,5 +277,3 @@ empty_dump <- function() {
   dir.create(tmp, showWarnings = FALSE)
   tmp
 }
-
-

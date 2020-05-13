@@ -535,6 +535,7 @@ load_responsibilities <- function(transformed_data, con) {
       return(t)
     }
 
+
     res <- add_serial_rows("burden_estimate_expectation", t, con)
 
     # Replace fake ids with real ids in
