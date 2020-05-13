@@ -118,6 +118,7 @@ extract_responsibilities <- function(e, path, con) {
          sql_in(unique(paste(e$responsibilities_csv$modelling_group,
                              e$responsibilities_csv$touchstone, sep = "\r")))))
 
+
   # Now look up all expectations that are in the existing responsibility_sets
   # and the responsibility rows too. Initialise with a zero row table, to
   # avoid some issues later...
@@ -137,7 +138,8 @@ extract_responsibilities <- function(e, path, con) {
 
     res[['resp_responsibility']] <- DBI::dbGetQuery(con, sprintf("
       SELECT * FROM responsibility
-      WHERE responsibility_set IN %s", sql_in(responsibility_ids$id)))
+      WHERE id IN %s", sql_in(responsibility_ids$id)))
+
   }
 
   # res$resp_expectations being null is awkward later... I'd prefer a
@@ -359,6 +361,9 @@ transform_responsibilities <- function(e, t_so_far) {
   res$burden_estimate_expectation <- assign_serial_ids(
     res$burden_estimate_expectation, e$resp_expectations,
       "burden_estimate_expectation", fields, fields)
+
+  message("BEE ids:")
+  message(paste(res$burden_estimate_expectation$id, collapse=","))
 
   # And now assign the expectation id to res$responsibility, which will
   # be a bit messy - multi-column match between the expectation details

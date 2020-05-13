@@ -123,16 +123,6 @@ default_responsibility <- function() {
   )
 }
 
-test_that("New responsibility - standard", {
-  test <- new_test()
-  standard_disease_touchstones(test)
-  standard_responsibility_support(test)
-  resp <- default_responsibility()
-  create_responsibilities(test, resp)
-  do_test(test)
-  test_responsibilities(test, resp)
-})
-
 test_that("New responsibility - no countries or outcomes first", {
   test <- new_test()
   standard_disease_touchstones(test)
@@ -149,6 +139,38 @@ test_that("New responsibility - no countries or outcomes first", {
   create_responsibilities(test, resp)
   do_test(test)
   test_responsibilities(test, resp)
+})
+
+test_that("New responsibility - standard", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  create_responsibilities(test, resp)
+  do_test(test)
+  test_responsibilities(test, resp)
+})
+
+
+test_that("Database is fast", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  do_test(test)
+  clear_files(test)
+  DBI::dbExecute(test$con, "
+     INSERT INTO scenario
+                 (touchstone, scenario_description)
+          VALUES ('nevis-1', 'pies')")
+
+  res <- DBI::dbGetQuery(test$con,  "
+      SELECT *
+        FROM scenario
+       WHERE CONCAT(touchstone, '\r', scenario_description) IN
+                 ('nevis-1\rpies')")
+
+  expect_equal(nrow(res), 1)
+
 })
 
 test_that("Add countries and outcomes to existing expectations", {
@@ -202,6 +224,9 @@ test_that("Add new responsibility to existing responsibility_set", {
   resp <- default_responsibility()
   create_responsibilities(test, resp)
   do_test(test)
+
+  things <- DBI::dbGetQuery(test$con, "
+    SELECT * FROM burden_estimate_expectation")
 
   clear_files(test)
   resp$scenario <- "hot_chocolate"
