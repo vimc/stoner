@@ -365,6 +365,18 @@ test_that("Incorrect year_min_inclusive/year_max_inclusive", {
   expect_error(do_test(test), "Responsibility year_min_inclusive must be before year_max_inclusive")
 })
 
+test_that("Incorrect disease", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$disease <- "imposter_syndrome"
+  create_responsibilities(test, resp)
+  expect_error(do_test(test), "Unknown responsibility diseases: ")
+})
+
+
+
 test_that("Multiple modelling groups should have different expectations", {
 
   # Different responsibility_sets should have different expectations - even
