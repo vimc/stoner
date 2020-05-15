@@ -25,22 +25,31 @@
 # countries            - eg AFG;BEN;COD
 # outcomes             - eg dalys;hepb_deaths_hcc;hepb_infections_acute
 
-extract_responsibilities_csv <- function() {
+extract_responsibilities_csv <- function(path) {
   csv <- read_meta(path, "responsibilities.csv")
-  if (is.null(csv)) return (csv)
+  if (is.null(csv)) {
+    return(NULL)
+  }
+
+  if (nrow(csv) == 0) {
+    return(csv)
+  }
 
   # It will make things more pleasant to multiplying out
   # any semi-colon separated scenarios here.
 
-  while (any(grepl(csv$scenario), ";")) {
-    first <- which(grepl(csv$scenario, ";"))[1]
+  search_semis <- unlist(lapply(csv$scenario, function(x) grepl(";", x)))
+
+  while (any(search_semis)) {
+    first <- which(search_semis)[1]
     first_row <- csv[first, ]
     items <- split_semi(first_row$scenario)
     csv$scenario[first] <- items[1]
     for (others in 2:length(items)) {
       first_row$scenario <- items[others]
-      first <- rbind(first, first_row)
+      csv <- rbind(csv, first_row)
     }
+    search_semis <- unlist(lapply(csv$scenario, function(x) grepl(";", x)))
   }
 
   # Note that all this multiplying out may have created some invalid

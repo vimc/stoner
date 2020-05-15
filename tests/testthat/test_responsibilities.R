@@ -240,6 +240,22 @@ test_that("Add multiple responsibilities in one go, separate csv lines", {
     SELECT DISTINCT expectations FROM responsibility")$expectations))
 })
 
+test_that("Add multiple responsibilities in one go, same csv line", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$scenario <- "hot_chocolate;pies"
+  create_responsibilities(test, resp)
+  do_test(test)
+  test_responsibilities(test, resp)
+
+  # Additionally check that they used the same expectation.
+
+  expect_equal(1, length(DBI::dbGetQuery(test$con, "
+    SELECT DISTINCT expectations FROM responsibility")$expectations))
+})
+
 #Test below is the only one that fails locally...
 
 test_that("Add new responsibility to existing responsibility_set", {
@@ -349,9 +365,11 @@ test_that("Incorrect year_min_inclusive/year_max_inclusive", {
   expect_error(do_test(test), "Responsibility year_min_inclusive must be before year_max_inclusive")
 })
 
-test_that("Multiple modelling groups should have different exepcations", {
+test_that("Multiple modelling groups should have different expectations", {
+
   # Different responsibility_sets should have different expectations - even
   # if they look the same.
+
   test <- new_test()
   standard_disease_touchstones(test)
   standard_responsibility_support(test)

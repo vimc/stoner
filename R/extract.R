@@ -20,7 +20,7 @@ stone_extract <- function(path, con) {
     scenario_description_csv = read_meta(path, "scenario_description.csv"),
     touchstone_demographic_dataset_csv = read_meta(path, "touchstone_demographic_dataset.csv"),
     touchstone_countries_csv = read_meta(path, "touchstone_country.csv"),
-    responsibilities_csv = read_meta(path, "responsibilities.csv")
+    responsibilities_csv = extract_responsibilities_csv(path)
   )
 
   # Remove any NULLs
