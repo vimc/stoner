@@ -30,19 +30,16 @@ extract_responsibilities_csv <- function() {
   if (is.null(csv)) return (csv)
 
   # It will make things more pleasant to multiplying out
-  # some of the semi-colons into a longer form here.
+  # any semi-colon separated scenarios here.
 
-  for (field in c("scenario", "touchstone")) {
-
-    while (any(grepl(csv[[field]], ";"))) {
-      first <- which(grepl(csv[[field]], ";"))[1]
-      first_row <- csv[first, ]
-      items <- split_semi(first_row[[field]])
-      csv[[field]][first] <- items[1]
-      for (others in 2:length(items)) {
-        first_row[[field]] <- items[others]
-        first <- rbind(first, first_row)
-      }
+  while (any(grepl(csv$scenario), ";")) {
+    first <- which(grepl(csv$scenario, ";"))[1]
+    first_row <- csv[first, ]
+    items <- split_semi(first_row$scenario)
+    csv$scenario[first] <- items[1]
+    for (others in 2:length(items)) {
+      first_row$scenario <- items[others]
+      first <- rbind(first, first_row)
     }
   }
 
@@ -124,21 +121,21 @@ extract_responsibilities <- function(e, path, con) {
   # avoid some issues later...
 
   if (nrow(res$resp_responsibility_set) > 0) {
-    responsibility_ids <- DBI::dbGetQuery(con, sprintf("
-      SELECT id
+    responsibilities <- DBI::dbGetQuery(con, sprintf("
+      SELECT *
         FROM responsibility
        WHERE responsibility_set IN %s", sql_in(res$resp_responsibility_set$id)))
 
-    if (nrow(responsibility_ids) > 0) {
+    if (nrow(responsibilities) > 0) {
       res$resp_expectations <- DBI::dbGetQuery(con, sprintf("
         SELECT *
           FROM burden_estimate_expectation
-         WHERE id IN %s", sql_in(responsibility_ids$id)))
+         WHERE id IN %s", sql_in(responsibilities$expectations)))
     }
 
     res[['resp_responsibility']] <- DBI::dbGetQuery(con, sprintf("
       SELECT * FROM responsibility
-      WHERE id IN %s", sql_in(responsibility_ids$id)))
+      WHERE id IN %s", sql_in(responsibilities$id)))
 
   }
 
@@ -362,12 +359,10 @@ transform_responsibilities <- function(e, t_so_far) {
     res$burden_estimate_expectation, e$resp_expectations,
       "burden_estimate_expectation", fields, fields)
 
-  message("BEE ids:")
-  message(paste(res$burden_estimate_expectation$id, collapse=","))
-
   # And now assign the expectation id to res$responsibility, which will
   # be a bit messy - multi-column match between the expectation details
   # in ecsv, and those we just made in res$burden_estimate_expectation
+
 
   res$responsibility$expectations <-
     res$burden_estimate_expectation$id[match(
@@ -392,6 +387,7 @@ transform_responsibilities <- function(e, t_so_far) {
   # to see if they exist, or assign negative ids otherwise. Using [[' ']]
   # here rather than $ because we have responsibility_set as well as
   # responsibility, and we don't want autocomplete to happen.
+
 
   fields <- c("responsibility_set", "scenario", "expectations")
   res$responsibility <- assign_serial_ids(res[['responsibility']],

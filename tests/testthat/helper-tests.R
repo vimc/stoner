@@ -37,6 +37,16 @@ new_test <- function() {
   DBI::dbExecute(res$con, "DELETE FROM touchstone")
   DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
   DBI::dbExecute(res$con, "DELETE FROM modelling_group")
+
+  # Scramble serial ids
+
+  tables <- c("scenario", "responsibility", "responsibility_set",
+              "burden_estimate_expectation")
+  for (table in seq_along(tables)) {
+    DBI::dbExecute(res$con, sprintf("SELECT setval('%s_id_seq', %s)",
+      tables[table], (1000 * table)))
+  }
+
   res
 }
 
@@ -57,7 +67,9 @@ test_prepare <- function(path, con = NULL) {
                  "responsibility", "burden_estimate_country_expectation",
                  "burden_estimate_outcome_expectation")
 
+  i <- 0
   for (table in db_tables) {
+    i <- i + 1
     csv_file <- read_meta(path, sprintf("db_%s.csv", table))
     if (!is.null(csv_file)) {
       DBI::dbWriteTable(con, table, csv_file, append = TRUE)
@@ -65,7 +77,7 @@ test_prepare <- function(path, con = NULL) {
     if (("id" %in% names(csv_file)) &&
        (is.numeric(csv_file$id))) {
       DBI::dbExecute(con, sprintf("SELECT setval('%s_id_seq', %s)",
-        table, max(as.integer(csv_file$id))))
+        table, (100 * i) + max(as.integer(csv_file$id))))
     }
   }
 }

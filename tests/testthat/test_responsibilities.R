@@ -43,59 +43,106 @@ test_responsibilities <- function(test, resp) {
     res
   }
 
-  expect_multi <- function(con, table, fields, values, result_field, compare) {
+  # Check that there is an entry in "table", where "fields" are equal to
+  # "values", such that the entries in "compare" exist in "result_field"
 
-    where_clause <- paste(paste(fields, values, sep = "="), collapse = " OR ")
-    res <- DBI::dbGetQuery(test$con, sprintf(
-      "SELECT %s FROM %s
-        WHERE %s ORDER BY %s", result_field, table, where_clause, result_field))
-    res <- paste(res[[result_field]], collapse = ";")
-    expect_equal(res, compare)
+  expect_multi <- function(con, table, field, value, result_field, compare) {
+    res <- DBI::dbGetQuery(con, sprintf("
+      SELECT DISTINCT %s FROM %s
+               WHERE %s = '%s'
+                 AND %s IN %s", result_field, table,
+                                field, value,
+                                result_field,
+                                sql_in(compare)))
+
+    expect_true(all(compare == res$country))
+    res
   }
 
-  test_single <- function(resp) {
+  test_single <- function(line) {
 
-    expect_present(test$con, "modelling_group", "id", resp$modelling_group)
-    res <- expect_present(test$con, "touchstone", "id", resp$touchstone)
-    expect_present(test$con, "touchstone_name", "id", res$touchstone_name)
-    expect_present(test$con, "scenario_description", "id", resp$scenario)
-    scen <- expect_present(test$con, "scenario",
-                           c("scenario_description", "touchstone"),
-                           c(resp$scenario, resp$touchstone), "AND")
+    # Here, line is one line in the responsibilities.csv file, which
+    # might actually represent multiple responsibilities, since we can
+    # have semi-colonned scenarios on one line
 
-    res <- expect_present(test$con, "burden_estimate_expectation",
-      c("age_min_inclusive", "age_max_inclusive", "cohort_min_inclusive",
-        "cohort_max_inclusive", "year_min_inclusive", "year_max_inclusive",
-        "description"),
-      c(resp$age_min_inclusive, resp$age_max_inclusive,
-        resp$cohort_min_inclusive, resp$cohort_max_inclusive,
-        resp$year_min_inclusive, resp$year_max_inclusive,
-        resp$description), "AND")
+    # Some basic existence tests first. Does the moelling group exist...
 
-    expect_multi(test$con, "burden_estimate_country_expectation",
-            "burden_estimate_expectation", res$id, "country", resp$countries)
+    expect_present(test$con, "modelling_group", "id", line$modelling_group)
 
-    expect_multi(test$con, "burden_estimate_outcome_expectation",
-            "burden_estimate_expectation", res$id, "outcome", resp$outcomes)
+    # Does the touchstone exist, and have a matching touchstone_name.
 
-    # May well be multiple responsibilities with same expectations, so
-    # scenarios may differ, but we'll test all of them eventually.
+    tsinfo <- expect_present(test$con, "touchstone", "id", line$touchstone)
+    expect_present(test$con, "touchstone_name", "id", tsinfo$touchstone_name)
 
-    res <- expect_present(test$con, "responsibility", "expectations", res$id)
-    expect_true(scen$id %in% res$scenario)
+    # There should be exactly one responsibility_set
+    # for this (modelling_group, touchstone)
 
-    # But all expectations should be in same responsibility set, so
-    # this should end up with 1 entry.
+    resp_set <- expect_present(test$con, "responsibility_set",
+                               c("modelling_group", "touchstone"),
+                               c(line$modelling_group, line$touchstone), "AND")
+    expect_equal(nrow(resp_set), 1)
 
-    resp_set <- unique(res$responsibility_set)
-    expect_length(resp_set, 1)
+    # We may have multiple semi-colon separate scenarios...
+    # Expand and check all exist.
 
-    expect_present(test$con, "responsibility_set",
-            c("id", "modelling_group", "touchstone"),
-            c(resp_set, resp$modelling_group, resp$touchstone),
-            "AND")
+    line_scenarios <- unique(split_semi(line$scenario))
+    scenario_descs <- expect_present(test$con, "scenario_description", "id",
+                                    line_scenarios)
+    expect_equal(nrow(scenario_descs), length(line_scenarios))
+
+    # Retrieve numerical ids for those scenarios
+
+    scenarios <- expect_present(test$con, "scenario", "scenario_description",
+                                scenario_descs$id)
+
+    expect_equal(nrow(scenarios), nrow(scenario_descs))
+
+    # Should be one line for each responsibility, matching
+    # responsibility_set and scenario
+
+    for (scenario in scenarios$id) {
+      resp <- expect_present(test$con, "responsibility",
+                             c("responsibility_set", "scenario"),
+                             c(resp_set$id, scenario), "AND")
+
+      expect_equal(nrow(resp), 1)
+
+      # Lookup the expectations (test there's 1, although that
+      # is covered by db schema), and test all the properties
+      # match what our csv says
+
+      expec <- expect_present(test$con, "burden_estimate_expectation",
+                              "id", resp$expectations)
+      expect_equal(expec$age_max_inclusive, line$age_max_inclusive)
+      expect_equal(expec$age_min_inclusive, line$age_min_inclusive)
+      expect_equal(expec$year_max_inclusive, line$year_max_inclusive)
+      expect_equal(expec$year_min_inclusive, line$year_min_inclusive)
+      expect_equal(expec$cohort_max_inclusive, line$cohort_max_inclusive)
+      expect_equal(expec$cohort_min_inclusive, line$cohort_min_inclusive)
+      expect_equal(expec$description, line$description)
+      expect_equal(expec$version, tsinfo$touchstone_name)
+
+      # Test countries and outcomes also match
+
+      countries <- unique(split_semi(line$countries))
+      expect_multi(test$con, "burden_estimate_country_expectation",
+                   "burden_estimate_expectation", resp$expectations,
+                   "country", countries)
+
+      outcomes <- unique(split_semi(line$outcomes))
+      expect_multi(test$con, "burden_estimate_outcome_expectation",
+                   "burden_estimate_expectation", resp$expectations,
+                   "outcome", outcomes)
+
+    }
+
+    invisible()
 
   }
+
+  # Build the description entry here, then test
+  # that every line in the responsibilities_csv file is
+  # represented...
 
   resp$description <- paste(
     resp$disease, resp$modelling_group, resp$scenario_type, sep = ':')
@@ -151,28 +198,6 @@ test_that("New responsibility - standard", {
   test_responsibilities(test, resp)
 })
 
-
-test_that("Database is fast", {
-  test <- new_test()
-  standard_disease_touchstones(test)
-  standard_responsibility_support(test)
-  do_test(test)
-  clear_files(test)
-  DBI::dbExecute(test$con, "
-     INSERT INTO scenario
-                 (touchstone, scenario_description)
-          VALUES ('nevis-1', 'pies')")
-
-  res <- DBI::dbGetQuery(test$con,  "
-      SELECT *
-        FROM scenario
-       WHERE CONCAT(touchstone, '\r', scenario_description) IN
-                 ('nevis-1\rpies')")
-
-  expect_equal(nrow(res), 1)
-
-})
-
 test_that("Add countries and outcomes to existing expectations", {
   test <- new_test()
   standard_disease_touchstones(test)
@@ -218,15 +243,19 @@ test_that("Add multiple responsibilities in one go, separate csv lines", {
 #Test below is the only one that fails locally...
 
 test_that("Add new responsibility to existing responsibility_set", {
+
+  # Here, we're going to add some standard responsibilities,
+  # and then do exactly the same again but with two scenarios
+  # instead of one. We should end up with the same expectation
+  # reused, but different responsibilities, within the same
+  # responsibility_set
+
   test <- new_test()
   standard_disease_touchstones(test)
   standard_responsibility_support(test)
   resp <- default_responsibility()
   create_responsibilities(test, resp)
   do_test(test)
-
-  things <- DBI::dbGetQuery(test$con, "
-    SELECT * FROM burden_estimate_expectation")
 
   clear_files(test)
   resp$scenario <- "hot_chocolate"
@@ -238,6 +267,7 @@ test_that("Add new responsibility to existing responsibility_set", {
   test_responsibilities(test, resp)
 
   # Additionally check that they used the same expectation.
+  # Because it should.
 
   expect_equal(1, length(DBI::dbGetQuery(test$con, "
     SELECT DISTINCT expectations FROM responsibility")$expectations))
