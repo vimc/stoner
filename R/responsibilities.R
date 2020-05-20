@@ -491,12 +491,6 @@ transform_responsibilities <- function(e, t_so_far) {
     t_rset <- t[['responsibility_set']]
     e_ts <- e[['touchstone']]
 
-    # Perhaps there are no responsibility_sets at all...
-
-    if (null_or_empty(t_rset)) {
-      return()
-    }
-
     # If responsibility_set already exists in the db, we're not
     # going to add it again, so nothing else to test here.
 
@@ -528,10 +522,6 @@ transform_responsibilities <- function(e, t_so_far) {
     t_resp <- t[['responsibility']]
     e_rset <- e[['resp_responsibility_set']]
     e_ts <- e[['touchstone']]
-
-    if (null_or_empty(t_resp)) {
-      return()
-    }
 
     # Here, we're interested in testing only responsibilities added where
     # the responsibility_set already exists. If it doesn't, then the test
