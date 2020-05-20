@@ -170,6 +170,16 @@ default_responsibility <- function() {
   )
 }
 
+test_that("New responsibility - standard", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  create_responsibilities(test, resp)
+  do_test(test)
+  test_responsibilities(test, resp)
+})
+
 test_that("New responsibility - no countries or outcomes first", {
   test <- new_test()
   standard_disease_touchstones(test)
@@ -183,16 +193,6 @@ test_that("New responsibility - no countries or outcomes first", {
   clear_files(test)
   resp$countries <- "AFG;ZWE"
   resp$outcomes <- "cases;deaths"
-  create_responsibilities(test, resp)
-  do_test(test)
-  test_responsibilities(test, resp)
-})
-
-test_that("New responsibility - standard", {
-  test <- new_test()
-  standard_disease_touchstones(test)
-  standard_responsibility_support(test)
-  resp <- default_responsibility()
   create_responsibilities(test, resp)
   do_test(test)
   test_responsibilities(test, resp)
@@ -392,5 +392,52 @@ test_that("Multiple modelling groups should have different expectations", {
   create_responsibilities(test, resp)
   do_test(test)
   test_responsibilities(test, resp)
+})
+
+test_that("Import previous dump to give same state", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  resp$scenario <- "hot_chocolate;pies"
+  create_responsibilities(test, resp)
+  do_test(test)
+  test_responsibilities(test, resp)
+  dump
+})
+
+test_that("New responsibility_set - touchstone finished", {
+  # Set up standard touchstones, make one finished,
+  # then try to add brand new responsibility info to it.
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  do_test(test)
+  DBI::dbExecute(test$con, "UPDATE touchstone SET status = 'finished'")
+  clear_files(test)
+  resp <- default_responsibility()
+  create_responsibilities(test, resp)
+  expect_error(do_test(test),
+    "Error - attempt to add responsibility_set for non in-prep\ touchstones:")
+})
+
+test_that("New responsibility - touchstone finished", {
+  # This time, set up touchstones including a responsibility set,
+  # set the touchstone to finished, and try adding another responsibility
+  # to the responsibility_set that already exists.
+
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  create_responsibilities(test, resp)
+  do_test(test)
+  DBI::dbExecute(test$con, "UPDATE touchstone SET status = 'finished'")
+  clear_files(test)
+  resp <- default_responsibility()
+  resp$scenario <- "pies"
+  create_responsibilities(test, resp)
+  expect_error(do_test(test),
+    "Error - attempt to add responsibility for non in-prep touchstones:")
 })
 

@@ -6,6 +6,18 @@ read_csv <- function(...) {
   utils::read.csv(stringsAsFactors = FALSE, ...)
 }
 
+null_or_empty <- function(t) {
+  if (is.null(t)) {
+    return(TRUE)
+  }
+
+  if (nrow(t) == 0) {
+    return(TRUE)
+  }
+
+  FALSE
+}
+
 read_meta <- function(path, filename) {
 
   meta_exists <- function(path, filename) {
@@ -143,7 +155,8 @@ copy_unique_flag <- function(extracted_data, tab) {
   if (tab %in% names(extracted_data) &&
       paste0(tab, "_csv") %in% names(extracted_data)) {
     t[[tab]] <- extracted_data[[paste0(tab, "_csv")]]
-    t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]], extracted_data[[tab]])
+    t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]],
+                                                 extracted_data[[tab]])
   }
   t
 }
@@ -260,9 +273,3 @@ check_faulty_serials <- function(con) {
     message("Tested faulty serials - OK!")
   }
 }
-
-# mash_id <- function(needle, haystack, fields, target_field = 'id') {
-#   needle[['mash_the_id']] <- mash(needle, fields)
-#   haystack[['mash_the_id']] <- mash(haystack, fields)
-#   haystack[[target_field]][match(needle[['mash_the_id']], haystack[['mash_the_id']])]
-# }

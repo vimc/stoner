@@ -27,12 +27,8 @@
 
 extract_responsibilities_csv <- function(path) {
   csv <- read_meta(path, "responsibilities.csv")
-  if (is.null(csv)) {
+  if (null_or_empty(csv)) {
     return(NULL)
-  }
-
-  if (nrow(csv) == 0) {
-    return(csv)
   }
 
   # It will make things more pleasant to multiplying out
@@ -63,8 +59,9 @@ extract_responsibilities <- function(e, path, con) {
 
   # Deal with responsibilities csv being non-existent or empty
 
-  if (is.null(e$responsibilities_csv)) return(NULL)
-  if (nrow(e$responsibilities_csv) == 0) return(NULL)
+  if (null_or_empty(e$responsibilities_csv)) {
+    return(list())
+  }
 
   res <- list()
 
@@ -170,8 +167,10 @@ extract_responsibilities <- function(e, path, con) {
 
 test_extract_responsibilities <- function(e) {
   ecsv <- e$responsibilities_csv
-  if (is.null(ecsv)) return(NULL)
-  if (nrow(ecsv) == 0) return(NULL)
+
+  if (null_or_empty(ecsv)) {
+    return(NULL)
+  }
 
   testthat::expect_equal(sort(names(ecsv)),
     c("age_max_inclusive", "age_min_inclusive", "cohort_max_inclusive",
@@ -246,8 +245,10 @@ test_extract_responsibilities <- function(e) {
 transform_responsibilities <- function(e, t_so_far) {
 
   ecsv <- e$responsibilities_csv
-  if (is.null(ecsv)) return(list())
-  if (nrow(ecsv) == 0) return(list())
+
+  if (null_or_empty(ecsv)) {
+    return(list())
+  }
 
   res <- list()
 
@@ -475,11 +476,104 @@ transform_responsibilities <- function(e, t_so_far) {
   # to be non-duplicates.
 
   res <- lapply(res, function(x) x[!duplicated(x), ])
+
+  #########################################################################
+
+  # Now some transform tests, which we'll do here while we have access to
+  # the extracted data too.
+
+  ##########################################################################
+  # Test that we don't try to create a responsibility_set again a touchstone
+  # that is not "in-preparation".
+
+  test_resp_set_touchstones <- function(t) {
+
+    t_rset <- t[['responsibility_set']]
+    e_ts <- e[['touchstone']]
+
+    # Perhaps there are no responsibility_sets at all...
+
+    if (null_or_empty(t_rset)) {
+      return()
+    }
+
+    # If responsibility_set already exists in the db, we're not
+    # going to add it again, so nothing else to test here.
+
+    t_rset <- t_rset[!t_rset$already_exists_db, ]
+
+    if (null_or_empty(t_rset)) {
+      return()
+    }
+
+    # So if there are responsibility sets to add, look up the
+    # touchstone status...
+
+    t_rset$status <- e_ts$status[match(t_rset$touchstone, e_ts$id)]
+    non_prep <- unique(t_rset$touchstone[t_rset$status != 'in-preparation'])
+
+    if (length(non_prep) > 0) {
+      stop(sprintf(
+        "Error - attempt to add responsibility_set for non in-prep touchstones: %s",
+        paste(non_prep, collapse = ", ")))
+    }
+  }
+
+  ############################################################################
+  # Test that we don't try to add a responsibility to an existing
+  # responsibility_set, when the touchstone for that responsibility_set is
+  # not in-preparation
+
+  test_resp_touchstones <- function(t) {
+    t_resp <- t[['responsibility']]
+    e_rset <- e[['resp_responsibility_set']]
+    e_ts <- e[['touchstone']]
+
+    if (null_or_empty(t_resp)) {
+      return()
+    }
+
+    # Here, we're interested in testing only responsibilities added where
+    # the responsibility_set already exists. If it doesn't, then the test
+    # for the responsibility_set will fail before we get here.
+
+    t_resp <- t_resp[t_resp$id > 0, ]
+
+    if (null_or_empty(t_resp)) {
+      return()
+    }
+
+    # Now lookup responsibility->responsibility_set->touchstone->status
+    # and stop if any are not "in-preparation"
+
+    t_resp$touchstone <- e_rset$touchstone[match(t_resp$responsibility_set,
+                                                 e_rset$id)]
+    t_resp$status <- e_ts$status[match(t_resp$touchstone, e_ts$id)]
+
+    non_prep <- unique(t_resp$touchstone[t_resp$status != 'in-preparation'])
+
+    if (length(non_prep) > 0) {
+      stop(sprintf(
+        "Error - attempt to add responsibility for non in-prep touchstones: %s",
+        paste(non_prep, collapse = ", ")))
+    }
+  }
+
+
+
+  ##################################################################
+  # List of responsibilities tests next - just we need
+  # the extracted data to test touchstones are in the right status
+  # to be able to update them.
+
+  test_resp_set_touchstones(res)
+  test_resp_touchstones(res)
+
   res
 }
 
 test_transform_responsibilities <- function(t) {
-  # Nothing useful to do here.
+  # Nothing left to do here
 }
 
 ###############################################################################
