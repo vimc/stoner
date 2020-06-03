@@ -337,8 +337,11 @@ transform_responsibilities <- function(e, t_so_far) {
 
   ecsv$description <- paste(ecsv$disease, ecsv$modelling_group,
                             ecsv$scenario_type, sep = ':')
-  ecsv$version <- e$touchstone$touchstone_name[match(
-    ecsv$touchstone, e$touchstone$id)]
+
+  all_touchstones <- rbind(e$touchstone, e$touchstone_csv)
+
+  ecsv$version <- all_touchstones$touchstone_name[
+    match(ecsv$touchstone, all_touchstones$id)]
 
   res$burden_estimate_expectation <- ecsv[,
     c("age_max_inclusive", "age_min_inclusive", "cohort_max_inclusive",
@@ -489,7 +492,7 @@ transform_responsibilities <- function(e, t_so_far) {
   test_resp_set_touchstones <- function(t) {
 
     t_rset <- t[['responsibility_set']]
-    e_ts <- e[['touchstone']]
+    e_ts <- rbind(e[['touchstone']], e[['touchstone_csv']])
 
     # If responsibility_set already exists in the db, we're not
     # going to add it again, so nothing else to test here.
@@ -521,7 +524,7 @@ transform_responsibilities <- function(e, t_so_far) {
   test_resp_touchstones <- function(t) {
     t_resp <- t[['responsibility']]
     e_rset <- e[['resp_responsibility_set']]
-    e_ts <- e[['touchstone']]
+    e_ts <- rbind(e[['touchstone']], e[['touchstone_csv']])
 
     # Here, we're interested in testing only responsibilities added where
     # the responsibility_set already exists. If it doesn't, then the test

@@ -4,7 +4,7 @@ test_path <- function(context, path) {
 
 cache <- new.env(parent = emptyenv())
 
-new_test <- function() {
+new_test <- function(clear_db = TRUE, clear_files = TRUE) {
   # Create stoner_test/meta in a temporary dir,
   # delete any existing files within it.
   # Also get new db connection, and
@@ -17,34 +17,38 @@ new_test <- function() {
   inner <- file.path(res$path, "meta")
   dir.create(inner, showWarnings = FALSE)
   files <- dir(inner, full.names = TRUE)
-  file.remove(files)
+  if (clear_files) {
+    file.remove(files)
+  }
   cache$con <- cache$con %||% test_db_connection()
   res$con <- cache$con
-  DBI::dbExecute(res$con, "DELETE FROM touchstone_demographic_dataset")
-  DBI::dbExecute(res$con, "DELETE FROM demographic_dataset")
-  DBI::dbExecute(res$con, "DELETE FROM demographic_statistic_type")
-  DBI::dbExecute(res$con, "DELETE FROM demographic_variant")
-  DBI::dbExecute(res$con, "DELETE FROM demographic_source")
-  DBI::dbExecute(res$con, "DELETE FROM touchstone_country")
-  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_country_expectation")
-  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_outcome_expectation")
-  DBI::dbExecute(res$con, "DELETE FROM responsibility")
-  DBI::dbExecute(res$con, "DELETE FROM burden_estimate_expectation")
-  DBI::dbExecute(res$con, "DELETE FROM responsibility_set")
-  DBI::dbExecute(res$con, "DELETE FROM scenario")
-  DBI::dbExecute(res$con, "DELETE FROM scenario_description")
-  DBI::dbExecute(res$con, "DELETE FROM disease")
-  DBI::dbExecute(res$con, "DELETE FROM touchstone")
-  DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
-  DBI::dbExecute(res$con, "DELETE FROM modelling_group")
+  if (clear_db) {
+    DBI::dbExecute(res$con, "DELETE FROM touchstone_demographic_dataset")
+    DBI::dbExecute(res$con, "DELETE FROM demographic_dataset")
+    DBI::dbExecute(res$con, "DELETE FROM demographic_statistic_type")
+    DBI::dbExecute(res$con, "DELETE FROM demographic_variant")
+    DBI::dbExecute(res$con, "DELETE FROM demographic_source")
+    DBI::dbExecute(res$con, "DELETE FROM touchstone_country")
+    DBI::dbExecute(res$con, "DELETE FROM burden_estimate_country_expectation")
+    DBI::dbExecute(res$con, "DELETE FROM burden_estimate_outcome_expectation")
+    DBI::dbExecute(res$con, "DELETE FROM responsibility")
+    DBI::dbExecute(res$con, "DELETE FROM burden_estimate_expectation")
+    DBI::dbExecute(res$con, "DELETE FROM responsibility_set")
+    DBI::dbExecute(res$con, "DELETE FROM scenario")
+    DBI::dbExecute(res$con, "DELETE FROM scenario_description")
+    DBI::dbExecute(res$con, "DELETE FROM disease")
+    DBI::dbExecute(res$con, "DELETE FROM touchstone")
+    DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
+    DBI::dbExecute(res$con, "DELETE FROM modelling_group")
 
-  # Scramble serial ids
+    # Scramble serial ids
 
-  tables <- c("scenario", "responsibility", "responsibility_set",
-              "burden_estimate_expectation")
-  for (table in seq_along(tables)) {
-    DBI::dbExecute(res$con, sprintf("SELECT setval('%s_id_seq', %s)",
-      tables[table], (1000 * table)))
+    tables <- c("scenario", "responsibility", "responsibility_set",
+                "burden_estimate_expectation")
+    for (table in seq_along(tables)) {
+      DBI::dbExecute(res$con, sprintf("SELECT setval('%s_id_seq', %s)",
+        tables[table], (1000 * table)))
+    }
   }
 
   res
@@ -241,20 +245,28 @@ standard_demography <- function(test, make_source = TRUE,
        type_id = type, dset_id = dset)
 }
 
-standard_disease_touchstones <- function(test, db = TRUE) {
+standard_disease <- function(test) {
   create_disease_csv(test$path, "flu", "Elf flu", db = TRUE)
+}
+
+standard_disease_touchstones <- function(test, db = TRUE) {
+  standard_disease(test)
   create_touchstone_csv(test$path, "nevis", 1, db = db)
   create_touchstone_name_csv(test$path, "nevis", db = db)
 }
 
-standard_responsibility_support <- function(test, db = TRUE) {
+standard_modelling_groups <- function(test) {
   create_modelling_groups(test$path,
-    c("LAP-elf", "EBHQ-bunny"),
-    c("Lapland Epi Centre", "EBHQ"),
-    c("Santa Claus", "Easter Bunny"),
-    c("Lapland Epi (chief-elf)", "Easter Bunny Head Quarters (bunny-minion)"),
-    c(NA, NA),
-    c(NA, NA))
+                          c("LAP-elf", "EBHQ-bunny"),
+                          c("Lapland Epi Centre", "EBHQ"),
+                          c("Santa Claus", "Easter Bunny"),
+                          c("Lapland Epi (chief-elf)", "Easter Bunny Head Quarters (bunny-minion)"),
+                          c(NA, NA),
+                          c(NA, NA))
+}
+
+standard_responsibility_support <- function(test, db = TRUE) {
+  standard_modelling_groups(test)
 
   create_scen_desc_csv(test$path,
     c("hot_chocolate", "pies"),

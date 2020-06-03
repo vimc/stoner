@@ -441,3 +441,37 @@ test_that("New responsibility - touchstone finished", {
     "Error - attempt to add responsibility for non in-prep touchstones:")
 })
 
+test_that("Test dump can be reimported", {
+
+  # First create a standard import
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  create_responsibilities(test, resp)
+  do_test(test)
+
+  # Now delete the original files, and do a dump from the db.
+  clear_files(test)
+  stoner::stone_dump(test$con, "nevis-1", file.path(test$path, "meta"), FALSE)
+
+  # Start a fresh db connection, (but don't delete the files we just dumped,
+  # if the temporary path returned is the same as it was before...)
+
+  test2 <- new_test(clear_files = FALSE)
+  test2$path <- test$path
+
+  # Only need disease and modelling group to already exist; the rest we'll
+  # restore from the dump
+
+  standard_disease(test2)
+  standard_modelling_groups(test2)
+  do_test(test2)
+
+  # We expect the data in the db to be correct
+
+  test_responsibilities(test2, resp)
+
+})
+
+
