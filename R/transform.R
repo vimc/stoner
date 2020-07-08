@@ -18,6 +18,8 @@ stone_transform <- function(extracted_data) {
          transform_touchstone_country(extracted_data)
   )
 
+  t <- c(t, transform_responsibilities(extracted_data, t))
+
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).
 

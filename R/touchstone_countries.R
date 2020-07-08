@@ -81,6 +81,10 @@ transform_touchstone_country <- function(e) {
     disease = expand_diseases,
     country = expand_countries)
 
+  touchstone_country <- touchstone_country[!duplicated(
+    paste(touchstone_country$touchstone, touchstone_country$disease,
+          touchstone_country$country, sep = "\r")), ]
+
   touchstone_country <- assign_serial_ids(touchstone_country,
                                           e$db_touchstone_country,
                                           "touchstone_country")

@@ -6,7 +6,24 @@ read_csv <- function(...) {
   utils::read.csv(stringsAsFactors = FALSE, ...)
 }
 
+null_or_empty <- function(t) {
+  if (is.null(t)) {
+    return(TRUE)
+  }
+
+  if (nrow(t) == 0) {
+    return(TRUE)
+  }
+
+  FALSE
+}
+
 read_meta <- function(path, filename) {
+
+  meta_exists <- function(path, filename) {
+    file.exists(file.path(path, "meta", filename))
+  }
+
   if (meta_exists(path, filename)) {
     thefile <- file.path(path, "meta", filename)
     header <- utils::read.csv(thefile, nrows = 1, stringsAsFactors = FALSE)
@@ -30,21 +47,8 @@ read_meta <- function(path, filename) {
   }
 }
 
-
-meta_exists <- function(path, filename) {
-  file.exists(file.path(path, "meta", filename))
-}
-
 data_frame <- function(...) {
   data.frame(stringsAsFactors = FALSE, ...)
-}
-
-sql_in_char <- function(strings) {
-  sprintf("('%s')", paste(strings, collapse = "','"))
-}
-
-sql_in_numeric <- function(numerics) {
-  sprintf("(%s)", paste(numerics, collapse = ","))
 }
 
 split_by <- function(x, by) {
@@ -57,6 +61,15 @@ split_semi <- function(x) {
 }
 
 sql_in <- function(things) {
+
+  sql_in_char <- function(strings) {
+    sprintf("('%s')", paste(strings, collapse = "','"))
+  }
+
+  sql_in_numeric <- function(numerics) {
+    sprintf("(%s)", paste(numerics, collapse = ","))
+  }
+
   if (is.character(things)) {
     sql_in_char(things)
   } else if (is.numeric(things)) {
@@ -69,7 +82,7 @@ sql_in <- function(things) {
 db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") {
   sql <- sprintf("SELECT %s FROM %s", select, table)
   if (!is.null(id_field)) {
-    sql <- sprintf("%s WHERE %s IN %s", sql, id_field, sql_in(id_values))
+    sql <- sprintf("%s WHERE %s IN %s", sql, id_field, sql_in(unique(id_values)))
   }
   DBI::dbGetQuery(con, sql)
 }
@@ -90,15 +103,16 @@ mash <- function(tab, fields = NULL) {
 # Return copy of the new table with id column filled in:
 # -1, -2 ... for new rows, or a positive integer for rows
 # that already exist in the target table.
+#
+# Allow duplicates, assigning the same serial ids to them.
 
 assign_serial_ids <- function(new_table, db_table, table_name,
                               mash_fields_csv = NULL,
                               mash_fields_db = NULL) {
 
   new_table$mash <- mash(new_table, mash_fields_csv)
-  if (any(duplicated(new_table$mash))) {
-    stop(sprintf("Duplicated entries in new %s rows", table_name))
-  }
+
+  non_dup_table <- new_table[!duplicated(new_table$mash), ]
 
   if (is.null(mash_fields_db)) {
     mash_fields_db <- sort(names(db_table))
@@ -106,14 +120,18 @@ assign_serial_ids <- function(new_table, db_table, table_name,
   }
 
   db_table$mash <- mash(db_table, mash_fields_db)
-  new_table$id <- db_table$id[match(new_table$mash, db_table$mash)]
-  new_table$mash <- NULL
+  non_dup_table$id <- db_table$id[match(non_dup_table$mash, db_table$mash)]
 
-  which_nas <- which(is.na(new_table$id))
-  new_table$already_exists_db <- !is.na(new_table$id)
-  new_table$id[which_nas] <- seq(from = -1, by = -1,
+  which_nas <- which(is.na(non_dup_table$id))
+  non_dup_table$already_exists_db <- !is.na(non_dup_table$id)
+  non_dup_table$id[which_nas] <- seq(from = -1, by = -1,
                                  length.out = length(which_nas))
+  new_table$id <- non_dup_table$id[match(new_table$mash, non_dup_table$mash)]
+  new_table$already_exists_db <-
+    non_dup_table$already_exists_db[match(new_table$mash, non_dup_table$mash)]
+  new_table$mash <- NULL
   new_table
+
 }
 
 # Return a vector of logicals, of whether each row in table1
@@ -137,15 +155,33 @@ copy_unique_flag <- function(extracted_data, tab) {
   if (tab %in% names(extracted_data) &&
       paste0(tab, "_csv") %in% names(extracted_data)) {
     t[[tab]] <- extracted_data[[paste0(tab, "_csv")]]
-    t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]], extracted_data[[tab]])
+    t[[tab]]$already_exists_db <- line_occurs_in(t[[tab]],
+                                                 extracted_data[[tab]])
   }
   t
 }
 
-# For rows that contain a serial "id" column. Add all the rows with a negative id,
-# letting the db choose the idea. Move the given ids to "fake_ids", and record the
-# ids the database chose as 'id'. Return a list of the added rows (with the
-# id fields), and a list of the rows that are edits.
+# For tables with no id, set the already_exists_db flag
+
+set_unique_flag <- function(con, data, db_table) {
+  # Do a reasonably small query of combinations of fields.
+
+
+  sql <- paste0("SELECT CONCAT(",
+          paste(names(data), collapse = ",'\r',"), ") AS mash FROM ", db_table)
+
+  data$mash <- mash(data)
+  db_mashes <- DBI::dbGetQuery(con, sql)$mash
+
+  data$already_exists_db <- data$mash %in% db_mashes
+  data$mash <- NULL
+  data
+}
+
+# For rows that contain a serial "id" column. Add all the rows with a negative
+# id, letting the db choose the id. Move the given ids to "fake_ids", and
+# record the ids the database chose as 'id'. Return a list of the added rows
+# (with the id fields), and a list of the rows that are edits.
 
 add_serial_rows <- function(table_name, transformed_data, con, id_field = "id",
                             fake_id_field = "fake_ids") {
@@ -173,6 +209,10 @@ add_serial_rows <- function(table_name, transformed_data, con, id_field = "id",
   list(adds = to_add, edits = to_edit)
 }
 
+# For tables that have a unique id that is not serial, (eg,
+# touchstone, touchstone_name, sccnario_description), add the rows
+# that don't already exist.
+
 add_non_serial_rows <- function(table_name, transformed_data, con,
                                 id_field = "id") {
   if (!table_name %in% names(transformed_data)) {
@@ -180,7 +220,13 @@ add_non_serial_rows <- function(table_name, transformed_data, con,
   }
 
   data <- transformed_data[[table_name]]
+
+  # This is... SELECT [id_field] FROM [table_name]
+  #            WHERE [id_field] IN data[[id_field]]
+
   ids_found <- db_get(con, table_name, id_field, data[[id_field]], id_field)$id
+
+  # These are the rows that have no matching id in the database.
   to_add <- data[!data[[id_field]] %in% ids_found, ]
 
   if (nrow(to_add) > 0) {

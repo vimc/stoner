@@ -28,3 +28,8 @@ test_that("assign_serial_id works", {
   expect_equal(csv2$id, c(-2, -1, 1))
   expect_equal(csv2$already_exists_db, c(FALSE, FALSE, TRUE))
 })
+
+test_that("null_or_empty works", {
+  expect_true(null_or_empty(NULL))
+  expect_true(null_or_empty(mtcars[mtcars$mpg>99999, ]))
+})

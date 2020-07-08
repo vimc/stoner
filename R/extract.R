@@ -19,7 +19,8 @@ stone_extract <- function(path, con) {
     touchstone_name_csv = read_meta(path, "touchstone_name.csv"),
     scenario_description_csv = read_meta(path, "scenario_description.csv"),
     touchstone_demographic_dataset_csv = read_meta(path, "touchstone_demographic_dataset.csv"),
-    touchstone_countries_csv = read_meta(path, "touchstone_country.csv")
+    touchstone_countries_csv = read_meta(path, "touchstone_country.csv"),
+    responsibilities_csv = extract_responsibilities_csv(path)
   )
 
   # Remove any NULLs
@@ -32,6 +33,7 @@ stone_extract <- function(path, con) {
     extract_touchstone(e, path, con),
     extract_scenario_description(e, path, con),
     extract_touchstone_demographic_dataset(e, path, con),
-    extract_touchstone_country(e, path, con)
+    extract_touchstone_country(e, path, con),
+    extract_responsibilities(e, path, con)
   )
 }
