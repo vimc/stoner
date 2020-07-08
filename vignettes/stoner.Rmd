@@ -403,13 +403,13 @@ knitr::kable(data_frame(
 
 ### The test functions
 
-Firstly, have your `test-extract` call `stoner::stone_test_extract(extracted_data)`, 
+Firstly, have your `test-extract` call `stoner::stone_test_extract(extracted_data)`,
 and `test-transform` call `stoner::stone_test_transform(transformed_data)` for the
-built-in tests to be called. Most likely, there is nothing else useful you can 
+built-in tests to be called. Most likely, there is nothing else useful you can
 write for these tests, if your extract and transform functions are simply calling
 Stoner's.
 
-Possibly the best approach to tests is to write the `test-queries` function for 
+Possibly the best approach to tests is to write the `test-queries` function for
 dettl in the following form:-
 
 <p style="font-size:0.6em">
@@ -451,7 +451,7 @@ testthat::test_that("Expected rows added", {
 </p>
 
 For this though, you will have to have prior knowledge about how many of the
-rows in your various CSV files exist already in the database, and how many 
+rows in your various CSV files exist already in the database, and how many
 you are expecting will need to be created.
 
 ## Using stoner as a standalone package (without Dettl)
