@@ -17,7 +17,7 @@ body .main-container {
   margin-right: auto;
 }
 body {
-max-width: 800px !important;
+  max-width: 800px !important;
   text-align: justify;
   font-family: "Calibri", Arial, sans-serif;
   font-size: 1em;
@@ -401,6 +401,58 @@ knitr::kable(data_frame(
   * Finally, the responsibility_table has a flag `is_open`, which Stoner
     will set to TRUE as default.
 
+### The test functions
+
+Firstly, have your `test-extract` call `stoner::stone_test_extract(extracted_data)`, 
+and `test-transform` call `stoner::stone_test_transform(transformed_data)` for the
+built-in tests to be called. Most likely, there is nothing else useful you can 
+write for these tests, if your extract and transform functions are simply calling
+Stoner's.
+
+Possibly the best approach to tests is to write the `test-queries` function for 
+dettl in the following form:-
+
+<p style="font-size:0.6em">
+```
+test_queries <- function(con) { list(
+  tn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone")[1,1],
+  tddn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_demographic_dataset")[1,1],
+  tcn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_country")[1,1],
+  sdn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario_description")[1,1],
+  sn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario")[1,1],
+  been = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_expectation")[1,1],
+  beoen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_outcome_expectation")[1,1],
+  becen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_country_expectation")[1,1],
+  rsn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility_set")[1,1],
+  rn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility")[1,1]
+)}
+```
+</p>
+
+and a `test_load.R` that tests how many rows have been added, for example...
+
+<p style="font-size:0.6em">
+```
+context("load")
+
+testthat::test_that("Expected rows added", {
+  expect_equal(after$tn, before$tn + 1)
+  expect_equal(after$tddn, before$tddn + 23)
+  expect_equal(after$tcn, before$tcn + 946)
+  expect_equal(after$sdn, before$sdn)
+  expect_equal(after$sn, before$sn + 67)
+  expect_equal(after$been, before$been + 26)
+  expect_equal(after$beoen, before$beoen + 128)
+  expect_equal(after$becen, before$becen + 2137)
+  expect_equal(after$rsn, before$rsn + 17)
+  expect_equal(after$rn, before$rn + 127)
+})
+```
+</p>
+
+For this though, you will have to have prior knowledge about how many of the
+rows in your various CSV files exist already in the database, and how many 
+you are expecting will need to be created.
 
 ## Using stoner as a standalone package (without Dettl)
 
