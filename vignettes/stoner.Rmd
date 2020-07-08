@@ -46,26 +46,26 @@ data_frame <- function(...) {
 ```
 ## Introduction
 
-`stoner` is a package to help with various tasks involving VIMC 
+`stoner` is a package to help with various tasks involving VIMC
 touchstones. Its purpose is evolving somewhat with the needs of the VIMC
 project; stoner is becoming an umbrella to keep these needs expressed in
 a tested package. As such, it can be used in a number of modes.
 
 ## Touchstone creation as a dettl helper
 
-Creation of touchstones is quite a common process, although new touchstones 
+Creation of touchstones is quite a common process, although new touchstones
 will often be based on a previous one. However, creating the touchstone
-involves additions to various related tables, so the code to create 
-touchstones is not always trivial to review. 
+involves additions to various related tables, so the code to create
+touchstones is not always trivial to review.
 
 [Dettl](https://github.com/vimc/dettl) has somewhat helped here, encouraging
 separation of extract, transform and load stages of an import, with testing of
-each stage, forcing the code for touchstone creation to be written in a way 
+each stage, forcing the code for touchstone creation to be written in a way
 that separates those concerns and makes reviewing easier. Furthermore, it has
 often been possible to review a new import as a diff to a previously reviewed
 import.
 
-Stoner takes this a step further by allowing the touchstone creation to be 
+Stoner takes this a step further by allowing the touchstone creation to be
 expressed in csv meta-data, providing function calls for the extract, transform
 and load stages.
 
@@ -82,14 +82,14 @@ line functions for a start.
 ```{r echo = FALSE, results = 'asis'}
 
 knitr::kable(data_frame(
-  `Dettl function` = c("extract(path, con)", 
-                       "test-extract(extracted_data)", 
-                       "transform(extracted_data)", 
-                       "test-transform(transformed_data)", 
+  `Dettl function` = c("extract(path, con)",
+                       "test-extract(extracted_data)",
+                       "transform(extracted_data)",
+                       "test-transform(transformed_data)",
                        "load(transformed_data, con)"),
-  `Stoner call` = c("stoner::stone_extract(path, con)", 
+  `Stoner call` = c("stoner::stone_extract(path, con)",
                     "stoner::stone_test_extract(extracted_data)",
-                    "stoner::stone_transform(extracted_data)", 
+                    "stoner::stone_transform(extracted_data)",
                     "stoner::stone_test_transform(transformed_data)",
                     "stoner::stone_load(transformed_data, con)")))
 ```
@@ -101,24 +101,24 @@ dettl's functions to the stoner handlers, passing the same arguments.
 
 The minimal example on its own will do nothing and exit cleanly. To make
 stoner do some useful work, we write csv files in a folder called `meta` within
-the import folder. These csv files should be thought of a specification of 
-"how you would like things to be" - rather than "what you want stoner to do". 
-If rows in your csv file identically exist in the database, stoner will use 
+the import folder. These csv files should be thought of a specification of
+"how you would like things to be" - rather than "what you want stoner to do".
+If rows in your csv file identically exist in the database, stoner will use
 the existing ones and not add duplicates. If the rows in your csv are provably
-absent from the database, stoner will add new ones. 
+absent from the database, stoner will add new ones.
 
 If stoner detects in some way that the items already exist, but not all csv
-data matches with those items, then some other factors come into play that 
-affect whether stoner can update the database content or not. Imports are 
-*incremental* to the database, yet on some occasions, it is useful to be able 
+data matches with those items, then some other factors come into play that
+affect whether stoner can update the database content or not. Imports are
+*incremental* to the database, yet on some occasions, it is useful to be able
 to do in-place edits of touchstones that are still in preparation, for example.
 
-Following are the csv files that stoner will recognise, and their columns and 
+Following are the csv files that stoner will recognise, and their columns and
 formats, and notes on the requirements. Any failure to meet the requirements
 will cause an abort with an error message.
 
 You do not have to provide all of the csvs, only ones where you expect
-something to change, but you may find it good practice to "over-specify", 
+something to change, but you may find it good practice to "over-specify",
 since the result is that Stoner will check the database tables are all as you
 expect. It also may be helpful to be able to compare complete touchstone
 definitions (ie, sets of stoner csv files) as a diff between two imports.
@@ -134,17 +134,17 @@ version that we colloquially refer to as 'a touchstone'.
 knitr::kable(data_frame(
   `Column` = c("id", "description", "comment"),
 
-  `Example` = c("`201910gavi`", 
-                "`October 2019 touchstone`", 
+  `Example` = c("`201910gavi`",
+                "`October 2019 touchstone`",
                 "`Standard GAVI`")))
 ```
 
-* If the `id` is not found in the `touchstone_name` db table, then the row is 
+* If the `id` is not found in the `touchstone_name` db table, then the row is
   added.
-* If the `id` is found, and `description` and `comment` match, then the row 
-  in the csv is ignored. 
-* If, a `touchstone_name` with that `id` exists, but `description` and/or 
-  `comment` differ from the original, then the fields in the database are updated 
+* If the `id` is found, and `description` and `comment` match, then the row
+  in the csv is ignored.
+* If, a `touchstone_name` with that `id` exists, but `description` and/or
+  `comment` differ from the original, then the fields in the database are updated
   in-place if either:
   * There are no versions of that touchstone yet, OR
   * **All** existing versions of that touchstone have status `in-preparation`.
@@ -164,8 +164,8 @@ estimates are all attached to one of these versioned touchstones.
 knitr::kable(data_frame(
   `Column` = c("id", "touchstone_name", "version", "status", "description", "comment"),
 
-  `Example` = c("`201910gavi-1`", 
-                "`201910gavi`", 
+  `Example` = c("`201910gavi-1`",
+                "`201910gavi`",
                 "`1`",
                 "`in-preparation`, `open` or `finished`",
                 "`201910gavi (version 1)`",
@@ -186,7 +186,7 @@ knitr::kable(data_frame(
 
 #### touchstone_countries.csv
 
-The `touchstone_country` table in the database should really be called 
+The `touchstone_country` table in the database should really be called
 `touchstone_country_disease`. For a given touchstone, it records which
 countries should be returned when groups download their demographic data.
 This might differ from the countries a group is expected to model for a
@@ -214,14 +214,14 @@ knitr::kable(data_frame(
 * All diseases must be found in the `id` field of the `disease` table. Stoner
   cannot currently add new diseases.
 * All countries must be found in the `id` column of the `country` table. Stoner
-  cannot currently add new countries, but the `country` table should be 
+  cannot currently add new countries, but the `country` table should be
   complete.
 * TO-DO: It looks like we can do this to touchstones that are not in-prep.
 
 #### touchstone_demographic_dataset.csv
 
-The touchstone_demographic_dataset table determines which 
-demographic_statistic_types from which demographic_source will be used when 
+The touchstone_demographic_dataset table determines which
+demographic_statistic_types from which demographic_source will be used when
 providing demographic data for a particular touchstone. Generally, there will
 be a new demographic source each year, when either the IGME child mortality data,
 or the UNWPP population data, or both get updated. Because these updates happen
@@ -234,8 +234,8 @@ hence this table.
 knitr::kable(data_frame(
   `Column` = c("demographic_source", "demographic_statistic_type", "touchstone"),
 
-  `Example` = c("`dds-201910_2`", 
-                "`int_pop`", 
+  `Example` = c("`dds-201910_2`",
+                "`int_pop`",
                 "`201910gavi-1`")))
 ```
 
@@ -255,20 +255,20 @@ knitr::kable(data_frame(
 knitr::kable(data_frame(
   `Column` = c("id", "description", "disease"),
 
-  `Example` = c("`mena-routine-no-vaccination`", 
-                "`Description free text`", 
+  `Example` = c("`mena-routine-no-vaccination`",
+                "`Description free text`",
                 "`MenA`")))
 ```
 
-* `id` has conventially been in lower-case, and in the form 
-  `disease-coverage_type`. 
-* If the scenario_description `id` does not exist in the database, stoner 
+* `id` has conventially been in lower-case, and in the form
+  `disease-coverage_type`.
+* If the scenario_description `id` does not exist in the database, stoner
   will add the new scenario_description.
 * If the scenario_description `id` exists, and all other columns match the
   existing values too, then the row is ignored.
   If the `id` exists, but other columns differ, then:
-  * If any `scenario` exists that refers to this `scenario_description`, 
-    and the touchstone associated with that scenario is not in the 
+  * If any `scenario` exists that refers to this `scenario_description`,
+    and the touchstone associated with that scenario is not in the
     `in-preparation` state, then the import fails with an error.
   * **However**, on occasion it has been desirable to change the description
     of a scenario while a touchstone referring to it is open. To overide the
@@ -277,7 +277,7 @@ knitr::kable(data_frame(
     &nbsp; &nbsp;```stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)```
     </p>
 
-* `disease` must currently be one of `Cholera`, `HepB`, `Hib`, `HPV`, `JE`, 
+* `disease` must currently be one of `Cholera`, `HepB`, `Hib`, `HPV`, `JE`,
   `Measles`, `MenA`, `PCV`, `Rota`, `Rubella`, `Typhoid` or `YF`. These match
   the `id` column of the `disease` table. Stoner cannot currently add new
   diseases; this is an admin task done separately.
@@ -323,28 +323,28 @@ knitr::kable(data_frame(
   whereas the maximum cohort will be the last year in which people were born,
   which will be the 0-year olds in 2100.
 * All countries must be found in the `id` column of the `country` table. Stoner
-  cannot currently add new countries, but the `country` table should be 
+  cannot currently add new countries, but the `country` table should be
   complete.
 * All outcomes must be found in the `code` column of the burden_outcome` table.
   Stoner cannot currently add new burden outcomes.
 
-  The `responsibilities.csv` file may cause changes to the `scenario`, 
-  `responsibility_set`, `responsibility`, `burden_estimate_expectation`, 
+  The `responsibilities.csv` file may cause changes to the `scenario`,
+  `responsibility_set`, `responsibility`, `burden_estimate_expectation`,
   `burden_estimate_country_expectation` and `burden_estimate_outcome_expectation`
-  tables. Where possible, existing rows are re-used, rather then creating 
+  tables. Where possible, existing rows are re-used, rather then creating
   duplicates.
 
 * **scenario table**
   * A `scenario` is defined by `scenario_description` and `touchstone`. If
-    combinations of those exist in `responsibilities_csv` that aren't in the 
+    combinations of those exist in `responsibilities_csv` that aren't in the
     `scenario` database table, then new rows get added.
-  * scenarios can only be added currently when the touchstone has 
+  * scenarios can only be added currently when the touchstone has
     status `in-prep`.
 * **responsibility_set table**
   * `responsibility_set` is defined by `modelling_group` and `touchstone`. If
     combinations exist in `responsibilities_csv` that aren't in the database,
     they get created.
-  * responsibility_sets can only be added currently when the touchstone has 
+  * responsibility_sets can only be added currently when the touchstone has
     status `in-prep`.
 * **burden_estimate_expectations table**
   * This table contains the minimum and maximum ages, cohorts and years, for a
@@ -355,35 +355,35 @@ knitr::kable(data_frame(
     has been defined as `standard`, allowing the same expectation definition to
     be shared for different scenarios (for a particular group and disease).
   * Stoner treats rows as already existing, if they match all of those fields
-    exactly. If a matching row can be found, then that 
+    exactly. If a matching row can be found, then that
     burden_estimate_expectation is reused, and its id is noted for the other
     tables below. Otherwise a new one is created, which will have a newly
-    create id. Hence, it is possible for multiple responsibilities to have the 
+    create id. Hence, it is possible for multiple responsibilities to have the
     same expectations - see below.
   * Stoner cannot remove or edit existing burden_estimate_expectations.
-  * Expectations can only be added currently when the touchstone has status 
+  * Expectations can only be added currently when the touchstone has status
     `in-prep`.
 * **burden_estimate_country_expectation table**
-  * For a particular `burden_estimate_expectation`, the rows in the 
+  * For a particular `burden_estimate_expectation`, the rows in the
     `burden_estimate_country_expectation` table list the countries
     for which we are expecting estimates to be uploaded by a particular group,
     for a particular disease, and a particular scenario.
-  * The `burden_estimate_expectation` in this table is a numerical id, 
+  * The `burden_estimate_expectation` in this table is a numerical id,
     referring to either a newly created expectation as a result of your import,
     or an expectation that previous existed and matched the details exactly.
-  * The table is increment-only; Stoner will add any (expectation, country) 
-    pairs from your responsibilities.csv file that aren't in the table, and 
-    ignore those that are. Stoner cannot remove countries from the 
+  * The table is increment-only; Stoner will add any (expectation, country)
+    pairs from your responsibilities.csv file that aren't in the table, and
+    ignore those that are. Stoner cannot remove countries from the
     expectations.
 * **burden_estimate_outcome_expectation table**
-  * Similar to the country expectations, the rows in the 
+  * Similar to the country expectations, the rows in the
     `burden_estimate_outcome_expectation` table list the expected outcomes that
     a group will upload for a particular scenario and disease.
   * The burden outcomes are listed in the `burden_outcome` table - but Stoner
     cannot change the contents of that table at present.
-  * Again, this table is increment-only; Stoner will add any (expectation, 
-    country) pairs from your responsibilities.csv file that aren't in the 
-    table, and ignore those that are. Stoner cannot remove countries from the 
+  * Again, this table is increment-only; Stoner will add any (expectation,
+    country) pairs from your responsibilities.csv file that aren't in the
+    table, and ignore those that are. Stoner cannot remove countries from the
     expectations.
 * **responsibility table**
   * Finally, having created all the necessary rows, the responsibility table
@@ -391,9 +391,9 @@ knitr::kable(data_frame(
     * The responsibility_set it belongs to
     * The scenario it refers to
     * The burden_estimate_expectation (which in turn is linked to by the
-      burden_estimate_outcome_expectation and 
+      burden_estimate_outcome_expectation and
       burden_estimate_country_expectation tables)
-  * Responsibility rows can only be added when the touchstone has status 
+  * Responsibility rows can only be added when the touchstone has status
     `in-prep`.
   * The responsibility table also records `current_burden_estimate_set` and
     `current_stochastic_burden_estimate_set` - both of which are nullable,
@@ -411,5 +411,3 @@ a touchstone, and an output path, will produce csv files of everything connected
 with that touchstone, in the form stoner would use to import, as described above.
 This might be useful if you want to download an existing touchstone, edit some
 details (including the touchstone id), and upload a modified version.
-
-
