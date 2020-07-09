@@ -64,7 +64,7 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
   }
 
   if (class(e_tdd_csv$demographic_source) != "character") {
-    stop(paste0("demographic_source in touchstone_demographic_dataset.csv ",
+    stop(paste("demographic_source in touchstone_demographic_dataset.csv",
                 "must be character"))
   }
 

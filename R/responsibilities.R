@@ -200,7 +200,7 @@ test_extract_responsibilities <- function(e) {
 
   if (any(ecsv$cohort_min_inclusive >
           ecsv$cohort_max_inclusive)) {
-    stop(paste0("Responsibility cohort_min_inclusive must be before ",
+    stop(paste("Responsibility cohort_min_inclusive must be before",
                 "cohort_max_inclusive"))
   }
 
