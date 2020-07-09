@@ -26,7 +26,6 @@
 # outcomes             - eg dalys;hepb_deaths_hcc;hepb_infections_acute
 
 extract_responsibilities_csv <- function(path) {
-
   csv <- read_meta(path, "responsibilities.csv")
   if (null_or_empty(csv)) {
     return(NULL)
@@ -245,6 +244,7 @@ test_extract_responsibilities <- function(e) {
 ###############################################################################
 
 transform_responsibilities <- function(e, t_so_far) {
+
   ecsv <- e$responsibilities_csv
 
   if (null_or_empty(ecsv)) {

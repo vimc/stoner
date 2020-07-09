@@ -274,6 +274,7 @@ standard_modelling_groups <- function(test) {
 
 standard_responsibility_support <- function(test, db = TRUE) {
   standard_modelling_groups(test)
+
   create_scen_type_csv(test$path, "type1", "The Default Type", db = TRUE)
   create_scen_desc_csv(test$path,
     c("hot_chocolate", "pies"),
@@ -283,7 +284,6 @@ standard_responsibility_support <- function(test, db = TRUE) {
 }
 
 test_run_import <- function(path, con = NULL, ...) {
-
   e <- stone_extract(path, con)
   stone_test_extract(e)
   t <- stone_transform(e)

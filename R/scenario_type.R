@@ -1,5 +1,4 @@
 extract_scenario_type <- function(e, path, con) {
-
   if ((!is.null(e$scenario_type_csv)) || (!is.null(e$scenario_description_csv))) {
     list(
       scenario_type_csv = e$scenario_type_csv,
@@ -7,9 +6,7 @@ extract_scenario_type <- function(e, path, con) {
       scenario_type = db_get(con, "scenario_type", "id",
         unique(c(e$scenario_type_csv$id,
                  e$scenario_description_csv$scenario_type)))
-
     )
-
   } else {
     list()
   }

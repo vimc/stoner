@@ -1,7 +1,5 @@
 extract_scenario_description <- function(e, path, con) {
-
   if (!is.null(e$scenario_description_csv)) {
-
     list(
       scenario_description_csv = e$scenario_description_csv,
 
@@ -99,7 +97,8 @@ load_scenario_description <- function(transformed_data, con,
       DBI::dbExecute(con, "
         UPDATE scenario_description
            SET description = $1, disease = $2,
-               scenario_type = $3 WHERE id = $4",
+               scenario_type = $3
+         WHERE id = $4",
          list(to_edit$description[r],
               to_edit$disease[r],
               to_edit$scenario_type[r],
