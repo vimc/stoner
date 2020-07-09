@@ -1,5 +1,7 @@
 extract_scenario_description <- function(e, path, con) {
+
   if (!is.null(e$scenario_description_csv)) {
+
     list(
       scenario_description_csv = e$scenario_description_csv,
 
@@ -19,17 +21,21 @@ extract_scenario_description <- function(e, path, con) {
 
 test_extract_scenario_description <- function(e) {
 
-  testthat::expect_true(all(unique(e[['scenario_description_csv']]$disease)
-                  %in% e[['disease']]$id),
+  testthat::expect_true(all(unique(e$scenario_description_csv$disease)
+                        %in% e$disease$id),
               label = "Diseases in scenario_description are valid")
+
+  testthat::expect_true(all(unique(e$scenario_description_csv$scenario_type)
+                        %in% c(e$scenario_type_csv$id, e$scenario_type$id)),
+              label = "Scenario Types in scenario_description are valid")
 
   testthat::expect_false(any(duplicated(e[['scenario_description_csv']]$id)),
                label = "Duplicate ids in scenario_description.csv")
 
-  if (!is.null(e[['scenario_description_csv']])) {
+  if (!is.null(e$scenario_description_csv)) {
     testthat::expect_true(
-      identical(sort(names(e[['scenario_description_csv']])),
-                sort(c("id", "description", "disease"))),
+      identical(sort(names(e$scenario_description_csv)),
+                sort(c("id", "description", "disease", "scenario_type"))),
       label = "Column names correct in scenario_description.csv")
   }
 }
@@ -92,9 +98,11 @@ load_scenario_description <- function(transformed_data, con,
 
       DBI::dbExecute(con, "
         UPDATE scenario_description
-           SET description = $1, disease = $2 WHERE id = $3",
+           SET description = $1, disease = $2,
+               scenario_type = $3 WHERE id = $4",
          list(to_edit$description[r],
               to_edit$disease[r],
+              to_edit$scenario_type[r],
               to_edit$id[r]))
     } else {
 

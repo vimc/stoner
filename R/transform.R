@@ -12,7 +12,9 @@
 #'   database table names, and containing rows to be added to that table.
 
 stone_transform <- function(extracted_data) {
+
   t <- c(transform_touchstone(extracted_data),
+         transform_scenario_type(extracted_data),
          transform_scenario_description(extracted_data),
          transform_touchstone_demographic_dataset(extracted_data),
          transform_touchstone_country(extracted_data)

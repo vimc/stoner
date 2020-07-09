@@ -26,6 +26,7 @@
 # outcomes             - eg dalys;hepb_deaths_hcc;hepb_infections_acute
 
 extract_responsibilities_csv <- function(path) {
+
   csv <- read_meta(path, "responsibilities.csv")
   if (null_or_empty(csv)) {
     return(NULL)
@@ -64,6 +65,7 @@ extract_responsibilities <- function(e, path, con) {
   }
 
   res <- list()
+  res$responsibilities_csv = e$responsibilities_csv
 
   # Look up all scenario data (touchstone, scenario_description)
   # that match those in the csv, so we know to not add them again.
@@ -93,7 +95,7 @@ extract_responsibilities <- function(e, path, con) {
   # Replace with "" and lookup.
 
   e$responsibilities_csv$outcomes[is.na(e$responsibilities_csv$outcomes)] <- ""
-    all_outcomes <- unique(unlist(lapply(e$responsibilities_csv$outcomes,
+  all_outcomes <- unique(unlist(lapply(e$responsibilities_csv$outcomes,
                                           split_semi)))
 
   res$resp_outcomes <- DBI::dbGetQuery(con, sprintf("
@@ -243,7 +245,6 @@ test_extract_responsibilities <- function(e) {
 ###############################################################################
 
 transform_responsibilities <- function(e, t_so_far) {
-
   ecsv <- e$responsibilities_csv
 
   if (null_or_empty(ecsv)) {

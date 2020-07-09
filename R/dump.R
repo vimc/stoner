@@ -65,6 +65,27 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
 
   #########################################################################
 
+  dump_scenario_type <- function() {
+
+    # Note that focal_coverage_set info is not dumped, since
+    # Stoner can't currently do anything with it.
+
+    csv_scen_types <- DBI::dbGetQuery(con, "
+      SELECT DISTINCT scenario_type AS id, name
+        FROM scenario
+        JOIN scenario_description
+          ON scenario.scenario_description = scenario_description.id
+        JOIN scenario_type
+          ON scenario_description.scenario_type = scenario_type.id
+       WHERE touchstone = $1", touchstone)
+
+    if (nrow(csv_scen_types) > 0) {
+      write_csv(csv_scen_types, file.path(path, "scenario_type.csv"))
+    }
+  }
+
+  #########################################################################
+
   dump_scenario_description <- function() {
 
     # Note that focal_coverage_set info is not dumped, since
@@ -72,7 +93,7 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
 
     csv_scenarios <- DBI::dbGetQuery(con, "
       SELECT DISTINCT scenario_description AS id,
-                      description, disease
+                      description, disease, scenario_type
         FROM scenario
         JOIN scenario_description
           ON scenario.scenario_description = scenario_description.id
@@ -303,6 +324,7 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
   #########################################################################
 
   dump_touchstone()
+  dump_scenario_type()
   dump_scenario_description()
   dump_touchstone_countries()
   dump_touchstone_demographic_datasets()

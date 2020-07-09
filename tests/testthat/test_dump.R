@@ -36,8 +36,8 @@ initialise_with_fake_resps <- function(test, no_resps = FALSE,
   create_ts_dds(test$path, "nevis-1", "S1", "T1")
   create_disease_csv(test$path, c("flu", "piles"),
                                 c("Elf flu", "Elf piles"), db = TRUE)
-
-  create_scen_desc_csv(test$path, "pies", "campaign", "flu")
+  create_scen_type_csv(test$path, "default", "Default Scenario Type")
+  create_scen_desc_csv(test$path, "pies", "campaign", "flu", "default")
   create_ts_country_csv(test$path, "nevis-1", c("flu", "piles"), "AFG;ZWE")
 
   do_test(test)
@@ -176,6 +176,19 @@ test_dump_touchstone_country <- function(path) {
   expect_equal(data$disease, "flu;piles")
   expect_equal(data$country, "AFG;ZWE")
   expect_equal(data$touchstone, "nevis-1")
+}
+
+# Test that a dumped scenario_description.csv file matches the
+# fake data written using create_scen_desc_csv in initialise_with_fake_resps
+# above.
+
+test_dump_scenario_type <- function(path) {
+  f <- file.path(path, "scenario_type.csv")
+  expect_true(file.exists(f))
+  data <- read_csv(f)
+  expect_equal(nrow(data), 1)
+  expect_equal(data$id, "default")
+  expect_equal(data$name, "Default Scenario Type")
 }
 
 # Test that a dumped scenario_description.csv file matches the
@@ -355,21 +368,23 @@ test_responsibilities_helper <- function(no_countries, no_outcomes) {
   test_dump_touchstone_name(tmp)
   test_dump_touchstone_dds(tmp)
   test_dump_touchstone_country(tmp)
+  test_dump_scenario_type(tmp)
   test_dump_scenario_description(tmp)
   test_dump_responsibilities(tmp, no_countries, no_outcomes)
-  expect_equal(length(list.files(tmp)), 6)
+  expect_equal(length(list.files(tmp)), 7)
   stoner::stone_dump(test$con, "nevis-1", tmp, TRUE)
   test_dump_touchstone(tmp)
   test_dump_touchstone_name(tmp)
   test_dump_touchstone_dds(tmp)
   test_dump_touchstone_country(tmp)
+  test_dump_scenario_type(tmp)
   test_dump_scenario_description(tmp)
   test_dump_responsibilities(tmp, no_countries, no_outcomes)
   test_dump_db_demographic_source(tmp)
   test_dump_db_demographic_statistic_type(tmp)
   test_dump_db_modelling_group(tmp)
   test_dump_db_disease(tmp)
-  expect_equal(length(list.files(tmp)), 10)
+  expect_equal(length(list.files(tmp)), 11)
 }
 
 # Now test with responsibilities and expectations, but no
