@@ -1,3 +1,7 @@
+## 0.0.7
+
+Support for scenario_type.csv metadata
+
 ## 0.0.6
 
 Support for responsibilities.csv metadata
