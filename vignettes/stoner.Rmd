@@ -267,15 +267,15 @@ knitr::kable(data_frame(
   * If there are no scenario_descriptions referring to this `id`, the `name`
     in the database table for this id will be updated.
   * If there are scenario_descriptions referring to this `id`, then stoner
-    looks up the status of any touchstones that refer to that 
+    looks up the status of any touchstones that refer to that
     scenario_description, and will only perform the update if all are in the
     `in-preparation` state.
-  * **However**, you can overide this requirement by using this in your load 
+  * **However**, you can overide this requirement by using this in your load
     phase:-
     <br/><p style="font-size:0.8em">
     &nbsp; &nbsp;```stoner::stone_load(transformed_data, con, allow_overwrite_scenario_type = TRUE)```
     </p>
-    
+
 
 #### scenario_description.csv
 
@@ -311,7 +311,7 @@ knitr::kable(data_frame(
   `Measles`, `MenA`, `PCV`, `Rota`, `Rubella`, `Typhoid` or `YF`. These match
   the `id` column of the `disease` table. Stoner cannot currently add new
   diseases; this is an admin task done separately.
-* `scenario_type` must be the `id` of a `scenario_type`, either in the 
+* `scenario_type` must be the `id` of a `scenario_type`, either in the
   database table, or in a `scenario_type.csv` as part of your import.
 
 #### responsibilities.csv
