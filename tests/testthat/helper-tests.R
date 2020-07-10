@@ -36,6 +36,7 @@ new_test <- function(clear_db = TRUE, clear_files = TRUE) {
     DBI::dbExecute(res$con, "DELETE FROM responsibility_set")
     DBI::dbExecute(res$con, "DELETE FROM scenario")
     DBI::dbExecute(res$con, "DELETE FROM scenario_description")
+    DBI::dbExecute(res$con, "DELETE FROM scenario_type")
     DBI::dbExecute(res$con, "DELETE FROM disease")
     DBI::dbExecute(res$con, "DELETE FROM touchstone")
     DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
@@ -61,7 +62,7 @@ clear_files <- function(test) {
 
 test_prepare <- function(path, con = NULL) {
   db_tables <- c("touchstone_name", "touchstone", "disease",
-                 "scenario_description", "scenario",
+                 "scenario_type", "scenario_description", "scenario",
                  "demographic_variant", "demographic_source",
                  "demographic_statistic_type",
                  "demographic_dataset",
@@ -169,9 +170,15 @@ create_scenario_csv <- function(path, ids, touchstones, sds, db = FALSE) {
     file.path(path, "meta", db_file(db, "scenario.csv")))
 }
 
-create_scen_desc_csv <- function(path, ids, descs, diseases, db = FALSE) {
+create_scen_type_csv <- function(path, ids, names, db = FALSE) {
   write_csv(data_frame(
-    id = ids, description = descs, disease = diseases),
+    id = ids, name = names),
+    file.path(path, "meta", db_file(db, "scenario_type.csv")))
+}
+
+create_scen_desc_csv <- function(path, ids, descs, diseases, types, db = FALSE) {
+  write_csv(data_frame(
+    id = ids, description = descs, disease = diseases, scenario_type = types),
     file.path(path, "meta", db_file(db, "scenario_description.csv")))
 }
 
@@ -268,9 +275,10 @@ standard_modelling_groups <- function(test) {
 standard_responsibility_support <- function(test, db = TRUE) {
   standard_modelling_groups(test)
 
+  create_scen_type_csv(test$path, "type1", "The Default Type", db = TRUE)
   create_scen_desc_csv(test$path,
     c("hot_chocolate", "pies"),
-    c("campaign", "routine"), "flu", db = TRUE)
+    c("campaign", "routine"), "flu", "type1", db = TRUE)
 
   create_scenario_csv(test$path, 1, "nevis-1", "hot_chocolate", db = TRUE)
 }

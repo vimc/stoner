@@ -10,14 +10,20 @@
 #' @param allow_overwrite_scenario_description If TRUE, then stoner will overwrite
 #' rows in the scenario_description table with rows from the CSV file, (matching id,
 #' different description or disease), even if there are open or finished touchstones
-#' that use this description. See the advanced section of the vignette for discussion
-#' on why this may be necessary.
+#' that use this description.
+#' @param allow_overwrite_scenario_type If TRUE, then stoner will overwrite
+#' rows in the scenario_type table with rows from the CSV file, (matching id,
+#' different name), even if there are open or finished touchstones
+#' that use this description.
 #'
 
 stone_load <- function(transformed_data, con,
-                       allow_overwrite_scenario_description = FALSE) {
+                       allow_overwrite_scenario_description = FALSE,
+                       allow_overwrite_scenario_type = FALSE) {
   load_touchstone_name(transformed_data, con)
   load_touchstone(transformed_data, con)
+  load_scenario_type(transformed_data, con,
+                     allow_overwrite_scenario_type)
   load_scenario_description(transformed_data, con,
                             allow_overwrite_scenario_description)
   load_touchstone_demographic_dataset(transformed_data, con)

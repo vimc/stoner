@@ -64,6 +64,7 @@ extract_responsibilities <- function(e, path, con) {
   }
 
   res <- list()
+  res$responsibilities_csv = e$responsibilities_csv
 
   # Look up all scenario data (touchstone, scenario_description)
   # that match those in the csv, so we know to not add them again.
@@ -93,7 +94,7 @@ extract_responsibilities <- function(e, path, con) {
   # Replace with "" and lookup.
 
   e$responsibilities_csv$outcomes[is.na(e$responsibilities_csv$outcomes)] <- ""
-    all_outcomes <- unique(unlist(lapply(e$responsibilities_csv$outcomes,
+  all_outcomes <- unique(unlist(lapply(e$responsibilities_csv$outcomes,
                                           split_semi)))
 
   res$resp_outcomes <- DBI::dbGetQuery(con, sprintf("
@@ -199,7 +200,7 @@ test_extract_responsibilities <- function(e) {
 
   if (any(ecsv$cohort_min_inclusive >
           ecsv$cohort_max_inclusive)) {
-    stop(paste0("Responsibility cohort_min_inclusive must be before ",
+    stop(paste("Responsibility cohort_min_inclusive must be before",
                 "cohort_max_inclusive"))
   }
 

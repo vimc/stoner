@@ -3,7 +3,7 @@
 extract_touchstone_country <- function(e, path, con) {
   csv <- e$touchstone_countries_csv
   if (is.null(csv)) {
-    return(e)
+    return(list())
   }
 
   if (!setequal(names(csv), c("touchstone", "disease", "country"))) {
@@ -13,12 +13,13 @@ extract_touchstone_country <- function(e, path, con) {
   disease <- unlist(lapply(csv$disease, split_semi))
   country <- unlist(lapply(csv$country, split_semi))
 
-  c(e, list(
+  list(
+    touchstone_countries_csv = csv,
     tc_disease = db_get(con, "disease", "id", unique(disease)),
     tc_country = db_get(con, "country", "id", unique(country)),
     db_touchstone_country = db_get(con, "touchstone_country", "touchstone",
                                    unique(csv$touchstone))
-  ))
+  )
 }
 
 test_extract_touchstone_country <- function(e) {

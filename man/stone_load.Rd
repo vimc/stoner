@@ -5,7 +5,8 @@
 \title{Load touchstone data to database}
 \usage{
 stone_load(transformed_data, con,
-  allow_overwrite_scenario_description = FALSE)
+  allow_overwrite_scenario_description = FALSE,
+  allow_overwrite_scenario_type = FALSE)
 }
 \arguments{
 \item{transformed_data}{The transformed data from the transform stage. In a
@@ -16,8 +17,12 @@ form which adheres to the DB schema.}
 \item{allow_overwrite_scenario_description}{If TRUE, then stoner will overwrite
 rows in the scenario_description table with rows from the CSV file, (matching id,
 different description or disease), even if there are open or finished touchstones
-that use this description. See the advanced section of the vignette for discussion
-on why this may be necessary.}
+that use this description.}
+
+\item{allow_overwrite_scenario_type}{If TRUE, then stoner will overwrite
+rows in the scenario_type table with rows from the CSV file, (matching id,
+different name), even if there are open or finished touchstones
+that use this description.}
 }
 \description{
 Load touchstone-relevant transformed data into the database. This should be

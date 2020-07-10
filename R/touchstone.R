@@ -53,14 +53,14 @@ test_extract_touchstone <- function(e) {
                 c(e[['touchstone_name_csv']]$id,
                   e[['touchstone_name']]$id)),
       label = "All touchstone.touchstone_name are known")
+    
+    testthat::expect_true(all(
+      ts$id == sprintf("%s-%s", ts$touchstone_name, ts$version)),
+        label = "All touchstone.id are touchstone_name-version")
 
-    testthat::expect_true(all(ts$id ==
-        paste0(ts$touchstone_name, "-", ts$version)),
-      label = "All touchstone.id are touchstone_name-version")
-
-    testthat::expect_true(all(ts$description == paste0(ts$touchstone_name,
-                                               " (version ", ts$version,")")),
-      label = "All touchstone.description are formatted correctly")
+    testthat::expect_true(all(
+      ts$description == sprintf("%s (version %s)", ts$touchstone_name, ts$version)),
+        label = "All touchstone.description are formatted correctly")
 
     testthat::expect_false(any(duplicated(ts$id)),
       label = "No duplicate ids in touchstone.csv")
@@ -154,8 +154,8 @@ load_touchstone_name <- function(transformed_data, con) {
               to_edit$id[r]))
     } else {
 
-      stop(paste0("Can't edit touchstone_name id ", to_edit$id[r], ". ",
-                  "Already exists with open/finished touchstone versions."))
+      stop(paste("Can't edit touchstone_name id ", to_edit$id[r], ".",
+                 "Already exists with open/finished touchstone versions."))
     }
   }
 }
@@ -208,8 +208,8 @@ load_touchstone <- function(transformed_data, con) {
                           touch$comment, touch$id))
     } else {
 
-      stop(paste0("Can't edit touchstone id ", touch$id, ". ",
-                  "Already exists with open/finished status."))
+      stop(paste("Can't edit touchstone id ", touch$id, ".",
+                 "Already exists with open/finished status."))
     }
   }
 
