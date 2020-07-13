@@ -9,248 +9,487 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+<style>
+body .main-container {
+  max-width: 800px !important;
+  width: 800px !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+body {
+  max-width: 800px !important;
+  text-align: justify;
+  font-family: "Calibri", Arial, sans-serif;
+  font-size: 1em;
+  line-height: 125%;
+}
+
+li {
+  margin-bottom: 5px;
+}
+
+ul {
+  margin-top: 5px;
+}
+
+</style>
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+
+data_frame <- function(...) {
+  data.frame(stringsAsFactors = FALSE, ...)
+}
 ```
 ## Introduction
 
-`stoner` is a package to help with a common administrative task for Montagu: creation or development of a touchstone. A touchstone
-links together the coverage, demography, responsibilities and outputs for a particularly set of runs that VIMC modellers are asked
-to perform. Once a touchstone is opened, it is designed to be fixed, so having downloaded input data from a particular touchstone,
-if a modelling group chooses to download the input data again, they will always get the same result. This ensures reproducibility,
-but as a side effect, it means that if there is even a minor error that we discover in a touchstone, we will open a new version
-of that touchstone, so that any results made using the erroneous touchstone are still well audited and reproducible.
+`stoner` is a package to help with various tasks involving VIMC
+touchstones. Its purpose is evolving somewhat with the needs of the VIMC
+project; stoner is becoming an umbrella to keep these needs expressed in
+a tested package. As such, it can be used in a number of modes.
 
-This comes at a cost of creating new touchstones, or new versions quite often, including a significant period of development
-to create the touchstone, and more repetitive adjustments. Historically, this has been difficult to review, since the code to
-perform CSV reading and SQL updates has often been tangled. [dettl](https://github.com/vimc/dettl) helps here to encourage
-separation of such imports into cleanly bounded extract, transform and load stages, with unit testing of each stage; this is
-our state of the art we use for the [montagu-imports](https://github.com/vimc/montagu-imports) repository. This
-clarifies things greatly, but at times, at the cost of brevity, where writing a single SQL query in the three stages with tests can
-feel somewhat strenuous, compared to the simplicity of the actual task.
+## Touchstone creation as a dettl helper
 
-`stoner` is in principle very similar to a [dettl](https://github.com/vimc/dettl) import; it has extract, transform and load
-phases, and tests on the extract and transform phases. It is specifically designed for a particular set of tasks, and relying
-on specific metadata, in order to do the specific tasks of incrementally building a touchstone. The aim is that the montagu-import
-for creating a new touchstone (or making edits to a touchstone that is in preparation), will consist of single-line functions for
-extract, transform and load, which stoner will take care of. The tests in the import will consist of a single-line call to stoner's
-tests, followed by tests that are specific to the metadata in the import.
+Creation of touchstones is quite a common process, although new touchstones
+will often be based on a previous one. However, creating the touchstone
+involves additions to various related tables, so the code to create
+touchstones is not always trivial to review.
 
-The review of a montagu-import that uses stoner, will therefore be a case of reviewing the metadata, and the meta-data-specific
-tests; and all of the reproducible work will have been separately reviewed in the stoner package. Tests of `stoner` itself are 
-done by running a docker instance of the montagu database, and a rack of tests for each element of an import exist in 
-`tests/testthat/examples`. These tests are designed to mimic as closely as possible the shape of a montagu-import.
+[Dettl](https://github.com/vimc/dettl) has somewhat helped here, encouraging
+separation of extract, transform and load stages of an import, with testing of
+each stage, forcing the code for touchstone creation to be written in a way
+that separates those concerns and makes reviewing easier. Furthermore, it has
+often been possible to review a new import as a diff to a previously reviewed
+import.
+
+Stoner takes this a step further by allowing the touchstone creation to be
+expressed in csv meta-data, providing function calls for the extract, transform
+and load stages.
+
+### The R code
+
+The code for a stoner touchstone import is very simple. Dettl requires that we
+write extract, transform, and load functions, and tests for the extract and load.
+So we create a dettl import as usual (see `dettl::dettl_new`), which begins a new
+import in our imports repo.
+
+Dettl requires us to write various functions, which we can satisfy with single
+line functions for a start.
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Dettl function` = c("extract(path, con)",
+                       "test-extract(extracted_data)",
+                       "transform(extracted_data)",
+                       "test-transform(transformed_data)",
+                       "load(transformed_data, con)"),
+  `Stoner call` = c("stoner::stone_extract(path, con)",
+                    "stoner::stone_test_extract(extracted_data)",
+                    "stoner::stone_transform(extracted_data)",
+                    "stoner::stone_test_transform(transformed_data)",
+                    "stoner::stone_load(transformed_data, con)")))
+```
+
+So for the minimal example, when writing the dettl import, delegate each of
+dettl's functions to the stoner handlers, passing the same arguments.
+
+### The CSV files for the Import
+
+The minimal example on its own will do nothing and exit cleanly. To make
+stoner do some useful work, we write csv files in a folder called `meta` within
+the import folder. These csv files should be thought of a specification of
+"how you would like things to be" - rather than "what you want stoner to do".
+If rows in your csv file identically exist in the database, stoner will use
+the existing ones and not add duplicates. If the rows in your csv are provably
+absent from the database, stoner will add new ones.
+
+If stoner detects in some way that the items already exist, but not all csv
+data matches with those items, then some other factors come into play that
+affect whether stoner can update the database content or not. Imports are
+*incremental* to the database, yet on some occasions, it is useful to be able
+to do in-place edits of touchstones that are still in preparation, for example.
+
+Following are the csv files that stoner will recognise, and their columns and
+formats, and notes on the requirements. Any failure to meet the requirements
+will cause an abort with an error message.
+
+You do not have to provide all of the csvs, only ones where you expect
+something to change, but you may find it good practice to "over-specify",
+since the result is that Stoner will check the database tables are all as you
+expect. It also may be helpful to be able to compare complete touchstone
+definitions (ie, sets of stoner csv files) as a diff between two imports.
+
+#### touchstone_name.csv
+
+A `touchstone_name` refers to a broad ensemble of closely related runs; there
+will be at least one version for each touchstone_name, and it is the specific
+version that we colloquially refer to as 'a touchstone'.
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Column` = c("id", "description", "comment"),
+
+  `Example` = c("`201910gavi`",
+                "`October 2019 touchstone`",
+                "`Standard GAVI`")))
+```
+
+* If the `id` is not found in the `touchstone_name` db table, then the row is
+  added.
+* If the `id` is found, and `description` and `comment` match, then the row
+  in the csv is ignored.
+* If, a `touchstone_name` with that `id` exists, but `description` and/or
+  `comment` differ from the original, then the fields in the database are updated
+  in-place if either:
+  * There are no versions of that touchstone yet, OR
+  * **All** existing versions of that touchstone have status `in-preparation`.
+  * Otherwise: an error occurs and the import aborts.
+* `Description` and `Comment` must be non-empty. Conventionally, `description`
+  has been used to describe the date and basic purpose, and `comment` for any
+  further detail required.
+
+#### touchstone.csv
+
+A `touchstone` is a particular version of a `touchstone_name`, and is the basic
+unit of currency for touchstones in Montagu. Coverage, expectations and burden
+estimates are all attached to one of these versioned touchstones.
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Column` = c("id", "touchstone_name", "version", "status", "description", "comment"),
+
+  `Example` = c("`201910gavi-1`",
+                "`201910gavi`",
+                "`1`",
+                "`in-preparation`, `open` or `finished`",
+                "`201910gavi (version 1)`",
+                "`GAVI Version 1`")))
+```
+
+* `id` must be in the form `touchstone_name`-`version`.
+* `touchstone_name` must match a `touchstone_name.id`, either in the database,
+  or in the accompanying `touchstone_name.csv`
+* If touchstone `id` is not found, then stoner will add the new row.
+* If touchstone `id` is found and all other columns match, stoner ignores it.
+* If touchstone `id` is found, but any other column differs, then stoner will
+  update the fields in the existing touchstone only if its status is
+  `in-preparation`. Otherwise, it will fail with an error.
+* `description` and `comment` must be non-empty. Typically, `description` has
+  been very minimal about the existence of the touchstone, and `comments` to
+  record more details about why the touchstone version exists.
+
+#### touchstone_countries.csv
+
+The `touchstone_country` table in the database should really be called
+`touchstone_country_disease`. For a given touchstone, it records which
+countries should be returned when groups download their demographic data.
+This might differ from the countries a group is expected to model for a
+certain touchstone; see the responsibilities.csv section for that.
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Column` = c("touchstone", "disease", "country"),
+
+  `Example` = c("`201910gavi-1`",
+                "`Measles;MenA`",
+                "`AFG;BEN;IND;ZWE`")))
+```
+
+* This is an incremental update; if any row in the csv does not exactly match
+  one in the database table, a new row will be added. Exact duplicates will be
+  ignored.
+* It is not currently possible to remove rows in the database, or to edit
+  existing ones.
+* The touchstone `id` must exist in the database already, or in the
+  `touchstone.csv` file included in your import.
+* Semi-colon separates lists are acceptable for the disease and country, since
+  several diseaes share the same list of relevant countries.
+* All diseases must be found in the `id` field of the `disease` table. Stoner
+  cannot currently add new diseases.
+* All countries must be found in the `id` column of the `country` table. Stoner
+  cannot currently add new countries, but the `country` table should be
+  complete.
+* TO-DO: It looks like we can do this to touchstones that are not in-prep.
+
+#### touchstone_demographic_dataset.csv
+
+The touchstone_demographic_dataset table determines which
+demographic_statistic_types from which demographic_source will be used when
+providing demographic data for a particular touchstone. Generally, there will
+be a new demographic source each year, when either the IGME child mortality data,
+or the UNWPP population data, or both get updated. Because these updates happen
+at different times (UNWPP bi-yearly, and IGME yearly), sometimes a
+touchstone_demographic_dataset might incorporate fields from different sources,
+hence this table.
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Column` = c("demographic_source", "demographic_statistic_type", "touchstone"),
+
+  `Example` = c("`dds-201910_2`",
+                "`int_pop`",
+                "`201910gavi-1`")))
+```
+
+* `demographic_statistic_type` and `demographic_source` are strings, that must
+  exist in the `code` column of the respective database tables.
+* The touchstone `id` must exist in the database already, or in the
+  `touchstone.csv` file included in your import.
+* Updates here are incremental only; non-matching rows will be added, and
+  exact matches will be ignored. Stoner cannot remove or edit existing
+  entries.
+* TO-DO: It looks like we can do this to touchstones that are not in-prep.
+
+#### scenario_type.csv
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Column` = c("id", "name"),
+  `Example` = c("`stop`",
+                "`VIMC stop scenario`")))
+
+```
+
+* If the scenario_type `id` is not found in the database table, then new rows
+  will be added.
+* If the scenario_type `id` is found in the database table, and the name
+  matches that in your csv file, then the row is ignored.
+* If the `id` exists, but the `name` differs then:-
+  * If there are no scenario_descriptions referring to this `id`, the `name`
+    in the database table for this id will be updated.
+  * If there are scenario_descriptions referring to this `id`, then stoner
+    looks up the status of any touchstones that refer to that
+    scenario_description, and will only perform the update if all are in the
+    `in-preparation` state.
+  * **However**, you can overide this requirement by using this in your load
+    phase:-
+    <br/><p style="font-size:0.8em">
+    &nbsp; &nbsp;```stoner::stone_load(transformed_data, con, allow_overwrite_scenario_type = TRUE)```
+    </p>
 
 
-## Creating a montagu-import that uses stoner
+#### scenario_description.csv
 
-## What stoner does
+```{r echo = FALSE, results = 'asis'}
 
-### stone_extract
+knitr::kable(data_frame(
+  `Column` = c("id", "description", "disease", "scenario_type"),
 
-The extract phase is called as `stoner::stone_extract(path, con)`; the arguments are the path to the particular montagu-import, and a
-database connection. Internally, `stoner` splits the extract phase into two; the first reads all the `csv` metadata first, and
-the second queries the database for rows regarding the metadata. This split is necessary because (for example) there are several 
-different parts of the import that might all refer to touchstones, and it would be good to know about all the touchstones we ever 
-mention in the metadata, at the point where we query the `touchstone` database table.
+  `Example` = c("`mena-routine-no-vaccination`",
+                "`Description free text`",
+                "`MenA`",
+                "`stop`")))
+```
 
-The metadata files are expected to be in a folder called `meta`, within the import.
+* `id` has conventially been in lower-case, and in the form
+  `disease-coverage_type`.
+* If the scenario_description `id` does not exist in the database, stoner
+  will add the new scenario_description.
+* If the scenario_description `id` exists, and all other columns match the
+  existing values too, then the row is ignored.
+  If the `id` exists, but other columns differ, then:
+  * If any `scenario` exists that refers to this `scenario_description`,
+    and the touchstone associated with that scenario is not in the
+    `in-preparation` state, then the import fails with an error.
+  * **However**, on occasion it has been desirable to change the description
+    of a scenario while a touchstone referring to it is open. To overide the
+    `in-preparation` requirement, in the load phase of the import, use:
+    <br/><p style="font-size:0.8em">
+    &nbsp; &nbsp;```stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)```
+    </p>
 
-#### touchstone and touchstone_name
+* `disease` must currently be one of `Cholera`, `HepB`, `Hib`, `HPV`, `JE`,
+  `Measles`, `MenA`, `PCV`, `Rota`, `Rubella`, `Typhoid` or `YF`. These match
+  the `id` column of the `disease` table. Stoner cannot currently add new
+  diseases; this is an admin task done separately.
+* `scenario_type` must be the `id` of a `scenario_type`, either in the
+  database table, or in a `scenario_type.csv` as part of your import.
 
-  * In the `extract-csv` phase, read `touchstone_name` and `touchstone` csv files, if they exist.
-  * In the `extract-db` phase, fetch `touchstone` rows from database for any matching `id` in `touchstone_csv`, 
-    and `touchstone_name` rows from database for any matching `id` in `touchstone_name_csv`, and
-    also matching `touchstone_name` in `touchstone_csv`.
-  * The format of all new `touchstone.id` should be `touchstone_name-version`
-  * All new `touchstone.description` should be `touchstone_name (version v)`
-  * All new `touchstone.status` must be either `in-preparation`, `open`, or `finished`.
+#### responsibilities.csv
 
-#### scenario_description
+Most of the work for implementing a touchstone is done here, in which we add
+the scenario, responsibility and expectations (including countries and
+outcomes) that form the tasks different groups must perform.
 
-  * In the `extract-csv` phase, read `meta/scenario_description.csv` if it exists.
-  * In the `extract-db` phase, read all matching rows from the scenario_description table.
-  * Also lookup Montagu's `disease` table for ids that match `scenario_description_csv`$disease.
+```{r echo = FALSE, results = 'asis'}
 
-#### touchstone_demographic_dataset
+knitr::kable(data_frame(
+  `Column` = c("modelling_group", "disease", "touchstone",
+               "scenario", "scenario_type",
+               "age_min_inclusive", "age_max_inclusive",
+               "cohort_min_inclusive", "cohort_max_inclusive",
+               "year_min_inclusive", "year_max_inclusive",
+               "countries", "outcomes"),
 
-  * In the `extract-csv` phase, read `meta/touchstone_demographic_dataset.csv` if it exists. 
-    This csv is pleasantly human readable - it uses string references instead of database ids. 
-    It therefore differs from how the `touchstone_demographic_dataset` table appears in the 
-    database, and we will need to extract more metadata to transform the strings into ids.
-  * Slightly out of place, but the extract code will all fail here untidily, if the columns are
-    incorrect. So a set of tidy tests is done here, to check the CSV columns and their types.
-  * In the `extract-db` phase, find any existing `touchstone_demographic_datasets` that refer to
-    touchstones that the CSV mentions.
-  * Also look up `demographic_source`, `demographic_statistic_type` and `touchstone` information
-    for any rows in the CSV.
-  * Lookup the `demographic_datasets` that refer to the above sources and types.
-  * For convenience, we do some mashes here for quickly comparing `(touchstone, source, type)`
-    triples for touchstone_demographic_datasets, and `(source, type`) pairs for `demographic dataset`.
+  `Example` = c("`IC-Hallet`", "`HepB`", "`201910gavi-1`",
+                "`hepb-no-vaccination;hepb-bd-routine-bestcase`",
+                "`standard`", "`0`", "`99`", "`1901`", "`2100`",
+                "`2000`", "`2100`", "`AFG;BEN;COD`",
+                "`dalys;deaths;cases`")))
+```
 
-#### touchstone_country
+* The `modelling_group` must match an `id` of the `modelling_group` table.
+  Stoner can't add new modelling groups.
+* The `disease` must match an `id` of the `disease` table. Stoner can't
+  add new diseases either.
+* The `touchstone` must exist either in the `touchstone` table, or in the
+  `touchstone.csv` as part of your import.
+* `scenario` here is a semi-colon separated list of scenarios - which are
+  actually `scenario_description` ids. The matching description must exist
+  in either the `scenario_description` table, or `scenario_description.csv`
+  in your import.
+* The minimum and maximum ages, cohorts and years above are implying that
+  this group should provide ages 0-99 inclusive, for calendar years 2000-2100.
+  The 99 year olds in 2000 were born in 1901, so this is the minimum cohort,
+  whereas the maximum cohort will be the last year in which people were born,
+  which will be the 0-year olds in 2100.
+* All countries must be found in the `id` column of the `country` table. Stoner
+  cannot currently add new countries, but the `country` table should be
+  complete.
+* All outcomes must be found in the `code` column of the burden_outcome` table.
+  Stoner cannot currently add new burden outcomes.
 
-  * In the `extract-csv` phase, read `meta/touchstone_country.csv` if it exists. This csv has columns
-    `(touchstone,diseases,countries)`, where `diseases` and `countries` can be semi-colon separated.
-  * The extract phase also queries the database for diseases, countries and touchstones referred to 
-    in the csv.
+  The `responsibilities.csv` file may cause changes to the `scenario`,
+  `responsibility_set`, `responsibility`, `burden_estimate_expectation`,
+  `burden_estimate_country_expectation` and `burden_estimate_outcome_expectation`
+  tables. Where possible, existing rows are re-used, rather then creating
+  duplicates.
 
-### stone_test_extract
+* **scenario table**
+  * A `scenario` is defined by `scenario_description` and `touchstone`. If
+    combinations of those exist in `responsibilities_csv` that aren't in the
+    `scenario` database table, then new rows get added.
+  * scenarios can only be added currently when the touchstone has
+    status `in-prep`.
+* **responsibility_set table**
+  * `responsibility_set` is defined by `modelling_group` and `touchstone`. If
+    combinations exist in `responsibilities_csv` that aren't in the database,
+    they get created.
+  * responsibility_sets can only be added currently when the touchstone has
+    status `in-prep`.
+* **burden_estimate_expectations table**
+  * This table contains the minimum and maximum ages, cohorts and years, for a
+    given version (which is a `touchstone_name` - no version number), and a
+    description, conventionally in the form `disease:group:scenario_type`,
+    where the `scenario_type` might be a particular scenario (if expectations
+    need to be specific to that scenario), or in many cases, then scenario_type
+    has been defined as `standard`, allowing the same expectation definition to
+    be shared for different scenarios (for a particular group and disease).
+  * Stoner treats rows as already existing, if they match all of those fields
+    exactly. If a matching row can be found, then that
+    burden_estimate_expectation is reused, and its id is noted for the other
+    tables below. Otherwise a new one is created, which will have a newly
+    create id. Hence, it is possible for multiple responsibilities to have the
+    same expectations - see below.
+  * Stoner cannot remove or edit existing burden_estimate_expectations.
+  * Expectations can only be added currently when the touchstone has status
+    `in-prep`.
+* **burden_estimate_country_expectation table**
+  * For a particular `burden_estimate_expectation`, the rows in the
+    `burden_estimate_country_expectation` table list the countries
+    for which we are expecting estimates to be uploaded by a particular group,
+    for a particular disease, and a particular scenario.
+  * The `burden_estimate_expectation` in this table is a numerical id,
+    referring to either a newly created expectation as a result of your import,
+    or an expectation that previous existed and matched the details exactly.
+  * The table is increment-only; Stoner will add any (expectation, country)
+    pairs from your responsibilities.csv file that aren't in the table, and
+    ignore those that are. Stoner cannot remove countries from the
+    expectations.
+* **burden_estimate_outcome_expectation table**
+  * Similar to the country expectations, the rows in the
+    `burden_estimate_outcome_expectation` table list the expected outcomes that
+    a group will upload for a particular scenario and disease.
+  * The burden outcomes are listed in the `burden_outcome` table - but Stoner
+    cannot change the contents of that table at present.
+  * Again, this table is increment-only; Stoner will add any (expectation,
+    country) pairs from your responsibilities.csv file that aren't in the
+    table, and ignore those that are. Stoner cannot remove countries from the
+    expectations.
+* **responsibility table**
+  * Finally, having created all the necessary rows, the responsibility table
+    then links the following together:-
+    * The responsibility_set it belongs to
+    * The scenario it refers to
+    * The burden_estimate_expectation (which in turn is linked to by the
+      burden_estimate_outcome_expectation and
+      burden_estimate_country_expectation tables)
+  * Responsibility rows can only be added when the touchstone has status
+    `in-prep`.
+  * The responsibility table also records `current_burden_estimate_set` and
+    `current_stochastic_burden_estimate_set` - both of which are nullable,
+    and are left at `NA` by default.
+  * Finally, the responsibility_table has a flag `is_open`, which Stoner
+    will set to TRUE as default.
 
-#### touchstone and touchstone_name
+### The test functions
 
-  * Check that columns in the `touchstone` and `touchstone_name` csv files match the databse table.
-  * All `touchstone.touchstone_name` must have a matching entry in either the `touchstone_name` csv file, or the
-    `touchstone_name` database table.
-  * All `touchstone.touchstone_name` and `touchstone.id` must be unique within the csv files.
+Firstly, have your `test-extract` call `stoner::stone_test_extract(extracted_data)`,
+and `test-transform` call `stoner::stone_test_transform(transformed_data)` for the
+built-in tests to be called. Most likely, there is nothing else useful you can
+write for these tests, if your extract and transform functions are simply calling
+Stoner's.
 
-#### scenario_description
+Possibly the best approach to tests is to write the `test-queries` function for
+dettl in the following form:-
 
-  * Test that all diseases in `scenario_description_csv`$disease are valid.
-  * Test that there are no rows in `scenario_description_csv` with duplicate ids.
+<p style="font-size:0.6em">
+```
+test_queries <- function(con) { list(
+  tn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone")[1,1],
+  tddn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_demographic_dataset")[1,1],
+  tcn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_country")[1,1],
+  sdn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario_description")[1,1],
+  sn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario")[1,1],
+  been = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_expectation")[1,1],
+  beoen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_outcome_expectation")[1,1],
+  becen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_country_expectation")[1,1],
+  rsn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility_set")[1,1],
+  rn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility")[1,1]
+)}
+```
+</p>
 
-#### touchstone_demographic_dataset
-  * Check that all the `demographic_source` and `demographic_statistic_type` entries in the CSV file
-    exist in the database. We don't create these in stoner; a demographic import must do that.
-  * Check that for each `(demographic_source, demographic_statistic_type)` pair in the CSV file, a
-    `demographic_dataset` already exists linking the two. Again, we don't create those (currently) in stoner.
-  * Check that all the touchstones referred to in the CSV file exist - either in the database, or in
-    the `touchstone.csv` file extracted. (`touchstone.id` is a string, so we do not need to worry about
-    database serial numbers here).
-  * Check there are no duplicate `(Touchstone, demographic_dataset)` pairs in the CSV.
+and a `test_load.R` that tests how many rows have been added, for example...
 
-#### touchstone_country
-  * Check all diseases and countries in the CSV are known to the database. `stoner` does 
-    not currently support adding of new diseases or countries.
-  * Check that all touchstones referred to in the CSV exist either in the database, or that they will also
-    be added during the current update.
-  * Also check basic format of the CSV.
-    
-### stone_transform
+<p style="font-size:0.6em">
+```
+context("load")
 
-The transform stage involves processing the `extracted_data` and returning a list of data.frames
-that are have the right names, and correct columns to be appended to tables in the Montagu database.
-During the transform, some tables will have an extra column `already_exists_db` added, to indicate
-that the entire row matches exactly with one in the database. At the end of the transform, any rows
-that have this column set will be dropped if the rows are exactly the same
-as the database content, or kept for potential editing, which we'll discuss in the load section.
-Call the transform code with `stoner::stone_transform(extracted_data)` from within the dettl
-transform.
+testthat::test_that("Expected rows added", {
+  expect_equal(after$tn, before$tn + 1)
+  expect_equal(after$tddn, before$tddn + 23)
+  expect_equal(after$tcn, before$tcn + 946)
+  expect_equal(after$sdn, before$sdn)
+  expect_equal(after$sn, before$sn + 67)
+  expect_equal(after$been, before$been + 26)
+  expect_equal(after$beoen, before$beoen + 128)
+  expect_equal(after$becen, before$becen + 2137)
+  expect_equal(after$rsn, before$rsn + 17)
+  expect_equal(after$rn, before$rn + 127)
+})
+```
+</p>
 
-#### touchstone and touchstone_name
+For this though, you will have to have prior knowledge about how many of the
+rows in your various CSV files exist already in the database, and how many
+you are expecting will need to be created.
 
-Having noted whether any of the rows in `touchstone_csv` and `touchstone_name_csv` are entirely
-new, or have matching ids but differ in some other column to the database:
+## Using stoner as a standalone package (without Dettl)
 
-  * Use new/differing rows in `touchstone_csv` as the transformed `touchstone` table rows.
-  * Use new/differing rows in `touchstone_name_csv` as the transformed `touchstone_name` table.
+### Dumping touchstones
 
-#### scenario_description
-
-  * Use new/differing rows in `scenario_description_csv` as the transformed `scenario_description` table rows.
-
-#### touchstone_demographic_dataset
-
-  * Work out the `demographic_dataset` id for each new `touchstone_demographic_dataset` by comparing
-    the mashes created in the extract stage. Ignore any `(touchstone, demographic_dataset)` pairs that
-    already exactly exist in the db.
-  * For the remaining rows, some may match a `demographic_statistic_type`, but not a `demographic_source`
-    in that touchstone. For example, sometimes we have fixed an issue and put the result in a new
-    version of the `demographic_source`. For these rows, copy the `id` from the existing row for that 
-    `demographic_statistic_type` - since there is only ever one instance of each `demographic_statistic_type`
-    in a touchstone. We will want to update these rows in the load stage.
-  * Assign negative, and decrementing ids to each row for which no existing `demographic_statistic_type` 
-    matched the row for that touchstone. These are the new rows to be added.
-
-#### touchstone_country
-  * For each row, all combinations of the (semi-colon-separated) countries and diseases are expanded into 
-    a proposed append to the `touchstone_country` database table.
-  * `id` is assigned - any combinations that already exist in the database table will inherit the `id` from
-    the database; new rows will be assigned a new negative id, and flagged as rows to be added.
-  * Any duplicates that are found within the incoming CSV will cause an abort.
-
-### stone_test_transform
-
-`stoner::stone_test_transform(transformed_data)` should be called from test_transform.R in the montagu-import.
-
-#### touchstone and touchstone_name
-
-  * Test that in `touchstone`, `id` is in the format `touchstone_name`-`version`
-  * Test that all touchstones have valid status. (open, in-preparation, finished)
-
-#### scenario_description
-
-  * Nothing further to test here; all useful tests are in the extract stage.
-
-#### touchstone_demographic_dataset
-
-  * Nothing further to test here; all useful tests are in the extract stage.
-
-#### touchstone_country
-
-  * Nothing further to test here; all useful tests are in earlier code.
- 
-### stone_load
-
-The montagu-import using stoner must use a custom load, not an automatic one, since the first line of the
-load should be `stoner::stone_load(transformed_data, con)`.
-
-#### touchstone_name
-
-  * `touchstone_name` is uploaded first, since `touchstone` may refer to it.
-  * Rows with new ids are trivially appended.
-  * Rows with the same id but differing other columns will be edited in-place, provided that
-    if any touchstone refers to the touchstone_name id, that touchstone must have status `in-preparation`.
-
-#### touchstone
-
-  * Rows with new ids are trivially appended.
-  * Rows with the same id but differing other columns will be edited in-place, provided that
-    the status of that touchstone is `in-preparation`.
-
-#### scenario_description
-
-  * Scenario descriptions with new ids are appended.
-  * Existing ids are edited if every touchstone that refers to that `scenario_description` is in the
-    `in-preparation` stage. However, we do want to improve scenario_descriptions (without changing
-    their meaning, or any data connected to them), or touchstones that are more recent. See the
-    Advanced Use section later.
-
-#### touchstone_demographic_dataset
-
-  * For all `touchstone_demographic_dataset` rows with a negative `id`, append the rows to the table,
-    preserving lookup information from the negative id, to the positive one that the database
-    assigns to each new row.
-    
-  * Where `id` was positive (and therefore already existing in the db table), check whether the 
-    `touchstone` for that row in the proposed `touchstone_demographic_dataset` is of status 
-    `in-preparation`. If not, then abort. If it is, then update the `demographic_dataset` for 
-    that `(id, touchstone)` entry to the new value.
-
-#### touchstone_country
-
-  * Add all new rows to the database. This is assumed to be an incremental update; it is not possible
-    to remove countries from the touchstone_country database with stoner at present.
-
-### (test_load)
-
-There are no generic tests for load; these must be implemented specifically for the metadata
-in the montagu-import.
-
-## Advanced Use
-
-### Overwriting scenario_description
-
-The `scenario_description` table provides human-readable scenario information for the ids. Scenarios,
-however, are shared between touchstones. On occasion, it has been desirable to update the human-readable
-descriptions to make them more clear for a particular scenario, thus changing the way the text appears,
-for both future and historic touchstones.
-
-Usually, this would not be permitted, but since this is purely for the purpose of readability and clarity,
-and because it causes no data changes, the default behaviour of forbidding such changes on open or finished
-touchstones can be relaxed by using this longer form of `stoner::load` :-
-
-`stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)`
+`stoner::stone_dump(con, touchstone, path)`, called with a database connection,
+a touchstone, and an output path, will produce csv files of everything connected
+with that touchstone, in the form stoner would use to import, as described above.
+This might be useful if you want to download an existing touchstone, edit some
+details (including the touchstone id), and upload a modified version.
