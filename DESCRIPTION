@@ -19,7 +19,7 @@ Imports:
     RPostgres,
     utils
 Language: en-GB
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)
 Suggests:
     knitr,

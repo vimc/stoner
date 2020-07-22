@@ -3,6 +3,7 @@
 export(stone_dump)
 export(stone_extract)
 export(stone_load)
+export(stone_stochastic_process)
 export(stone_test_extract)
 export(stone_test_transform)
 export(stone_transform)

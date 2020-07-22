@@ -4,9 +4,12 @@
 \alias{stone_load}
 \title{Load touchstone data to database}
 \usage{
-stone_load(transformed_data, con,
+stone_load(
+  transformed_data,
+  con,
   allow_overwrite_scenario_description = FALSE,
-  allow_overwrite_scenario_type = FALSE)
+  allow_overwrite_scenario_type = FALSE
+)
 }
 \arguments{
 \item{transformed_data}{The transformed data from the transform stage. In a
