@@ -1,30 +1,5 @@
 context("responsibility")
 
-create_responsibilities <- function(test, resp, db = FALSE) {
-
-  df <- data_frame(
-    modelling_group = resp$modelling_group,
-    disease = resp$disease,
-    touchstone = resp$touchstone,
-    scenario = resp$scenario,
-    scenario_type = resp$scenario_type,
-    age_min_inclusive = resp$age_min_inclusive,
-    age_max_inclusive = resp$age_max_inclusive,
-    cohort_min_inclusive = resp$cohort_min_inclusive,
-    cohort_max_inclusive = resp$cohort_max_inclusive,
-    year_min_inclusive = resp$year_min_inclusive,
-    year_max_inclusive = resp$year_max_inclusive,
-    countries = resp$countries,
-    outcomes = resp$outcomes
-  )
-
-  write.csv(df,
-    file.path(test$path, "meta",
-      db_file(db, "responsibilities.csv")),
-    row.names = FALSE
-  )
-}
-
 test_responsibilities <- function(test, resp) {
 
   expect_present <- function(con, table, fields, values, op = "OR") {
@@ -150,24 +125,6 @@ test_responsibilities <- function(test, resp) {
   for (i in seq_len(nrow(resp))) {
     test_single(resp[i, ])
   }
-}
-
-default_responsibility <- function() {
-  data_frame(
-    modelling_group = "LAP-elf",
-    disease = "flu",
-    touchstone = "nevis-1",
-    scenario = "pies",
-    scenario_type = "standard",
-    age_min_inclusive = 0,
-    age_max_inclusive = 100,
-    cohort_min_inclusive = 1900,
-    cohort_max_inclusive = 2100,
-    year_min_inclusive = 2000,
-    year_max_inclusive = 2100,
-    countries = "AFG;ZWE",
-    outcomes = "cases;deaths"
-  )
 }
 
 test_that("New responsibility - standard", {

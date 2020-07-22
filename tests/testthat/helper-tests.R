@@ -253,34 +253,87 @@ standard_demography <- function(test, make_source = TRUE,
 }
 
 standard_disease <- function(test) {
-  create_disease_csv(test$path, "flu", "Elf flu", db = TRUE)
+  create_disease_csv(test$path, c("flu", "piles"),
+                                c("Elf flu", "Elf piles"), db = TRUE)
 }
 
 standard_disease_touchstones <- function(test, db = TRUE) {
   standard_disease(test)
-  create_touchstone_csv(test$path, "nevis", 1, db = db)
-  create_touchstone_name_csv(test$path, "nevis", db = db)
+  create_touchstone_csv(test$path, c("nevis", "kili"),
+                                   c(1, 1), db = db)
+  create_touchstone_name_csv(test$path,
+                                   c("nevis", "kili"), db = db)
 }
 
 standard_modelling_groups <- function(test) {
   create_modelling_groups(test$path,
-                          c("LAP-elf", "EBHQ-bunny"),
-                          c("Lapland Epi Centre", "EBHQ"),
-                          c("Santa Claus", "Easter Bunny"),
-                          c("Lapland Epi (chief-elf)", "Easter Bunny Head Quarters (bunny-minion)"),
-                          c(NA, NA),
-                          c(NA, NA))
+                          c("LAP-elf", "EBHQ-bunny", "R-deer"),
+                          c("Lapland Epi Centre", "EBHQ", "Lapland zoo"),
+                          c("Santa Claus", "Easter Bunny", "A reindeer"),
+                          c("Lapland Epi (chief-elf)",
+                            "Easter Bunny Head Quarters (bunny-minion)",
+                            "Lapland Reindeer Research Centre"),
+                          c(NA, NA, NA),
+                          c(NA, NA, NA))
 }
 
 standard_responsibility_support <- function(test, db = TRUE) {
   standard_modelling_groups(test)
 
-  create_scen_type_csv(test$path, "type1", "The Default Type", db = TRUE)
+  create_scen_type_csv(test$path,
+                       c("type1", "type2"),
+                       c("Best type", "Even better type"), db = TRUE)
+
   create_scen_desc_csv(test$path,
-    c("hot_chocolate", "pies"),
-    c("campaign", "routine"), "flu", "type1", db = TRUE)
+    c("hot_chocolate", "pies", "mistletoe", "holly"),
+    c("campaign", "routine", "campaign", "routine"),
+    c("flu", "flu", "piles", "flu"),
+    c("type1", "type2", "type1", "type2"), db = TRUE)
 
   create_scenario_csv(test$path, 1, "nevis-1", "hot_chocolate", db = TRUE)
+}
+
+create_responsibilities <- function(test, resp, db = FALSE) {
+
+  df <- data_frame(
+    modelling_group = resp$modelling_group,
+    disease = resp$disease,
+    touchstone = resp$touchstone,
+    scenario = resp$scenario,
+    scenario_type = resp$scenario_type,
+    age_min_inclusive = resp$age_min_inclusive,
+    age_max_inclusive = resp$age_max_inclusive,
+    cohort_min_inclusive = resp$cohort_min_inclusive,
+    cohort_max_inclusive = resp$cohort_max_inclusive,
+    year_min_inclusive = resp$year_min_inclusive,
+    year_max_inclusive = resp$year_max_inclusive,
+    countries = resp$countries,
+    outcomes = resp$outcomes
+  )
+
+  write.csv(df,
+            file.path(test$path, "meta",
+                      db_file(db, "responsibilities.csv")),
+            row.names = FALSE
+  )
+}
+
+default_responsibility <- function() {
+  data_frame(
+    modelling_group = "LAP-elf",
+    disease = "flu",
+    touchstone = "nevis-1",
+    scenario = "pies",
+    scenario_type = "standard",
+    age_min_inclusive = 0,
+    age_max_inclusive = 100,
+    cohort_min_inclusive = 1900,
+    cohort_max_inclusive = 2100,
+    year_min_inclusive = 2000,
+    year_max_inclusive = 2100,
+    countries = "AFG;ZWE",
+    outcomes = "cases;deaths"
+  )
 }
 
 test_run_import <- function(path, con = NULL, ...) {
