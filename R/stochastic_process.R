@@ -5,6 +5,7 @@
 ##'
 ##' @export
 ##' @title Process stochastic data
+##' @import data.table
 ##' @param con DBI connection to production. Used for verifying certificate
 ##' against expected properties
 ##' @param modelling_group The modelling group id
@@ -14,7 +15,7 @@
 ##' parameter is of length more than 1, then it must be the same length as
 ##' the number of scenarios, and a one-to-one mapping between the two is
 ##' assumed.
-##' @param path The folder containing the stochastic files
+##' @param in_path The folder containing the stochastic files
 ##' @param files Either a single string containing placeholders to indicate
 ##' filenames, or a vector of files, one for each scenario. Placeholders can
 ##' include :group :touchstone :scenario :disease and :index
@@ -27,15 +28,31 @@
 ##' in a sequence of a files. Can be scalar, applying to all scenarios, or
 ##' a vector with an entry for each scenario, with an integer value or NA
 ##' in each case.
+##' @param out_path Path to writing output files into
+##' @param deaths If deaths must be calculated as a sum of other burden
+##' outcomes, then provide a vector of the outcome names here. The default
+##' is the existing deaths burden_outcome.
+##' @param cases If cases must be calculated as a sum of other burden
+##' outcomes, then provide a vector of the outcome names here. The default
+##' is the existing cases burden_outcome.
+##' @param dalys If dalys must be calculated as a sum of other burden
+##' outcomes, then provide a vector of the outcome names here. The default
+##' is the existing dalys burden_outcome. Additionally, for the one
+##' remaining group that does not provide dalys, you can set dalys to
+##' NA here, and stoner will calculate them.
 ##' @return A list of named data frames and/or named values representing the extracted data.
 stone_stochastic_process <- function(con, modelling_group, disease,
-                                     touchstone, scenarios, path, files,
-                                     cert, index_start, index_end) {
+                                     touchstone, scenarios, in_path, files,
+                                     cert, index_start, index_end, out_path,
+                                     deaths = "deaths", cases = "cases",
+                                     dalys = "dalys") {
 
+  #######################################################################
   # Do all the parameter and file testing upfront, as this can be a very
   # time-consuming process...
 
   assert_connection(con)
+  countries <- DBI::dbGetQuery(con, "SELECT id, nid FROM country")
 
   assert_scalar_character(modelling_group)
   if (!db_exists(con, "modelling_group", "id", modelling_group)) {
@@ -98,11 +115,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   # have several additional scenarios for which they provide central but
   # not stochastic estimates. So not sure if this is so easy to insist on.
 
-  assert_scalar_character(path)
-  if (!file.exists(path)) {
-    stop(sprintf("Input path not found: ", path))
+  assert_scalar_character(in_path)
+  if (!file.exists(in_path)) {
+    stop(sprintf("Input path not found: ", in_path))
   }
-  stopifnot(file.exists(path))
+  stopifnot(file.exists(in_path))
 
   # Check number of file patterns is 1 for all, or 1 per scenario
 
@@ -154,41 +171,316 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     all_files <- files
   }
 
+  if (length(index_start) == 1) {
+    index_start <- rep(index_start, length(files))
+  }
+
+  if (length(index_end) == 1) {
+    index_end <- rep(index_end, length(files))
+  }
+
   if (!identical(grepl(":index", all_files), !is.na(index_start))) {
     stop("Mismatch between NA in index_start, and :index placeholder in files")
   }
 
-  for (scenario_no in seq_along(scenarios)) {
-    scenario <- scenarios[scenario_no]
-    if (length(index_start) != 1) {
-      index_from <- index_start[scenario_no]
-      index_to < index_end[scenario_no]
-    } else {
-      index_from <- index_start
-      index_to <- index_end
+  check_outcomes <- function(type, options) {
+    assert_character(options)
+    if (any(duplicated(options))) {
+      stop(sprintf("Duplicated outcome in %s", type))
     }
+    res <- DBI::dbGetQuery(con, sprintf("
+      SELECT * FROM burden_outcome
+        WHERE code IN %s", sql_in(options)))
 
-    if (is.na(index_from)) {
-      index_from <- 1
-      index_to <- 1
+    missing <- options[!options %in% res$code]
+
+    if (length(missing) > 0) {
+      stop(sprintf("Outcomes not found, %s %s",
+        type, sql_in(missing)))
     }
+    invisible(TRUE)
+  }
 
-    for (i in index_from:index_to) {
+  check_outcomes("cases", cases)
+  check_outcomes("deaths", deaths)
+  if (!is.na(dalys)) {
+    check_outcomes("dalys", dalys)
+  }
 
-      one_file <- all_files[scenario_no]
-      one_file <- gsub(":index", i, one_file)
-      one_file <- gsub(":group", modelling_group, one_file)
-      one_file <- gsub(":touchstone", touchstone, one_file)
-      one_file <- gsub(":disease", disease, one_file)
-      one_file <- gsub(":scenario", scenario, one_file)
-      the_file <- file.path(path, one_file)
-      if (!file.exists(the_file)) {
-        stop(sprintf("File not found: %s", the_file))
+  # dry_run below is so that we can test all the files exists
+  # before we bother reading any of them.
+
+
+
+  all_scenarios <- function(dry_run = FALSE) {
+
+    all_u5_cal <- NULL
+    all_u5_coh <- NULL
+    all_cal <- NULL
+    all_coh <- NULL
+
+    for (scenario_no in seq_along(scenarios)) {
+
+      scenario_data <- list()
+      scenario <- scenarios[scenario_no]
+
+      if (length(index_start) != 1) {
+        index_from <- index_start[scenario_no]
+        index_to <- index_end[scenario_no]
+      } else {
+        index_from <- index_start
+        index_to <- index_end
+      }
+
+      if (is.na(index_from)) {
+        index_from <- 1
+        index_to <- 1
+      }
+
+      ################################################################
+      # Read a single csv.xz file, summing the outcomes into the three
+      # we want, ignoring the columns we don't want, and
+
+      read_xz_csv <- function(the_file) {
+        columns <- readr::cols(
+          run_id = readr::col_integer(),
+          year = readr::col_integer(),
+          age = readr::col_integer(),
+          country = readr::col_character(),
+          country_name = readr::col_skip(),
+          disease = readr::col_skip(),
+          cohort_size = readr::col_skip(),
+          .default = readr::col_double()
+        )
+
+        csv <- as.data.frame(suppressMessages(
+          readr::read_csv(the_file,
+                          col_types = columns,
+                          progress = FALSE, na = "NA"))
+        )
+
+        csv$country <- countries$nid[match(csv$country, countries$id)]
+
+        if (deaths != 'deaths') {
+          deaths_total <- csv[[deaths[1]]]
+          csv[[deaths[1]]] <- NULL
+          for (i in 2:length(deaths)) {
+            deaths_total <- deaths_total + csv[[deaths[i]]]
+            csv[[deaths[i]]] <- NULL
+          }
+          csv[['deaths']] <- deaths_total
+        }
+
+        if (cases != 'cases') {
+          cases_total <- csv[[cases[1]]]
+          csv[[cases[1]]] <- NULL
+          for (i in 2:length(cases)) {
+            cases_total <- cases_total + csv[[cases[i]]]
+            csv[[cases[i]]] <- NULL
+          }
+          csv[['cases']] <- deaths_total
+        }
+
+        if (!is.na(dalys)) {
+          if (dalys != 'dalys') {
+            dalys_total <- csv[[dalys[1]]]
+            csv[[dalys[1]]] <- NULL
+            for (i in 2:length(dalys)) {
+              dalys_total <- dalys_total + csv[[dalys[i]]]
+              csv[[dalys[i]]] <- NULL
+            }
+            csv[['dalys']] <- dalys_total
+          }
+        }
+        csv
+      }
+
+      ################################################################
+
+      for (i in index_from:index_to) {
+
+        one_file <- all_files[scenario_no]
+        one_file <- gsub(":index", i, one_file)
+        one_file <- gsub(":group", modelling_group, one_file)
+        one_file <- gsub(":touchstone", touchstone, one_file)
+        one_file <- gsub(":disease", disease, one_file)
+        one_file <- gsub(":scenario", scenario, one_file)
+        the_file <- file.path(in_path, one_file)
+
+        if (!file.exists(the_file)) {
+          stop(sprintf("File not found: %s", the_file))
+        }
+        if (!dry_run) {
+          message(the_file)
+          scenario_data[[i]] <- read_xz_csv(the_file)
+        }
+      }
+
+      if (dry_run) {
+        return()
+      }
+
+      # We now have a full scenario. Eliminate age, splitting into
+      # the four files (calendar/cohort, and u5/all age).
+      # For now, in the cohort files, I'm going to call cohort
+      # 'year' - just to keep code tidier, as the code is common...
+
+      scenario_data <- rbindlist(scenario_data)
+
+      #######################################################
+
+      agg_and_sort <- function(data) {
+        data <- data[ , lapply(.SD, sum),
+                       by = list(run_id, year, country),
+                       .SDcols = c("cases", "dalys", "deaths")]
+        data[order(data$run_id, data$country, data$year), ]
+
+      }
+
+      scen_u5 <- scenario_data[scenario_data$age <= 4 , ]
+      scen_u5_cal <- agg_and_sort(scen_u5)
+
+      scen_u5$year <- scen_u5$year - scen_u5$age
+      scen_u5_coh <- agg_and_sort(scen_u5)
+
+      scen_cal <- agg_and_sort(scenario_data)
+
+      scenario_data$year <- scenario_data$year - scenario_data$age
+      scen_coh <- agg_and_sort(scenario_data)
+
+      scenario_data <- NULL
+
+      # Could force garbage collection here?
+
+      ##############################################################
+      # If this is the first scenario, then it's easy...
+
+      rename_cols <- function(scen, scname) {
+        names(scen)[names(scen) == 'deaths'] <- paste0("deaths_", scname)
+        names(scen)[names(scen) == 'cases'] <- paste0("cases_", scname)
+        names(scen)[names(scen) == 'dalys'] <- paste0("dalys_", scname)
+        scen
+      }
+
+
+      if (is.null(all_u5_cal)) {
+
+        all_u5_cal <- rename_cols(scen_u5_cal, scenario)
+        all_u5_coh <- rename_cols(scen_u5_coh, scenario)
+        all_cal <- rename_cols(scen_cal, scenario)
+        all_coh <- rename_cols(scen_coh, scenario)
+
+      # Otherwise, we need to add new columns with the new scenario
+      # HOWEVER: there could be different countries in different
+      # scenarios, so we may need to add countries with NA data to
+      # make the rows line up.
+
+      } else {
+
+        # Are there any countries in the accumulated data that aren't
+        # in this new scenario? If, so need to add some NA rows to scenario.
+
+        add_na_countries <- function(df, missing) {
+          na_data <- df[df$country == df$country[1], ]
+          na_cols <- names(df)
+          na_cols <- na_cols[!na_cols %in% c("run_id", "country", "year")]
+          na_data[, na_cols] <- NA
+          new_data <- list()
+          for (m in seq_along(missing)) {
+            na_data$country <- missing[m]
+            new_data[[m]] <- na_data
+          }
+
+          df <- rbind(df, rbindlist(na_data))
+          df <- df[order(df$run_id, df$country, df$year), ]
+        }
+
+        known_countries <- unique(all_u5_cal$country)
+        next_countries <- unique(scen_u5_cal$country)
+
+        missing_countries <- known_countries[
+          !known_countries %in% next_countries]
+
+        if (length(missing_countries) > 0) {
+          scen_u5_cal <- add_na_countries(scen_u5_cal, missing_countries)
+          scen_u5_coh <- add_na_countries(scen_u5_coh, missing_countries)
+          scen_cal <- add_na_countries(scen_cal, missing_countries)
+          scen_coh <- add_na_countries(scen_coh, missing_countries)
+        }
+
+        # And are there any countries in the new scenario that we
+        # didn't encounter in previous scenarios? If so, we need to
+        # add NA rows to the accumulated data.
+
+        missing_countries <- next_countries[
+          !next_countries %in% known_countries]
+
+        if (length(missing_countries) > 0) {
+          all_u5_cal <- add_na_countries(all_u5_cal, missing_countries)
+          all_u5_coh <- add_na_countries(all_u5_coh, missing_countries)
+          all_cal <- add_na_countries(all_cal, missing_countries)
+          all_coh <- add_na_countries(all_coh, missing_countries)
+        }
+
+        # Now all... and scen... should have same number of rows,
+        # and be sorted by run_id, country, year (or cohort)
+        # Let's test this...
+
+        stopifnot(identical(all_u5_cal$run_id, scen_u5_cal$run_id))
+        stopifnot(identical(all_u5_cal$country, scen_u5_cal$country))
+        stopifnot(identical(all_u5_cal$year, scen_u5_cal$year))
+        stopifnot(identical(all_u5_coh$run_id, scen_u5_coh$run_id))
+        stopifnot(identical(all_u5_coh$country, scen_u5_coh$country))
+        stopifnot(identical(all_u5_coh$year, scen_u5_coh$year))
+        stopifnot(identical(all_cal$run_id, scen_cal$run_id))
+        stopifnot(identical(all_cal$country, scen_cal$country))
+        stopifnot(identical(all_cal$year, scen_cal$year))
+        stopifnot(identical(all_coh$run_id, scen_coh$run_id))
+        stopifnot(identical(all_coh$country, scen_coh$country))
+        stopifnot(identical(all_coh$year, scen_coh$year))
+
+        col_bind <- function(all, scen, scname) {
+          scen <- rename_cols(scen, scname)
+          scen$year <- NULL
+          scen$country <- NULL
+          scen$run_id <- NULL
+          cbind(all, scen)
+        }
+
+        all_u5_cal <- col_bind(all_u5_cal, scen_u5_cal, scenario)
+        all_u5_coh <- col_bind(all_u5_coh, scen_u5_coh, scenario)
+        all_cal <- col_bind(all_cal, scen_cal, scenario)
+        all_coh <- col_bind(all_coh, scen_coh, scenario)
       }
     }
+
+    names(all_u5_coh)[names(all_u5_coh) == "year"] <- "cohort"
+    names(all_coh)[names(all_coh) == "year"] <- "cohort"
+
+    # We're done. Save the files.
+
+    write.csv(x = all_u5_cal, file = file.path(out_path,
+      sprintf("%s_%s_calendar_u5.csv", modelling_group, disease)),
+      row.names = FALSE)
+
+    write.csv(x = all_cal, file = file.path(out_path,
+      sprintf("%s_%s_calendar.csv", modelling_group, disease)),
+      row.names = FALSE)
+
+    write.csv(x = all_u5_coh, file = file.path(out_path,
+      sprintf("%s_%s_cohort_u5.csv", modelling_group, disease)),
+      row.names = FALSE)
+
+    write.csv(x = all_coh, file = file.path(out_path,
+      sprintf("%s_%s_cohort.csv", modelling_group, disease)),
+      row.names = FALSE)
   }
+
+  all_scenarios(dry_run = TRUE)
 
   # We are now as tested as we can get at this point.
   ####################################################
+
+  all_scenarios(dry_run = FALSE)
 
 }

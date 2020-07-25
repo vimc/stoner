@@ -10,11 +10,15 @@ stone_stochastic_process(
   disease,
   touchstone,
   scenarios,
-  path,
+  in_path,
   files,
   cert,
   index_start,
-  index_end
+  index_end,
+  out_path,
+  deaths = "deaths",
+  cases = "cases",
+  dalys = "dalys"
 )
 }
 \arguments{
@@ -32,7 +36,7 @@ parameter is of length more than 1, then it must be the same length as
 the number of scenarios, and a one-to-one mapping between the two is
 assumed.}
 
-\item{path}{The folder containing the stochastic files}
+\item{in_path}{The folder containing the stochastic files}
 
 \item{files}{Either a single string containing placeholders to indicate
 filenames, or a vector of files, one for each scenario. Placeholders can
@@ -49,6 +53,22 @@ The placeholder :index in the filenames will be replaced with this.}
 in a sequence of a files. Can be scalar, applying to all scenarios, or
 a vector with an entry for each scenario, with an integer value or NA
 in each case.}
+
+\item{out_path}{Path to writing output files into}
+
+\item{deaths}{If deaths must be calculated as a sum of other burden
+outcomes, then provide a vector of the outcome names here. The default
+is the existing deaths burden_outcome.}
+
+\item{cases}{If cases must be calculated as a sum of other burden
+outcomes, then provide a vector of the outcome names here. The default
+is the existing cases burden_outcome.}
+
+\item{dalys}{If dalys must be calculated as a sum of other burden
+outcomes, then provide a vector of the outcome names here. The default
+is the existing dalys burden_outcome. Additionally, for the one
+remaining group that does not provide dalys, you can set dalys to
+NA here, and stoner will calculate them.}
 }
 \value{
 A list of named data frames and/or named values representing the extracted data.

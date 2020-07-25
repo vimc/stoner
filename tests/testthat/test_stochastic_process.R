@@ -110,6 +110,16 @@ test_that("Bad arguments", {
     "", 1, 1),
     "File not found: (.*)non_exist1.xz")
 
+  expect_error(stoner::stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
+    "", 1, 1, c("deaths", "deaths")),
+    "Duplicated outcome in deaths")
+
+  expect_error(stoner::stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
+    "", 1, 1, "deaths", "cases", "piles_dalys"),
+    "Outcomes not found, dalys \\('piles_dalys'\\)")
+
 })
 
 
