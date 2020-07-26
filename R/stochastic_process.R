@@ -258,11 +258,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
         columns <- do.call(readr::cols_only, col_list)
 
-        csv <- suppressMessages(
+        csv <- suppressMessages(as.data.table(
           readr::read_csv(the_file,
                           col_types = columns,
                           progress = FALSE, na = "NA")
-        )
+        ))
 
         csv$country <- countries$nid[match(csv$country, countries$id)]
 
