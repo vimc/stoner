@@ -258,15 +258,15 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
         columns <- do.call(readr::cols_only, col_list)
 
-        csv <- as.data.frame(suppressMessages(
+        csv <- suppressMessages(
           readr::read_csv(the_file,
                           col_types = columns,
-                          progress = FALSE, na = "NA"))
+                          progress = FALSE, na = "NA")
         )
 
         csv$country <- countries$nid[match(csv$country, countries$id)]
 
-        if (deaths != 'deaths') {
+        if (!identical(deaths, 'deaths')) {
           deaths_total <- csv[[deaths[1]]]
           csv[[deaths[1]]] <- NULL
           for (i in 2:length(deaths)) {
@@ -274,20 +274,22 @@ stone_stochastic_process <- function(con, modelling_group, disease,
             csv[[deaths[i]]] <- NULL
           }
           csv[['deaths']] <- deaths_total
+          deaths_total <- NULL
         }
 
-        if (cases != 'cases') {
+        if (!identical(cases, 'cases')) {
           cases_total <- csv[[cases[1]]]
           csv[[cases[1]]] <- NULL
           for (i in 2:length(cases)) {
             cases_total <- cases_total + csv[[cases[i]]]
             csv[[cases[i]]] <- NULL
           }
-          csv[['cases']] <- deaths_total
+          csv[['cases']] <- cases_total
+          cases_total <- NULL
         }
 
         if (!is.na(dalys)) {
-          if (dalys != 'dalys') {
+          if (!identical(dalys, 'dalys')) {
             dalys_total <- csv[[dalys[1]]]
             csv[[dalys[1]]] <- NULL
             for (i in 2:length(dalys)) {
@@ -295,6 +297,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
               csv[[dalys[i]]] <- NULL
             }
             csv[['dalys']] <- dalys_total
+            dalys_total <- NULL
           }
         }
         csv
