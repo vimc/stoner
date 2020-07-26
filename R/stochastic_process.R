@@ -241,17 +241,22 @@ stone_stochastic_process <- function(con, modelling_group, disease,
       # Read a single csv.xz file, summing the outcomes into the three
       # we want, ignoring the columns we don't want, and
 
-      read_xz_csv <- function(the_file) {
-        columns <- readr::cols(
+      read_xz_csv <- function(the_file, meta_cols) {
+        col_list <- list(
           run_id = readr::col_integer(),
           year = readr::col_integer(),
           age = readr::col_integer(),
           country = readr::col_character(),
           country_name = readr::col_skip(),
           disease = readr::col_skip(),
-          cohort_size = readr::col_skip(),
-          .default = readr::col_double()
+          cohort_size = readr::col_skip()
         )
+
+        for (outcome in meta_cols) {
+          col_list[[outcome]] <- readr::col_guess()
+        }
+
+        columns <- do.call(readr::cols_only, col_list)
 
         csv <- as.data.frame(suppressMessages(
           readr::read_csv(the_file,
@@ -312,7 +317,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         }
         if (!dry_run) {
           message(the_file)
-          scenario_data[[i]] <- read_xz_csv(the_file)
+          scenario_data[[i]] <- read_xz_csv(the_file,
+                                            c(deaths, cases, dalys))
         }
       }
 
@@ -325,7 +331,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
       # For now, in the cohort files, I'm going to call cohort
       # 'year' - just to keep code tidier, as the code is common...
 
-      scenario_data <- rbindlist(scenario_data)
+      if (index_from == index_to) {
+        scenario_data <- scenario_data[[1]]
+      } else {
+        scenario_data <- rbindlist(scenario_data)
+      }
 
       #######################################################
 
