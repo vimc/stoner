@@ -404,7 +404,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
             new_data[[m]] <- na_data
           }
 
-          df <- rbind(df, rbindlist(na_data))
+          df <- rbind(df, rbindlist(new_data))
           df <- df[order(df$run_id, df$country, df$year), ]
         }
 
