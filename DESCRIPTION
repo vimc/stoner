@@ -18,8 +18,8 @@ Imports:
     DBI,
     RPostgres,
     utils,
-    data.table
-    
+    data.table,
+    readr    
 Language: en-GB
 RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)

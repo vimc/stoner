@@ -6,6 +6,7 @@
 ##' @export
 ##' @title Process stochastic data
 ##' @import data.table
+##' @import readr
 ##' @param con DBI connection to production. Used for verifying certificate
 ##' against expected properties
 ##' @param modelling_group The modelling group id
