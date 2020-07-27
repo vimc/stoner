@@ -41,12 +41,22 @@
 ##' is the existing dalys burden_outcome. Additionally, for the one
 ##' remaining group that does not provide dalys, you can set dalys to
 ##' NA here, and stoner will calculate them.
+##' @param runid_from_file Occasionally groups have omitted the run_id
+##' from the stochastic file, and provided 200 files, one per run_id. Set
+##' runid_from_file to TRUE if this is the case, to deduce the run_id from
+##' the filenames. The index_start and index_end must be 1 and 200 in
+##' this case.
+##' @param allow_missing_disease Occasionally groups have omitted the
+##' disease column from their stochastic data. Set this to TRUE to expect
+##' that circumstane, and avoid generating warnings.
 ##' @return A list of named data frames and/or named values representing the extracted data.
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
                                      deaths = "deaths", cases = "cases",
-                                     dalys = "dalys") {
+                                     dalys = "dalys",
+                                     runid_from_file = FALSE,
+                                     allow_missing_disease = FALSE) {
 
   #######################################################################
   # Do all the parameter and file testing upfront, as this can be a very
@@ -167,9 +177,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   # (and the converse also holds)
 
   if (length(files) == 1) {
-    all_files <- rep(files, length(scenario))
-  } else {
-    all_files <- files
+    files <- rep(files, length(scenarios))
   }
 
   if (length(index_start) == 1) {
@@ -180,8 +188,14 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     index_end <- rep(index_end, length(files))
   }
 
-  if (!identical(grepl(":index", all_files), !is.na(index_start))) {
+  if (!identical(grepl(":index", files), !is.na(index_start))) {
     stop("Mismatch between NA in index_start, and :index placeholder in files")
+  }
+
+  if (runid_from_file) {
+    if (index_start != 1 || index_end != 200) {
+      stop("Must have index_start and index_end as 1..200 to imply run_id")
+    }
   }
 
   check_outcomes <- function(type, options) {
@@ -242,16 +256,23 @@ stone_stochastic_process <- function(con, modelling_group, disease,
       # Read a single csv.xz file, summing the outcomes into the three
       # we want, ignoring the columns we don't want, and
 
-      read_xz_csv <- function(the_file, meta_cols) {
+      read_xz_csv <- function(the_file, meta_cols, allow_missing_disease,
+                              runid_from_file, run_id) {
         col_list <- list(
-          run_id = readr::col_integer(),
           year = readr::col_integer(),
           age = readr::col_integer(),
           country = readr::col_character(),
           country_name = readr::col_skip(),
-          disease = readr::col_skip(),
           cohort_size = readr::col_skip()
         )
+
+        if (!runid_from_file) {
+          col_list[['run_id']] = readr::col_integer()
+        }
+
+        if (!allow_missing_disease) {
+          col_list[['disease']] <- col_skip()
+        }
 
         for (outcome in meta_cols) {
           col_list[[outcome]] <- readr::col_guess()
@@ -264,6 +285,10 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                           col_types = columns,
                           progress = FALSE, na = "NA")
         ))
+
+        if (runid_from_file) {
+          csv[['run_id']] <- run_id
+        }
 
         csv$country <- countries$nid[match(csv$country, countries$id)]
 
@@ -308,7 +333,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
       for (i in index_from:index_to) {
 
-        one_file <- all_files[scenario_no]
+        one_file <- files[scenario_no]
         one_file <- gsub(":index", i, one_file)
         one_file <- gsub(":group", modelling_group, one_file)
         one_file <- gsub(":touchstone", touchstone, one_file)
@@ -322,7 +347,10 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         if (!dry_run) {
           message(the_file)
           scenario_data[[i]] <- read_xz_csv(the_file,
-                                            c(deaths, cases, dalys))
+                                              c(deaths, cases, dalys),
+                                              allow_missing_disease,
+                                              runid_from_file, i
+                                              )
         }
       }
 

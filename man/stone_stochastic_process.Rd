@@ -18,7 +18,9 @@ stone_stochastic_process(
   out_path,
   deaths = "deaths",
   cases = "cases",
-  dalys = "dalys"
+  dalys = "dalys",
+  runid_from_file = FALSE,
+  allow_missing_disease = FALSE
 )
 }
 \arguments{
@@ -69,6 +71,16 @@ outcomes, then provide a vector of the outcome names here. The default
 is the existing dalys burden_outcome. Additionally, for the one
 remaining group that does not provide dalys, you can set dalys to
 NA here, and stoner will calculate them.}
+
+\item{runid_from_file}{Occasionally groups have omitted the run_id
+from the stochastic file, and provided 200 files, one per run_id. Set
+runid_from_file to TRUE if this is the case, to deduce the run_id from
+the filenames. The index_start and index_end must be 1 and 200 in
+this case.}
+
+\item{allow_missing_disease}{Occasionally groups have omitted the
+disease column from their stochastic data. Set this to TRUE to expect
+that circumstane, and avoid generating warnings.}
 }
 \value{
 A list of named data frames and/or named values representing the extracted data.

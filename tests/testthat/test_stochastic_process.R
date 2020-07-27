@@ -112,13 +112,18 @@ test_that("Bad arguments", {
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, c("deaths", "deaths")),
+    "", 1, 1, "", c("deaths", "deaths")),
     "Duplicated outcome in deaths")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, "deaths", "cases", "piles_dalys"),
+    "", 1, 1, "", "deaths", "cases", "piles_dalys"),
     "Outcomes not found, dalys \\('piles_dalys'\\)")
+
+  expect_error(stoner::stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
+    "", 1, 1, "", "deaths", "cases", "dalys", TRUE),
+    "Must have index_start and index_end as 1..200 to imply run_id")
 
 })
 
