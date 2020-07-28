@@ -295,9 +295,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         if (!identical(deaths, 'deaths')) {
           deaths_total <- csv[[deaths[1]]]
           csv[[deaths[1]]] <- NULL
-          for (i in 2:length(deaths)) {
-            deaths_total <- deaths_total + csv[[deaths[i]]]
-            csv[[deaths[i]]] <- NULL
+          if (length(deaths) > 1) {
+            for (i in 2:length(deaths)) {
+              deaths_total <- deaths_total + csv[[deaths[i]]]
+              csv[[deaths[i]]] <- NULL
+            }
           }
           csv[['deaths']] <- deaths_total
           deaths_total <- NULL
@@ -306,9 +308,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         if (!identical(cases, 'cases')) {
           cases_total <- csv[[cases[1]]]
           csv[[cases[1]]] <- NULL
-          for (i in 2:length(cases)) {
-            cases_total <- cases_total + csv[[cases[i]]]
-            csv[[cases[i]]] <- NULL
+          if (length(cases) > 1) {
+            for (i in 2:length(cases)) {
+              cases_total <- cases_total + csv[[cases[i]]]
+              csv[[cases[i]]] <- NULL
+            }
           }
           csv[['cases']] <- cases_total
           cases_total <- NULL
@@ -318,9 +322,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
           if (!identical(dalys, 'dalys')) {
             dalys_total <- csv[[dalys[1]]]
             csv[[dalys[1]]] <- NULL
-            for (i in 2:length(dalys)) {
-              dalys_total <- dalys_total + csv[[dalys[i]]]
-              csv[[dalys[i]]] <- NULL
+            if (length(dalys) > 1) {
+              for (i in 2:length(dalys)) {
+                dalys_total <- dalys_total + csv[[dalys[i]]]
+                csv[[dalys[i]]] <- NULL
+              }
             }
             csv[['dalys']] <- dalys_total
             dalys_total <- NULL
