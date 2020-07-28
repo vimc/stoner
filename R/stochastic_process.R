@@ -48,21 +48,31 @@
 ##' this case.
 ##' @param allow_missing_disease Occasionally groups have omitted the
 ##' disease column from their stochastic data. Set this to TRUE to expect
-##' that circumstane, and avoid generating warnings.
-##' @return A list of named data frames and/or named values representing the extracted data.
+##' that circumstance, and avoid generating warnings.
+##' @param upload_to_annex Set to TRUE if you want to upload the results
+##' straight into annex. (Files will still be created, as the upload is
+##' relative fast; creating the csvs is slower and worth caching)
+##' @param annex DBI connection to annex, used if upload_to_annex is TRUE.
+
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
                                      deaths = "deaths", cases = "cases",
                                      dalys = "dalys",
                                      runid_from_file = FALSE,
-                                     allow_missing_disease = FALSE) {
+                                     allow_missing_disease = FALSE,
+                                     upload_to_annex = FALSE,
+                                     annex = NULL) {
 
   #######################################################################
   # Do all the parameter and file testing upfront, as this can be a very
   # time-consuming process...
 
   assert_connection(con)
+  if (upload_to_annex) {
+    assert_connection(annex)
+  }
+
   countries <- DBI::dbGetQuery(con, "SELECT id, nid FROM country")
 
   assert_scalar_character(modelling_group)
@@ -275,7 +285,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         }
 
         for (outcome in meta_cols) {
-          col_list[[outcome]] <- readr::col_guess()
+          col_list[[outcome]] <- readr::col_double()
         }
 
         columns <- do.call(readr::cols_only, col_list)
@@ -285,6 +295,10 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                           col_types = columns,
                           progress = FALSE, na = "NA")
         ))
+
+        for (n in names(csv)) {
+          csv[[n]][is.na(csv[[n]])] <- 0
+        }
 
         if (runid_from_file) {
           csv[['run_id']] <- run_id
@@ -360,146 +374,139 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         }
       }
 
-      if (dry_run) {
-        return()
-      }
+      if (!dry_run) {
 
-      # We now have a full scenario. Eliminate age, splitting into
-      # the four files (calendar/cohort, and u5/all age).
-      # For now, in the cohort files, I'm going to call cohort
-      # 'year' - just to keep code tidier, as the code is common...
+        # We now have a full scenario. Eliminate age, splitting into
+        # the four files (calendar/cohort, and u5/all age).
+        # For now, in the cohort files, I'm going to call cohort
+        # 'year' - just to keep code tidier, as the code is common...
 
-      if (index_from == index_to) {
-        scenario_data <- scenario_data[[1]]
-      } else {
-        scenario_data <- rbindlist(scenario_data)
-      }
+        if (index_from == index_to) {
+          scenario_data <- scenario_data[[1]]
+        } else {
+          scenario_data <- rbindlist(scenario_data)
+        }
 
-      #######################################################
+        #######################################################
 
-      agg_and_sort <- function(data) {
-        data <- data[ , lapply(.SD, sum),
-                       by = list(run_id, year, country),
-                       .SDcols = c("cases", "dalys", "deaths")]
-        data[order(data$run_id, data$country, data$year), ]
+        agg_and_sort <- function(data) {
+          data <- data[ , lapply(.SD, sum),
+                         by = list(run_id, year, country),
+                         .SDcols = c("cases", "dalys", "deaths")]
+          data[order(data$run_id, data$country, data$year), ]
 
-      }
+        }
 
-      scen_u5 <- scenario_data[scenario_data$age <= 4 , ]
-      scen_u5_cal <- agg_and_sort(scen_u5)
+        scen_u5 <- scenario_data[scenario_data$age <= 4 , ]
+        scen_u5_cal <- agg_and_sort(scen_u5)
 
-      scen_u5$year <- scen_u5$year - scen_u5$age
-      scen_u5_coh <- agg_and_sort(scen_u5)
+        scen_u5$year <- scen_u5$year - scen_u5$age
+        scen_u5_coh <- agg_and_sort(scen_u5)
 
-      scen_cal <- agg_and_sort(scenario_data)
+        scen_cal <- agg_and_sort(scenario_data)
 
-      scenario_data$year <- scenario_data$year - scenario_data$age
-      scen_coh <- agg_and_sort(scenario_data)
+        scenario_data$year <- scenario_data$year - scenario_data$age
+        scen_coh <- agg_and_sort(scenario_data)
 
-      scenario_data <- NULL
-
-      # Could force garbage collection here?
-
-      ##############################################################
-      # If this is the first scenario, then it's easy...
-
-      rename_cols <- function(scen, scname) {
-        names(scen)[names(scen) == 'deaths'] <- paste0("deaths_", scname)
-        names(scen)[names(scen) == 'cases'] <- paste0("cases_", scname)
-        names(scen)[names(scen) == 'dalys'] <- paste0("dalys_", scname)
-        scen
-      }
+        scenario_data <- NULL
+        gc()
 
 
-      if (is.null(all_u5_cal)) {
+        ##############################################################
+        # If this is the first scenario, then it's easy...
 
-        all_u5_cal <- rename_cols(scen_u5_cal, scenario)
-        all_u5_coh <- rename_cols(scen_u5_coh, scenario)
-        all_cal <- rename_cols(scen_cal, scenario)
-        all_coh <- rename_cols(scen_coh, scenario)
+        rename_cols <- function(scen, scname) {
+          names(scen)[names(scen) == 'deaths'] <- paste0("deaths_", scname)
+          names(scen)[names(scen) == 'cases'] <- paste0("cases_", scname)
+          names(scen)[names(scen) == 'dalys'] <- paste0("dalys_", scname)
+          scen
+        }
 
-      # Otherwise, we need to add new columns with the new scenario
-      # HOWEVER: there could be different countries in different
-      # scenarios, so we may need to add countries with NA data to
-      # make the rows line up.
 
-      } else {
+        if (is.null(all_u5_cal)) {
 
-        # Are there any countries in the accumulated data that aren't
-        # in this new scenario? If, so need to add some NA rows to scenario.
+          all_u5_cal <- rename_cols(scen_u5_cal, scenario)
+          all_u5_coh <- rename_cols(scen_u5_coh, scenario)
+          all_cal <- rename_cols(scen_cal, scenario)
+          all_coh <- rename_cols(scen_coh, scenario)
 
-        add_na_countries <- function(df, missing) {
-          na_data <- df[df$country == df$country[1], ]
-          na_cols <- names(df)
-          na_cols <- na_cols[!na_cols %in% c("run_id", "country", "year")]
-          na_data[, na_cols] <- NA
-          new_data <- list()
-          for (m in seq_along(missing)) {
-            na_data$country <- missing[m]
-            new_data[[m]] <- na_data
+        # Otherwise, we need to add new columns with the new scenario
+        # HOWEVER: there could be different countries in different
+        # scenarios, so we may need to add countries with NA data to
+        # make the rows line up.
+
+        } else {
+
+          # Are there any countries in the accumulated data that aren't
+          # in this new scenario? If, so need to add some NA rows to scenario.
+
+          add_na_countries <- function(df, missing) {
+            na_data <- df[df$country == df$country[1], ]
+            na_cols <- names(df)
+            na_cols <- na_cols[!na_cols %in% c("run_id", "country", "year")]
+            na_data[, na_cols] <- NA
+            new_data <- list()
+            for (m in seq_along(missing)) {
+              na_data$country <- missing[m]
+              new_data[[m]] <- na_data
+            }
+
+            df <- rbind(df, rbindlist(new_data))
+            df <- df[order(df$run_id, df$country, df$year), ]
           }
 
-          df <- rbind(df, rbindlist(new_data))
-          df <- df[order(df$run_id, df$country, df$year), ]
-        }
+          known_countries <- unique(all_u5_cal$country)
+          next_countries <- unique(scen_u5_cal$country)
 
-        known_countries <- unique(all_u5_cal$country)
-        next_countries <- unique(scen_u5_cal$country)
+          missing_countries <- known_countries[
+            !known_countries %in% next_countries]
 
-        missing_countries <- known_countries[
-          !known_countries %in% next_countries]
+          if (length(missing_countries) > 0) {
+            scen_u5_cal <- add_na_countries(scen_u5_cal, missing_countries)
+            scen_u5_coh <- add_na_countries(scen_u5_coh, missing_countries)
+            scen_cal <- add_na_countries(scen_cal, missing_countries)
+            scen_coh <- add_na_countries(scen_coh, missing_countries)
+          }
 
-        if (length(missing_countries) > 0) {
-          scen_u5_cal <- add_na_countries(scen_u5_cal, missing_countries)
-          scen_u5_coh <- add_na_countries(scen_u5_coh, missing_countries)
-          scen_cal <- add_na_countries(scen_cal, missing_countries)
-          scen_coh <- add_na_countries(scen_coh, missing_countries)
-        }
+          # And are there any countries in the new scenario that we
+          # didn't encounter in previous scenarios? If so, we need to
+          # add NA rows to the accumulated data.
 
-        # And are there any countries in the new scenario that we
-        # didn't encounter in previous scenarios? If so, we need to
-        # add NA rows to the accumulated data.
+          missing_countries <- next_countries[
+            !next_countries %in% known_countries]
 
-        missing_countries <- next_countries[
-          !next_countries %in% known_countries]
+          if (length(missing_countries) > 0) {
+            all_u5_cal <- add_na_countries(all_u5_cal, missing_countries)
+            all_u5_coh <- add_na_countries(all_u5_coh, missing_countries)
+            all_cal <- add_na_countries(all_cal, missing_countries)
+            all_coh <- add_na_countries(all_coh, missing_countries)
+          }
 
-        if (length(missing_countries) > 0) {
-          all_u5_cal <- add_na_countries(all_u5_cal, missing_countries)
-          all_u5_coh <- add_na_countries(all_u5_coh, missing_countries)
-          all_cal <- add_na_countries(all_cal, missing_countries)
-          all_coh <- add_na_countries(all_coh, missing_countries)
-        }
+          # Now all... and scen... should have same number of rows,
+          # and be sorted by run_id, country, year (or cohort)
 
-        # Now all... and scen... should have same number of rows,
-        # and be sorted by run_id, country, year (or cohort)
-        # Let's test this...
+          col_bind <- function(all, scen, scname) {
+            scen <- rename_cols(scen, scname)
+            scen$year <- NULL
+            scen$country <- NULL
+            scen$run_id <- NULL
+            cbind(all, scen)
+          }
 
-        stopifnot(identical(all_u5_cal$run_id, scen_u5_cal$run_id))
-        stopifnot(identical(all_u5_cal$country, scen_u5_cal$country))
-        stopifnot(identical(all_u5_cal$year, scen_u5_cal$year))
-        stopifnot(identical(all_u5_coh$run_id, scen_u5_coh$run_id))
-        stopifnot(identical(all_u5_coh$country, scen_u5_coh$country))
-        stopifnot(identical(all_u5_coh$year, scen_u5_coh$year))
-        stopifnot(identical(all_cal$run_id, scen_cal$run_id))
-        stopifnot(identical(all_cal$country, scen_cal$country))
-        stopifnot(identical(all_cal$year, scen_cal$year))
-        stopifnot(identical(all_coh$run_id, scen_coh$run_id))
-        stopifnot(identical(all_coh$country, scen_coh$country))
-        stopifnot(identical(all_coh$year, scen_coh$year))
+          all_u5_cal <- col_bind(all_u5_cal, scen_u5_cal, scenario)
+          all_u5_coh <- col_bind(all_u5_coh, scen_u5_coh, scenario)
+          all_cal <- col_bind(all_cal, scen_cal, scenario)
+          all_coh <- col_bind(all_coh, scen_coh, scenario)
 
-        col_bind <- function(all, scen, scname) {
-          scen <- rename_cols(scen, scname)
-          scen$year <- NULL
-          scen$country <- NULL
-          scen$run_id <- NULL
-          cbind(all, scen)
-        }
+        } # End of "not the first scenario"
+      } # End of "dry_run must be FALSE"
+    } # End of scenario loop
 
-        all_u5_cal <- col_bind(all_u5_cal, scen_u5_cal, scenario)
-        all_u5_coh <- col_bind(all_u5_coh, scen_u5_coh, scenario)
-        all_cal <- col_bind(all_cal, scen_cal, scenario)
-        all_coh <- col_bind(all_coh, scen_coh, scenario)
-      }
+    # If it's a dry_run. then nothing left to do now; all params
+    # for all scenarios / files have been tested.
+
+    if (dry_run) {
+      return()
     }
 
     names(all_u5_coh)[names(all_u5_coh) == "year"] <- "cohort"
@@ -507,21 +514,46 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
     # We're done. Save the files.
 
-    write.csv(x = all_u5_cal, file = file.path(out_path,
-      sprintf("%s_%s_calendar_u5.csv", modelling_group, disease)),
-      row.names = FALSE)
+    all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.csv",
+                                                   modelling_group, disease))
 
-    write.csv(x = all_cal, file = file.path(out_path,
-      sprintf("%s_%s_calendar.csv", modelling_group, disease)),
-      row.names = FALSE)
+    write.csv(x = all_u5_cal, file = all_u5_cal_file, row.names = FALSE)
 
-    write.csv(x = all_u5_coh, file = file.path(out_path,
-      sprintf("%s_%s_cohort_u5.csv", modelling_group, disease)),
-      row.names = FALSE)
 
-    write.csv(x = all_coh, file = file.path(out_path,
-      sprintf("%s_%s_cohort.csv", modelling_group, disease)),
-      row.names = FALSE)
+    all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.csv",
+                                                modelling_group, disease))
+
+    write.csv(x = all_cal, file = all_cal_file, row.names = FALSE)
+
+    all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.csv",
+                                                   modelling_group, disease))
+
+    write.csv(x = all_u5_coh, file = all_u5_coh_file, row.names = FALSE)
+
+    all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.csv",
+                                                modelling_group, disease))
+
+    write.csv(x = all_coh, file = all_coh_file, row.names = FALSE)
+
+    # Upload to Annex
+
+    if (upload_to_annex) {
+      stoner::stone_stochastic_upload(
+        all_u5_cal_file, con, annex, modelling_group, disease,
+        touchstone, is_cohort = FALSE, is_under5 = TRUE)
+
+      stoner::stone_stochastic_upload(
+        all_u5_coh_file, con, annex, modelling_group, disease,
+        touchstone, is_cohort = TRUE, is_under5 = TRUE)
+
+      stoner::stone_stochastic_upload(
+        all_cal_file, con, annex, modelling_group, disease,
+        touchstone, is_cohort = FALSE, is_under5 = FALSE)
+
+      stoner::stone_stochastic_upload(
+        all_coh_file, con, annex, modelling_group, disease,
+        touchstone, is_cohort = TRUE, is_under5 = FALSE)
+    }
   }
 
   all_scenarios(dry_run = TRUE)
@@ -531,4 +563,5 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
   all_scenarios(dry_run = FALSE)
 
+  invisible()
 }

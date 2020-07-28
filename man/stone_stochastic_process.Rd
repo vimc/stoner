@@ -20,7 +20,9 @@ stone_stochastic_process(
   cases = "cases",
   dalys = "dalys",
   runid_from_file = FALSE,
-  allow_missing_disease = FALSE
+  allow_missing_disease = FALSE,
+  upload_to_annex = FALSE,
+  annex = NULL
 )
 }
 \arguments{
@@ -80,10 +82,13 @@ this case.}
 
 \item{allow_missing_disease}{Occasionally groups have omitted the
 disease column from their stochastic data. Set this to TRUE to expect
-that circumstane, and avoid generating warnings.}
-}
-\value{
-A list of named data frames and/or named values representing the extracted data.
+that circumstance, and avoid generating warnings.}
+
+\item{upload_to_annex}{Set to TRUE if you want to upload the results
+straight into annex. (Files will still be created, as the upload is
+relative fast; creating the csvs is slower and worth caching)}
+
+\item{annex}{DBI connection to annex, used if upload_to_annex is TRUE.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,
