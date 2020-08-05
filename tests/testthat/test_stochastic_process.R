@@ -22,7 +22,7 @@ create_dummy_stoch <- function(test,
   standard_disease_touchstones(test)
   standard_responsibility_support(test)
   resps <- NULL
-  variable_country <- c("AFG;IND;PAK;ZWE","AFG;IND;PAK", "IND")
+  variable_country <- c("AFG;IND;PAK","IND;PAK", "AFG;IND;ZWE")
   scenarios <- c("pies", "hot_chocolate", "holly")
 
   for (scenario in seq_along(scenarios)) {
