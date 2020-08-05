@@ -182,7 +182,7 @@ reduce_outcomes <- function(data, scenario) {
     data$cases_chronic <- NULL
   }
   if (!"dalys" %in% names(data)) {
-    data[['dalys']] <- data$dalys_men + data$days_pneumo
+    data[['dalys']] <- data$dalys_men + data$dalys_pneumo
     data$dalys_men <- NULL
     data$dalys_pneumo <- NULL
   }
@@ -344,9 +344,19 @@ stochastic_runner <- function(same_countries = TRUE,
     index_end <- 200
   }
 
+  deaths <- "deaths"
+  cases <- "cases"
+  dalys <- "dalys"
+  if (!simple_outcomes) {
+    deaths <- c("deaths_acute", "deaths_chronic")
+    cases <- c("cases_acute", "cases_chronic")
+    dalys <- c("dalys_men", "dalys_pneumo")
+  }
+
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
                            res$resps$scenario, test$path, res$files, "",
-                           index_start, index_end, test$path)
+                           index_start, index_end, test$path,
+                           deaths, cases, dalys)
   list(
     test = test,
     data = res$data,
@@ -396,10 +406,15 @@ compare_all <- function(results) {
   expect_true(compare(results$test, results$data, results$coh_u5, TRUE, TRUE))
 }
 
-test_that("Stochastic - same countries, simple outcomes, single files", {
+test_that("Stochastic - same countries, simple test", {
   compare_all(stochastic_runner())
 })
 
-test_that("Stochastic - same countries, simple outcomes, multi files", {
+test_that("Stochastic - same countries, multi files", {
   compare_all(stochastic_runner(single_file_per_scenario = FALSE))
+})
+
+test_that("Stochastic - same countries, multi outcomes, multi files", {
+  compare_all(stochastic_runner(single_file_per_scenario = TRUE,
+                                simple_outcomes = FALSE))
 })

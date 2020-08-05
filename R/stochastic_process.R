@@ -230,7 +230,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
   check_outcomes("cases", cases)
   check_outcomes("deaths", deaths)
-  if (!is.na(dalys)) {
+  if (!is.na(dalys[1])) {
     check_outcomes("dalys", dalys)
   }
 
@@ -334,7 +334,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
           cases_total <- NULL
         }
 
-        if (!is.na(dalys)) {
+        if (!is.na(dalys[1])) {
           if (!identical(dalys, 'dalys')) {
             dalys_total <- csv[[dalys[1]]]
             csv[[dalys[1]]] <- NULL
