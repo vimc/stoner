@@ -205,7 +205,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   }
 
   if (runid_from_file) {
-    if (index_start != 1 || index_end != 200) {
+    if (any(index_start != 1) || any(index_end != 200)) {
       stop("Must have index_start and index_end as 1..200 to imply run_id")
     }
   }
