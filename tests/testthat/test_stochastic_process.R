@@ -12,7 +12,48 @@ context("stochastic_process")
 #                                     upload_to_annex = FALSE,
 #                                     annex = NULL)
 
+###############################################################################
+# Create fake responsibility data for dummy stochastic runs
 
+create_dummy_stoch <- function(test,
+                               same_countries = TRUE,
+                               simple_outcomes = TRUE) {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resps <- NULL
+  variable_country <- c("AFG;IND;PAK;ZWE","AFG;IND;PAK", "IND")
+  scenarios <- c("pies", "hot_chocolate", "holly")
+
+  for (scenario in seq_along(scenarios)) {
+    df <- data_frame(
+      scenario = scenarios[scenario],
+      countries = "AFG;ZWE",
+      outcomes = "cases;deaths;dalys"
+    )
+    if (!same_countries) {
+      df$countries <- variable_country[scenario]
+    }
+    if (!simple_outcomes) {
+      df$outcomes <- paste0("deaths_acute;deaths_chronic;cases_acute;",
+                            "cases_chronic;dalys_pneumo;dalys_men")
+    }
+
+    resps <- rbind(resps, df)
+  }
+
+  resps$modelling_group <- "LAP-elf"
+  resps$disease <- "flu"
+  resps$touchstone <- "nevis-1"
+  resps$scenario_type <- "standard"
+  resps$year_min_inclusive <- 2000
+  resps$year_max_inclusive <- 2005
+  resps$age_min_inclusive <- 0
+  resps$age_max_inclusive <- 7
+  resps$cohort_min_inclusive <- 1993
+  resps$cohort_max_inclusive <- 2005
+  resps
+}
 
 test_that("Bad arguments", {
   test <- new_test()
@@ -123,48 +164,7 @@ test_that("Bad arguments", {
     "Must have index_start and index_end as 1..200 to imply run_id")
 })
 
-###############################################################################
-# Create fake responsibility data for dummy stochastic runs
 
-create_dummy_stoch <- function(test,
-                               same_countries = TRUE,
-                               simple_outcomes = TRUE) {
-  test <- new_test()
-  standard_disease_touchstones(test)
-  standard_responsibility_support(test)
-  resps <- NULL
-  variable_country <- c("AFG;IND;PAK;ZWE","AFG;IND;PAK", "IND")
-  scenarios <- c("pies", "hot_chocolate", "holly")
-
-  for (scenario in seq_along(scenarios)) {
-    df <- data_frame(
-      scenario = scenarios[scenario],
-      countries = "AFG;ZWE",
-      outcomes = "cases;deaths;dalys"
-    )
-    if (!same_countries) {
-      df$countries <- variable_country[scenario]
-    }
-    if (!simple_outcomes) {
-      df$outcomes <- paste0("deaths_acute;deaths_chronic;cases_acute;",
-                            "cases_chronic;dalys_pneumo;dalys_men")
-    }
-
-    resps <- rbind(resps, df)
-  }
-
-  resps$modelling_group <- "LAP-elf"
-  resps$disease <- "flu"
-  resps$touchstone <- "nevis-1"
-  resps$scenario_type <- "standard"
-  resps$year_min_inclusive <- 2000
-  resps$year_max_inclusive <- 2005
-  resps$age_min_inclusive <- 0
-  resps$age_max_inclusive <- 7
-  resps$cohort_min_inclusive <- 1993
-  resps$cohort_max_inclusive <- 2005
-  resps
-}
 
 ################################################################
 # Reduce multi-outcomes to one
