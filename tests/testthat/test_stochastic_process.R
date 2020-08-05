@@ -204,9 +204,11 @@ expand_countries <- function(data, all_countries) {
     absent <- all_countries[!all_countries %in% present]
     if (length(absent) > 0) {
       d <- data[[i]][data[[i]]$country == present[1], ]
-      d$deaths <- NA
-      d$cases <- NA
-      d$dalys <- NA
+      outcome_cols <- names(d)
+      outcome_cols <- outcome_cols[!outcome_cols %in%
+        c("run_id", "country", "disease", "year", "age",
+          "country_name", "cohort_size")]
+      d[, outcome_cols] <- NA
       for (j in absent) {
         d$country <- j
         data[[i]] <- rbind(data[[i]], d)
@@ -391,8 +393,9 @@ compare <- function(test, data, reduced, cohort = FALSE, u5 = FALSE) {
         dsub_y <- colSums(dsub_r[dsub_r$year == year, ])
         red_y <- red_r[red_r$year == year, ]
         for (field in fields) {
-          if (dsub_y[[field]] != red_y[[field]]) {
-            return(FALSE)
+          if (!identical(as.numeric(dsub_y[[field]]),
+                         as.numeric(red_y[[field]]))) {
+              return(FALSE)
           }
         }
       }
@@ -426,4 +429,9 @@ test_that("Stochastic - same countries, multi outcomes, multi files", {
 test_that("Stochastic - same countries, multi outcomes, multi files", {
   compare_all(stochastic_runner(include_disease = FALSE))
 })
+
+test_that("Stochastic - differing countries", {
+  compare_all(stochastic_runner(same_countries = FALSE))
+})
+
 
