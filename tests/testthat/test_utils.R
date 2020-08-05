@@ -47,8 +47,11 @@ test_that("Asserts", {
   expect_error(assert_scalar_character(c("1","2"), "(.*) must be a scalar"))
   expect_error(assert_scalar_character(123), "(.*) must be a character")
   expect_invisible(assert_scalar_character("a"))
+  expect_error(assert_scalar_character(""), "(.*) must be nonempty")
 
   expect_error(assert_connection(mtcars), "(.*) must be a PqConnection object")
   test <- new_test()
   expect_invisible(assert_connection(test$con))
+
+
 })

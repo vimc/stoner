@@ -6,8 +6,8 @@
 ##' @export
 ##' @title Process stochastic data
 ##' @import data.table
-##' @importFrom("utils", "write.csv")
 ##' @import readr
+##' @importFrom utils write.csv
 ##' @param con DBI connection to production. Used for verifying certificate
 ##' against expected properties
 ##' @param modelling_group The modelling group id
@@ -54,7 +54,6 @@
 ##' straight into annex. (Files will still be created, as the upload is
 ##' relative fast; creating the csvs is slower and worth caching)
 ##' @param annex DBI connection to annex, used if upload_to_annex is TRUE.
-
 
 
 stone_stochastic_process <- function(con, modelling_group, disease,

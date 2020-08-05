@@ -292,6 +292,7 @@ random_stoch_data <- function(test, same_countries = TRUE,
     for (outcome in outcomes) {
       data[[scenario]][[outcome]] <- round(runif(n_rows) * 100000)
     }
+
     if (single_file_per_scenario) {
       write_csv(data[[scenario]],
         file.path(test$path, sprintf("LAP-elf_%s.csv", scenario)))
@@ -300,7 +301,7 @@ random_stoch_data <- function(test, same_countries = TRUE,
 
     } else {
 
-      for (j in n_runs) {
+      for (j in seq_len(n_runs)) {
         d <- data[[i]]
         d <- d[d$run_id == j, ]
         if (!include_run_id) {
@@ -310,7 +311,7 @@ random_stoch_data <- function(test, same_countries = TRUE,
           file.path(test$path,
                     sprintf("LAP-elf_%s_%s.csv", resps$scenario[i], j)))
       }
-      files[[i]] <- "LAP-elf_:scenario_:run_id"
+      files[[i]] <- "LAP-elf_:scenario_:index.csv"
     }
     data[[scenario]] <- reduce_outcomes(data[[scenario]], scenario)
   }
@@ -326,13 +327,19 @@ random_stoch_data <- function(test, same_countries = TRUE,
 
 ###############################################################################
 
-stochastic_runner <- function(single_file_per_scenario = FALSE, ...) {
+stochastic_runner <- function(same_countries = TRUE,
+                              simple_outcomes = TRUE,
+                              single_file_per_scenario = TRUE,
+                              include_run_id = TRUE,
+                              include_disease = TRUE) {
   test <- new_test()
-  res <- random_stoch_data(test, ...)
+  res <- random_stoch_data(test, same_countries, simple_outcomes,
+                           single_file_per_scenario, include_run_id,
+                           include_disease)
 
   index_start <- NA
   index_end <- NA
-  if (single_file_per_scenario) {
+  if (!single_file_per_scenario) {
     index_start <- 1
     index_end <- 200
   }
@@ -391,5 +398,8 @@ compare_all <- function(results) {
 
 test_that("Stochastic - same countries, simple outcomes, single files", {
   compare_all(stochastic_runner())
+})
 
+test_that("Stochastic - same countries, simple outcomes, multi files", {
+  compare_all(stochastic_runner(single_file_per_scenario = FALSE))
 })
