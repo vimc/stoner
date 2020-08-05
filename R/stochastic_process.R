@@ -392,6 +392,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         #######################################################
 
         agg_and_sort <- function(data) {
+          # Next lines are just to avoid travis NOTEs on
+          # the by = list line.
+          run_id <- NULL
+          year <- NULL
+          country <- NULL
           data <- data[ , lapply(.SD, sum),
                          by = list(run_id, year, country),
                          .SDcols = c("cases", "dalys", "deaths")]

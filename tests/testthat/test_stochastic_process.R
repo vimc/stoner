@@ -356,7 +356,9 @@ stochastic_runner <- function(same_countries = TRUE,
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
                            res$resps$scenario, test$path, res$files, "",
                            index_start, index_end, test$path,
-                           deaths, cases, dalys)
+                           deaths, cases, dalys,
+                           runid_from_file = !include_run_id,
+                           allow_missing_disease = !include_disease)
   list(
     test = test,
     data = res$data,
@@ -412,9 +414,16 @@ test_that("Stochastic - same countries, simple test", {
 
 test_that("Stochastic - same countries, multi files", {
   compare_all(stochastic_runner(single_file_per_scenario = FALSE))
+  compare_all(stochastic_runner(single_file_per_scenario = FALSE,
+                                include_run_id = FALSE))
 })
 
 test_that("Stochastic - same countries, multi outcomes, multi files", {
   compare_all(stochastic_runner(single_file_per_scenario = TRUE,
                                 simple_outcomes = FALSE))
 })
+
+test_that("Stochastic - same countries, multi outcomes, multi files", {
+  compare_all(stochastic_runner(include_disease = FALSE))
+})
+
