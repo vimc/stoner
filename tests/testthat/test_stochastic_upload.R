@@ -26,10 +26,6 @@ test_that("Bad arguments", {
     "LAP-elf", "flu", "ivinghoe-beacon-1"), "Unknown touchstone:")
 
   expect_error(stoner::stone_stochastic_upload(new_file, test$con, test$con,
-    "LAP-elf", "flu", "nevis-1", FALSE, FALSE, FALSE),
-    "stochastic_file database table not found")
-
-  expect_error(stoner::stone_stochastic_upload(new_file, test$con, test$con,
     "LAP-elf", "flu", "nevis-1", FALSE, FALSE, TRUE),
      "Columns not as expected")
 })

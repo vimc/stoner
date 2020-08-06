@@ -427,6 +427,18 @@ test_that("Stochastic - differing countries", {
   compare_all(stochastic_runner(same_countries = FALSE))
 })
 
+test_that("Stochastic - check database table exists", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  test <- do_test(test)
+  new_file <- tempfile(fileext = ".csv")
+  write.csv(mtcars, new_file)
+  expect_error(stoner::stone_stochastic_upload(new_file, test$con, test$con,
+    "LAP-elf", "flu", "nevis-1", FALSE, FALSE, FALSE),
+    "stochastic_file database table not found")
+})
+
 test_that("Stochastic - with upload", {
   result <- stochastic_runner(upload = TRUE)
   meta <- DBI::dbReadTable(result$test$con, "stochastic_file")
