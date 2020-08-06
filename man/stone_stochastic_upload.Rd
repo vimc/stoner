@@ -12,7 +12,9 @@ stone_stochastic_upload(
   disease,
   touchstone,
   is_cohort,
-  is_under5
+  is_under5,
+  allow_new_database = FALSE,
+  testing = FALSE
 )
 }
 \arguments{
@@ -33,6 +35,11 @@ FALSE for calendar-year oriented.}
 
 \item{is_under5}{Set this to TRUE if the csv file only considers ages
 0-4 inclusive; FALSE if all ages are included.}
+
+\item{allow_new_database}{Create the stochastic_file database if it
+does not exist. Should only be needed first time on a new database.}
+
+\item{testing}{For internal use only.}
 }
 \description{
 Upload stochastic data to annex

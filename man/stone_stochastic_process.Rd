@@ -22,7 +22,9 @@ stone_stochastic_process(
   runid_from_file = FALSE,
   allow_missing_disease = FALSE,
   upload_to_annex = FALSE,
-  annex = NULL
+  annex = NULL,
+  allow_new_database = FALSE,
+  testing = FALSE
 )
 }
 \arguments{
@@ -89,6 +91,11 @@ straight into annex. (Files will still be created, as the upload is
 relative fast; creating the csvs is slower and worth caching)}
 
 \item{annex}{DBI connection to annex, used if upload_to_annex is TRUE.}
+
+\item{allow_new_database}{If uploading, then set this to TRUE to enable
+creating the stochastic_file table if it is not found.}
+
+\item{testing}{For internal use only.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,
