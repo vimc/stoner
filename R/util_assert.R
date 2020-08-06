@@ -10,6 +10,12 @@ assert_scalar <- function(x, name = deparse(substitute(x))) {
   }
 }
 
+assert_logical <- function(x, name = deparse(substitute(x))) {
+  if (!is.logical(x)) {
+    stop(sprintf("'%s' must be a logical", name), call. = FALSE)
+  }
+}
+
 assert_character <- function(x, name = deparse(substitute(x))) {
   if (!is.character(x)) {
     stop(sprintf("'%s' must be a character", name), call. = FALSE)
@@ -23,6 +29,12 @@ assert_scalar_character <- function(x, name = deparse(substitute(x))) {
   if (!nzchar(x)) {
     stop(sprintf("'%s' must be nonempty", name), call. = FALSE)
   }
+}
+
+assert_scalar_logical <- function(x, name = deparse(substitute(x))) {
+  assert_logical(x, name)
+  assert_scalar(x, name)
+  assert_nonmissing(x, name)
 }
 
 assert_connection <- function(x, name = deparse(substitute(x))) {

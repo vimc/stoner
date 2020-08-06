@@ -1,17 +1,5 @@
 context("stochastic_process")
 
-# Lots of tests for stochastic parameters...
-
-#stone_stochastic_process <- function(con, modelling_group, disease,
-#                                     touchstone, scenarios, in_path, files,
-#                                     cert, index_start, index_end, out_path,
-#                                     deaths = "deaths", cases = "cases",
-#                                     dalys = "dalys",
-#                                     runid_from_file = FALSE,
-#                                     allow_missing_disease = FALSE,
-#                                     upload_to_annex = FALSE,
-#                                     annex = NULL)
-
 ###############################################################################
 # Create fake responsibility data for dummy stochastic runs
 
@@ -333,7 +321,9 @@ stochastic_runner <- function(same_countries = TRUE,
                               simple_outcomes = TRUE,
                               single_file_per_scenario = TRUE,
                               include_run_id = TRUE,
-                              include_disease = TRUE) {
+                              include_disease = TRUE,
+                              upload = FALSE,
+                              allow_new_database = TRUE) {
   test <- new_test()
   res <- random_stoch_data(test, same_countries, simple_outcomes,
                            single_file_per_scenario, include_run_id,
@@ -360,7 +350,10 @@ stochastic_runner <- function(same_countries = TRUE,
                            index_start, index_end, test$path,
                            deaths, cases, dalys,
                            runid_from_file = !include_run_id,
-                           allow_missing_disease = !include_disease)
+                           allow_missing_disease = !include_disease,
+                           upload_to_annex = upload, annex = test$con,
+                           allow_new_database = allow_new_database,
+                           testing = TRUE)
   list(
     test = test,
     data = res$data,
@@ -432,6 +425,10 @@ test_that("Stochastic - same countries, multi outcomes, multi files", {
 
 test_that("Stochastic - differing countries", {
   compare_all(stochastic_runner(same_countries = FALSE))
+})
+
+test_that("Stochastic - with upload", {
+  result <- stochastic_runner(upload = TRUE)
 })
 
 

@@ -54,6 +54,9 @@
 ##' straight into annex. (Files will still be created, as the upload is
 ##' relative fast; creating the csvs is slower and worth caching)
 ##' @param annex DBI connection to annex, used if upload_to_annex is TRUE.
+##' @param allow_new_database If uploading, then set this to TRUE to enable
+##' creating the stochastic_file table if it is not found.
+##' @param testing For internal use only.
 
 
 stone_stochastic_process <- function(con, modelling_group, disease,
@@ -64,7 +67,9 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      runid_from_file = FALSE,
                                      allow_missing_disease = FALSE,
                                      upload_to_annex = FALSE,
-                                     annex = NULL) {
+                                     annex = NULL,
+                                     allow_new_database = FALSE,
+                                     testing = FALSE) {
 
   #######################################################################
   # Do all the parameter and file testing upfront, as this can be a very
@@ -542,24 +547,27 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
     write.csv(x = all_coh, file = all_coh_file, row.names = FALSE)
 
-    # Upload to Annex
+    # Upload to Annex. Only allow possibility of creating new stochastic_file
+    # table on the first one; it will either fail there, or exist for the later
+    # three uploads.
 
     if (upload_to_annex) {
       stoner::stone_stochastic_upload(
         all_u5_cal_file, con, annex, modelling_group, disease,
-        touchstone, is_cohort = FALSE, is_under5 = TRUE)
+        touchstone, is_cohort = FALSE, is_under5 = TRUE,
+        allow_new_database = allow_new_database, testing = testing)
 
       stoner::stone_stochastic_upload(
         all_u5_coh_file, con, annex, modelling_group, disease,
-        touchstone, is_cohort = TRUE, is_under5 = TRUE)
+        touchstone, is_cohort = TRUE, is_under5 = TRUE, testing = testing)
 
       stoner::stone_stochastic_upload(
         all_cal_file, con, annex, modelling_group, disease,
-        touchstone, is_cohort = FALSE, is_under5 = FALSE)
+        touchstone, is_cohort = FALSE, is_under5 = FALSE, testing = testing)
 
       stoner::stone_stochastic_upload(
         all_coh_file, con, annex, modelling_group, disease,
-        touchstone, is_cohort = TRUE, is_under5 = FALSE)
+        touchstone, is_cohort = TRUE, is_under5 = FALSE, testing = testing)
     }
   }
 

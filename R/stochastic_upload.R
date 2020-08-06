@@ -12,10 +12,27 @@
 ##' FALSE for calendar-year oriented.
 ##' @param is_under5 Set this to TRUE if the csv file only considers ages
 ##' 0-4 inclusive; FALSE if all ages are included.
+##' @param allow_new_database Create the stochastic_file database if it
+##' does not exist. Should only be needed first time on a new database.
+##' @param testing For internal use only.
 
 stone_stochastic_upload <- function(file, con, annex, modelling_group,
                                     disease, touchstone, is_cohort,
-                                    is_under5) {
+                                    is_under5, allow_new_database = FALSE,
+                                    testing = FALSE) {
+
+  initialise_stochastic_file_db <- function(con) {
+    DBI::dbExecute(con, '
+    CREATE TABLE "stochastic_file" (
+    "id" SERIAL ,
+    "touchstone" TEXT NOT NULL ,
+    "modelling_group" TEXT NOT NULL ,
+    "disease" TEXT NOT NULL ,
+    "is_cohort" BOOLEAN NOT NULL ,
+    "is_under5" BOOLEAN NOT NULL,
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "creation_date" DATE NOT NULL DEFAULT NOW())')
+  }
 
   stopifnot(file.exists(file))
 
@@ -37,23 +54,45 @@ stone_stochastic_upload <- function(file, con, annex, modelling_group,
     stop(sprintf("Unknown touchstone: %s", touchstone))
   }
 
+  if (!"stochastic_file" %in% DBI::dbListTables(annex)) {
+    if (allow_new_database) {
+      initialise_stochastic_file_db(annex)
+    } else {
+      stop("stochastic_file database table not found")
+    }
+  }
+
+  assert_scalar_logical(is_cohort)
+  assert_scalar_logical(is_under5)
+
   # Load the data first (fail here if necessary, rather than during
-  # and database work)
+  # any database work)
 
   if (!is_cohort) {
     col_types <- readr::cols(year = readr::col_integer(),
                           country = readr::col_integer(),
                            run_id = readr::col_integer(),
                           .default = readr::col_guess())
+    expected_cols <- c("year", "country", "run_id")
   } else {
     col_types <- readr::cols(cohort = readr::col_integer(),
                             country = readr::col_integer(),
                              run_id = readr::col_integer(),
                           .default = readr::col_guess())
+    expected_cols <- c("cohort", "country", "run_id")
+  }
+
+  # Test columns before reading...
+
+  first_line <- read.csv(file, nrows = 1)
+  if (anyNA(match(expected_cols, names(first_line)))) {
+    stop("Columns not as expected")
   }
 
   message(sprintf("Reading %s", file))
   data <- readr::read_csv(file, col_types = col_types, progress = FALSE)
+
+
 
   # See if we've got previous history for this combo...
 
@@ -115,14 +154,21 @@ stone_stochastic_upload <- function(file, con, annex, modelling_group,
     }
   }
 
-  # All ready - write the data, then make it public.
+  # All ready - write the data.
 
   message(sprintf("Writing data"))
   DBI::dbWriteTable(annex, table_name, data, overwrite = TRUE)
-  DBI::dbExecute(annex, "
-      GRANT SELECT
-         ON ALL TABLES IN SCHEMA public
-         TO readonly")
 
+  # On annex, we need to make the new tables public - but not
+  # when we're testing. Want to do this in a way that preserves
+  # code coverage...
+
+  grant <- "GRANT SELECT ON ALL TABLES IN SCHEME public TO readonly"
+
+  if (testing) {
+    grant <- paste("/*", grant, " */")
+  }
+
+  DBI::dbExecute(annex, grant)
   invisible()
 }
