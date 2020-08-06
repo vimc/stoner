@@ -905,7 +905,6 @@ connection to production:-
 To get a connection to annex:-
 ```R
   password <- vault$read("/secret/annex/users/vimc")$password
-
   annex <- DBI::dbConnect(RPostgres::Postgres(),
                           dbname = "montagu",
                           host = "annex.montagu.dide.ic.ac.uk",
