@@ -3,10 +3,6 @@ context("stochastic_upload")
 # Main stochastic upload is tested from test_stochastic_process
 # In here we'll just deal with the arguments.
 
-stone_stochastic_upload <- function(file, con, annex, modelling_group,
-                                    disease, touchstone, is_cohort,
-                                    is_under5)
-
 test_that("Bad arguments", {
   test <- new_test()
   standard_disease_touchstones(test)

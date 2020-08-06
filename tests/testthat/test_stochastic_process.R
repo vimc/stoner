@@ -429,7 +429,45 @@ test_that("Stochastic - differing countries", {
 
 test_that("Stochastic - with upload", {
   result <- stochastic_runner(upload = TRUE)
+  meta <- DBI::dbReadTable(result$test$con, "stochastic_file")
+  expect_equal(nrow(meta), 4)
+  expect_equal(unique(meta$touchstone), "nevis-1")
+  expect_equal(unique(meta$modelling_group), "LAP-elf")
+  expect_equal(unique(meta$disease), "flu")
+  expect_equal(1, nrow(meta[meta$is_cohort & meta$is_under5,]))
+  expect_equal(1, nrow(meta[meta$is_cohort & !meta$is_under5,]))
+  expect_equal(1, nrow(meta[!meta$is_cohort & !meta$is_under5,]))
+  expect_equal(1, nrow(meta[!meta$is_cohort & meta$is_under5,]))
+  expect_equal(unique(meta$version), 1)
 
+  # Actually, latest research reveals that more pies in a
+  # are extremely effective at repelling elf flu but, oddly,
+  # only when looking across a calendar year.
+
+  cal <- meta$id[!meta$is_cohort & !meta$is_under5]
+
+  total <- DBI::dbGetQuery(result$test$con, sprintf("
+    SELECT SUM(deaths_pies) FROM stochastic_%s", cal))$sum
+
+  expect_equal(total, sum(result$cal$deaths_pies))
+
+  result$cal$deaths_pies <- round(result$cal$deaths_pies / 2)
+
+  new_csv_file <- tempfile(fileext = ".csv")
+  write.csv(x = result$cal, file = new_csv_file,
+            row.names = FALSE)
+
+  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+                          "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
+                          is_under5 = FALSE, allow_new_database = FALSE,
+                          testing = TRUE)
+
+  new_total <- DBI::dbGetQuery(result$test$con, sprintf("
+    SELECT SUM(deaths_pies) FROM stochastic_%s", cal))$sum
+
+  expect_equal(sum(result$cal$deaths_pies), new_total)
+  new_meta <- DBI::dbReadTable(result$test$con, "stochastic_file")
+  expect_equal(2, new_meta$version[!new_meta$is_cohort & !new_meta$is_under5])
 })
 
 
