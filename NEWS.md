@@ -1,6 +1,6 @@
 ## 0.0.8
 
-Support for stochastic processing
+Support for stochastic processing and upload
 
 ## 0.0.7
 

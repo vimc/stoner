@@ -493,3 +493,445 @@ a touchstone, and an output path, will produce csv files of everything connected
 with that touchstone, in the form stoner would use to import, as described above.
 This might be useful if you want to download an existing touchstone, edit some
 details (including the touchstone id), and upload a modified version.
+
+### Stochastic processing
+
+Modelling groups submit stochastic data to VIMC by responding to a Dropbox
+File Request. A stochastic set consists of 200 runs for each scenario for that
+group, using a range of different parameters that are intended to capture the
+uncertainty in the model.
+
+After some initial sanity checks (which are manual at present),
+the incoming csvs are compressed with `xz` with maximum settings, which
+provides the best compression for csvs, but fast decompression, and seamless
+decompression in R. (Windows command-line `xz -z -k -9 -e *.csv`)
+
+The incoming stochastics are separated certainly by scenario, and may
+be further separated for convenience; some groups have provided a file per
+country, others a file per stochastic run. From these, we create four
+intermediate files for each group, which eliminate age by summing over a
+calendar year, summing over a birth cohort (year - age), and for each option,
+either including all ages, or filtering just ages 0 to 4. They include
+just the `cases`, `deaths` and `dalys` outcomes (which might be calculated by
+summing more detailed outcomes a group provides) for each scenario in columns.
+The idea is so that calculating impact between scenarios can then be calculated
+simply by doing maths on values from the same row of the file.
+
+These four files are later uploaded to four separate tables on the annex database.
+
+Note that the production of the intermediate files can take a few hours per
+group, whereas the upload to annex takes only a few minutes. Storing the
+intermediate files can be useful should we need to redeploy annex at any point.
+
+Also note the examples below assume you have a connection to the production
+database (`con`), and later, a connection to the annex database (`annex`). See
+the end for notes on getting those connections in different ways.
+
+#### Simple Use
+
+In the simplest case, a group uploads a single csv file per scenario as follows:-
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `disease` = c("YF","YF","YF","YF","YF"),
+  `run_id` = c(1,1,1,1,1),
+  `year` = c(2000,2001,2002,2003,2004),
+  `age` = c(0,0,0,0,0),
+  `country` = c('AGO','AGO','AGO','AGO','AGO'),
+  `country_name` = c('Angola','Angola','Angola','Angola','Angola'),
+  `cohort_size` = c(677439,700540,725742,753178,782967),
+  `cases` = c(59,61,66,69,71),
+  `deaths` = c(22,23,24,25,26),
+  `dalys` = c(1233,1390,1330,1196,1490)
+  ))
+```
+
+which would continue for all the countries, years and ages, for 200 runs of
+a particular scenario. A separate file would exist for each scenario. To
+transform this into the four intermediate files, we might write below -
+where the argument names are included just for clarity, and are not needed.
+
+```
+  stone_stochastic_process(
+    con = con,
+    modelling_group = "IC-Garske",
+    disease = "YF",
+    touchstone = "201910gavi-4",
+    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                  "yf-preventive-default", "yf-routine-bestcase",
+                  "yf-routine-default", "yf-stop"),
+    in_path = "E:/Dropbox/File Requests/IC-Garske",
+    file = ":scenario.csv.xz",
+    cert = "certfile",
+    index_start = NA, index_end = NA,
+    out_path = "E:/Stochastic_Outputs")
+```
+
+This assumes that in the `in_path` folder, 6 .csv files are present. The
+`file` argument indicates the template for those files. In this case we
+are assuming all the files follow the same template, where `:scenario`
+will be replaced by each of the 6 specified scenarios in turn. If the
+files do not obey such a simple templating, then you can supply a vector
+of strings for `file`, to indicate which files; just note there should be
+either a one-to-one mapping, or a many-to-one mapping between the different
+scenarios, and the different files indicated.
+
+In this example, there is only one file per scenario; the `index_start` and
+`index_end` arguments are set to `NA`, and there is no reference to `:index` in
+the `file` template. We will see later multi-file examples where these three
+fields are changed to describe the sequence of files we are expecting.
+
+The result is that four files are written - below is an abbreviated
+section of each.
+
+##### IC-Garske_YF_calendar.csv
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `run_id` = c(1,1,1),
+  `year` = c(2000,2001,2002),
+  `country` = c(24,24,24),
+  `cases_novac` = c(1219,1269,1319),
+  `dalys_novac` = c(21388,22884,24129),
+  `deaths_novac` = c(452,471,494),
+  `cases_prevbest` = c(1165,1199,1235),
+  `dalys_prevbest` = c(20219,21353,22207),
+  `deaths_prevbest` = c(432,444,461)
+  ))
+```
+
+So here, we have in each row, the cases, deaths and dalys summed over
+age for a country and calendar year, for each scenario.
+
+##### IC-Garske_YF_calendar_u5.csv
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `run_id` = c(1,1,1),
+  `year` = c(2000,2001,2002),
+  `country` = c(24,24,24),
+  `cases_novac` = c(269,280,290),
+  `dalys_novac` = c(5710,6220,6564),
+  `deaths_novac` = c(100,105,110),
+  `cases_prevbest` = c(215,210,213),
+  `dalys_prevbest` = c(4541,4689,4849),
+  `deaths_prevbest` = c(80,78,80)
+  ))
+```
+
+This is similar to the calendar year, but ages five and above are ignored,
+when summing over age, so the numbers are all smaller.
+
+##### IC-Garske_YF_cohort.csv
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `run_id` = c(1,1,1,1,1,1),
+  `cohort` = c(1900,1901,1902,2000,2001,2002),
+  `country` = c(24,24,24,24,24,24),
+  `cases_novac` = c(0,0,0,3149,3261,3384),
+  `dalys_novac` = c(0,0,0,44542,47051,51399),
+  `deaths_novac` = c(0,0,0,1184,1222,1269),
+  `cases_prevbest` = c(0,0,0,774,809,799),
+  `dalys_prevbest` = c(0,0,0,15763,16902,17573),
+  `deaths_prevbest` = c(0,0,0,280,284,283)
+  ))
+```
+The `cohort` is calculated by subtracting `age` from `year`; it asks the question
+when were people of a certin age in a certain calendar year born. Notice the
+`cohort` column instead of `year`. This model includes 100-year-olds alive in
+calendar year 2000, so these were born in the year 1900, but no yellow fever
+cases or deaths for these scenarios are recorded for that birth cohort.
+
+##### IC-Garske_YF_cohort_u5.csv
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `run_id` = c(1,1,1,1,1,1,1),
+  `cohort` = c(1996,1997,1998,1999,2000,2001,2002),
+  `country` = c(24,24,24,24,24,24,234),
+  `cases_novac` = c(49,102,160,221,289,297,310),
+  `dalys_novac` = c(1010,2196,3626,4483,6057,6915,7223),
+  `deaths_novac` = c(18,38,60,83,108,112,116),
+  `cases_prevbest` = c(49,86,122,152,207,225,234),
+  `dalys_prevbest` = c(1010,1854,2778,3086,4346,5232,5464),
+  `deaths_prevbest` = c(18,32,45,57,78,84,87)
+  ))
+```
+
+This is similar to birth cohort, but only considering those age 4 or less.
+Hence, the oldest age group in the year 2000 (where calendar years begin for
+this model) will be 4, and they were born in 1996, which is the first birth
+cohort.
+
+#### Multiple files per scenario
+
+Some groups submit a file per stochastic run, or a file per country. Some
+have even arbitrarily started a new file when one file has become, say, 10Mb
+in size. Stoner doesn't mind at what point the files are split, except that
+data for two scenarios cannot exist in the same file, and the files that
+make up a set must be numbered with contiguous integers.
+
+The example below will expect runs numbered from 1 to 200, as indicated with
+`index_start` and `index_end`. Also notice the presence of the `:index`
+placeholder in the `file` stub, which will be replaced with the sequence number
+when the files are parsed.
+
+```
+  stone_stochastic_process(
+    con = con,
+    modelling_group = "IC-Garske",
+    disease = "YF",
+    touchstone = "201910gavi-4",
+    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                  "yf-preventive-default", "yf-routine-bestcase",
+                  "yf-routine-default", "yf-stop"),
+    in_path = "E:/Dropbox/File Requests/IC-Garske",
+    file = ":scenario_:index.csv.xz",
+    cert = "certfile",
+    index_start = 1, index_end = 200,
+    out_path = "E:/Stochastic_Outputs")
+```
+
+Some groups might also submit different numbers of files for each
+scenario. For example, HepB for some groups requires different numbers
+of countries to be modelled for different scenarios, dependingn on what
+campaigns were made in those countries. If a group wishes to split their
+results by country, they will then have different numbers of files per
+scenario. In this case, `index_start` and `index_end` can be vectors, of the
+same length as the `scenarios` vector, giving the start and end ids for each
+scenario.
+
+Stoner can also support a mixture of single and multi-files for different
+scenarios. For that case, you'll need vectors for both the `file` stub, and
+the `index_start` and `index_end` - Stoner will test that whenever the file
+stub contains `:index`, the `index_start` and `index_end` are specified,
+otherwise not.
+
+#### Summing different outcomes
+
+Some groups provide multiple deaths or cases categories which need to be summed
+to give the total deaths or cases. The example below uses the optional `deaths`,
+`cases` and `dalys` arguments, where a vector of outcomes are provided (which
+must exist in the incoming data, and in the responsibilities for that group
+and disease too), to be summed to give the final outcome.
+
+```
+  stone_stochastic_process(
+    con = con,
+    modelling_group = "IC-Garske",
+    disease = "YF",
+    touchstone = "201910gavi-4",
+    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                  "yf-preventive-default", "yf-routine-bestcase",
+                  "yf-routine-default", "yf-stop"),
+    in_path = "E:/Dropbox/File Requests/IC-Garske",
+    file = ":scenario_:index.csv.xz",
+    cert = "certfile",
+    index_start = 1, index_end = 200,
+    out_path = "E:/Stochastic_Outputs"),
+    deaths = c("deaths_cat1", "deaths_cat2"),
+    cases = c("cases_cat1", "cases_cat2"),
+    dalys = "dalys")
+```
+
+#### Where run_id is not specified in the CSV
+
+Occasionally, a group omit the `run_id` column in their input data. In practice
+this only happens when the `run_id` is specified as part of the filename. To
+handle this, set the optional `runid_from_file` argument to `TRUE` - and in
+that case, `index_start` and `index_end` must be `1` and `200` respectively,
+and `:index` must be included in the file template for all scenarios (either
+specified as a vector, or a singleton).
+
+```
+  stone_stochastic_process(
+    con = con,
+    modelling_group = "IC-Garske",
+    disease = "YF",
+    touchstone = "201910gavi-4",
+    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                  "yf-preventive-default", "yf-routine-bestcase",
+                  "yf-routine-default", "yf-stop"),
+    in_path = "E:/Dropbox/File Requests/IC-Garske",
+    file = ":scenario_:index.csv.xz",
+    cert = "certfile",
+    index_start = 1, index_end = 200,
+    out_path = "E:/Stochastic_Outputs"),
+    runid_from_file = TRUE)
+```
+
+#### Where disease is not specified
+
+Some groups have also omitted the constant `disease` from their stochastic
+results. This would normally generate a warning but work correctly in any
+case; to silence the warning, set the optional `allow_missing_disease` to be
+`TRUE`.
+
+```
+  stone_stochastic_process(
+    con = con,
+    modelling_group = "IC-Garske",
+    disease = "YF",
+    touchstone = "201910gavi-4",
+    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                  "yf-preventive-default", "yf-routine-bestcase",
+                  "yf-routine-default", "yf-stop"),
+    in_path = "E:/Dropbox/File Requests/IC-Garske",
+    file = ":scenario_:index.csv.xz",
+    cert = "certfile",
+    index_start = 1, index_end = 200,
+    out_path = "E:/Stochastic_Outputs"),
+    allow_missing_disease = TRUE)
+```
+
+#### Different countries in different scenarios
+
+As we said, this can occur, with HepB being an example. If this is the case,
+besides dealing with a different number of files per scenario (if the group
+split their files by country), there is nothing you need to do for Stoner
+to process this properly. In the output CSV files, any country for which
+there is no data for a particular scenario will have `NA` for those scenarios.
+Care might be needed in analysis later on in ensuring comparisons or impact
+calculations only occur where all the values are not `NA`.
+
+### Uploading to the annex database
+
+#### Uploading after processing
+
+The processed CSV files can be uploaded to annex automatically, if an
+additional database connection `annex` is provided, and the
+`upload_to_annex` is set to TRUE. The files will be uploaded after processing.
+
+```
+  stone_stochastic_process(
+    con = con,
+    modelling_group = "IC-Garske",
+    disease = "YF",
+    touchstone = "201910gavi-4",
+    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                  "yf-preventive-default", "yf-routine-bestcase",
+                  "yf-routine-default", "yf-stop"),
+    in_path = "E:/Dropbox/File Requests/IC-Garske",
+    file = ":scenario_:index.csv.xz",
+    cert = "certfile",
+    index_start = 1, index_end = 200,
+    out_path = "E:/Stochastic_Outputs"),
+    upload_to_annex = TRUE,
+    annex = annex,
+    allow_new_database = FALSE)
+```
+
+If `allow_new_database` is set to `TRUE`, then Stoner will try to create the
+`stochastic_file` index table on `annex`; this will only be wanted on the
+first time of uploading data to a new empty database, so typically, this
+will be left as `FALSE`.
+
+The result of uploading is that four new rows will be added to the
+`stochastic_file` table, for example:-
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `id` = c(1,2,3,4),
+  `touchstone` = rep("201910gavi-4", 4),
+  `modelling_group` = rep("IC-Garske", 4),
+  `disease` = rep("YF", 4),
+  `is_cohort` = c(FALSE, TRUE, FALSE, TRUE),
+  `is_under5` = c(TRUE, TRUE, FALSE, FALSE),
+  `version` = rep(1, 4),
+  `creation_date` = rep("2020-08-06", 4)
+  ))
+```
+
+Four new tables named in the form `stochastic_` followed by the `id` field
+listed in the table above will also have been made, which are uploaded copies
+of the final CSV files. If further uploads are made that match the `touchstone`,
+`modelling_group`, `disease`, `is_cohort` and `is_under5`, then the new data
+will overwrite the existing data, and the `version` and `creation_date` in the
+table above will be updated.
+
+#### Uploading seprately from processing
+
+You can also call the `stone_stochastic_upload` directly, if you have CSV
+files ready to upload. Call the function as below, to upload a single CSV file.
+(Vectors for multiple scenarios in one go are not currently supported in the
+function).
+
+```stone_stochastic_upload(
+     file = 'IC-Garske_YF_calendar_u5.csv',
+     con = con,
+     annex = annex,
+     modelling_group = 'IC-Garske',
+     disease = 'YF',
+     touchstone = '201910gavi-4',
+     is_cohort = FALSE,
+     is_under5 = TRUE
+  )
+```
+
+The filename is treated as arbitrary; `is_cohort` and `is_under5` need
+specifying to describe the data being uploaded. If this is the first ever
+upload to a new database, then the optional `allow_new_database` will enable
+creation of the `stochastic_file` table.
+
+#### The testing argument
+
+`stone_stochastic_process` and `stone_stochastic_upload` both
+take a `testing` logical argument; ignore this, as it is only used to
+as part of the tests, in which a fake annex database is set up.
+
+#### Database connections (and where to find them).
+
+We use the `vaultr` package, and assume that the `VAULT_ADDR` and
+`VAULT_AUTH_GITHUB_TOKEN` environment variables are set up - we won't go into
+doing that here.
+
+A read-only connection to the production database is used to validate the
+outcomes and countries against those in a group's expectations. To get the
+connection to production:-
+
+```R
+  vault <- vaultr::vault_client(login = "github")
+  password <- vault$read("/secret/database/production/users/readonly")$password
+  con <- DBI::dbConnect(RPostgres::Postgres(),
+                          dbname = "montagu",
+                          host = "production.montagu.dide.ic.ac.uk",
+                          port = 5432, password = password,
+                          user = "readonly")
+```
+
+To get a connection to annex:-
+```R
+  password <- vault$read("/secret/annex/users/vimc")$password
+
+  annex <- DBI::dbConnect(RPostgres::Postgres(),
+                          dbname = "montagu",
+                          host = "annex.montagu.dide.ic.ac.uk",
+                          port = 15432,
+                          password = password,
+                          user = "vimc")
+````
+
+#### Use from within dettl (future work)
+
+However, rather than acquiring connections as above and manually running
+ad hoc database queries on annex, it will be better to express imports to
+annex using `dettl`. The imports are made a little more complex than usual
+by the length of time taken to do the data reduction, the RAM they require
+can be very large, and the possibility that data will be replaced on annex
+with subsequent versions. Never-the-less, it would be good to have a formal
+process for uploading data to annex, and `dettl` would be a good way.
+
+For example:
+
+* `Extract stage:` read meta data, which would contain a list of groups and
+locations for different stochastic datasets to be processed. Also look up
+the necessary metadata for those files - responsibilities and outcomes.
+* `Transform stage:` Perform the reduction, producing csv files. We would need
+`dettl` to not try to validate the output against specific database tables,
+since we often need to create those tables on `annex` as part of the upload.
+* `Load stage:` Perform the uploads on the created csv files, updating the
+`stochastic_file` and adding new tables on `annex`.
+
