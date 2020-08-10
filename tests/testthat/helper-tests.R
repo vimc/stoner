@@ -23,6 +23,10 @@ new_test <- function(clear_db = TRUE, clear_files = TRUE) {
   cache$con <- cache$con %||% test_db_connection()
   res$con <- cache$con
   if (clear_db) {
+    DBI::dbExecute(res$con, "DELETE FROM model_run_parameter_set")
+    DBI::dbExecute(res$con, "DELETE FROM model_version")
+    DBI::dbExecute(res$con, "DELETE FROM model")
+    DBI::dbExecute(res$con, "DELETE FROM upload_info")
     DBI::dbExecute(res$con, "DELETE FROM touchstone_demographic_dataset")
     DBI::dbExecute(res$con, "DELETE FROM demographic_dataset")
     DBI::dbExecute(res$con, "DELETE FROM demographic_statistic_type")
