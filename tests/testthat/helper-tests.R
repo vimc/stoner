@@ -340,6 +340,48 @@ default_responsibility <- function() {
   )
 }
 
+valid_certificate <- function(con) {
+
+  resp_set <- DBI::dbGetQuery(con,
+                              "SELECT * FROM responsibility_set LIMIT 1")
+
+  upload_info <- DBI::dbGetQuery(con, "
+    INSERT INTO upload_info (uploaded_by, uploaded_on)
+    VALUES ('comet', NOW()) RETURNING id")$id
+
+  DBI::dbExecute(con, "
+    INSERT INTO model (id, modelling_group, description, disease,
+                       gender_specific)
+          VALUES ('test_model', 'LAP-elf', 'Description', 'flu', FALSE)")
+
+  model_version <- DBI::dbGetQuery(con, "
+    INSERT INTO model_version (model, version)
+          VALUES ('test_model', 1) RETURNING id")
+
+  mrps_id <- DBI::dbGetQuery(con, sprintf("
+    INSERT INTO model_run_parameter_set
+                (responsibility_set, upload_info, model_version)
+        VALUES (%s, %s, %s) RETURNING id",
+                                               resp_set$id, upload_info, model_version))$id
+
+
+  new_file <- tempfile(fileext = ".json")
+  dummy <- sprintf('[
+    {
+      "id": %s,
+      "disease": "flu",
+      "uploaded_by": "comet",
+      "uploaded_on": "2020-07-27T15:14:27.969Z"
+    },
+    {
+      "signature": "sigdata"
+    }
+  ]', mrps_id)
+
+  writeLines(dummy, new_file)
+  new_file
+}
+
 test_run_import <- function(path, con = NULL, ...) {
   e <- stone_extract(path, con)
   stone_test_extract(e)

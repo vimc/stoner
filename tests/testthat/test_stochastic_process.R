@@ -332,11 +332,17 @@ stochastic_runner <- function(same_countries = TRUE,
                               include_run_id = TRUE,
                               include_disease = TRUE,
                               upload = FALSE,
-                              allow_new_database = TRUE) {
+                              allow_new_database = TRUE,
+                              bypass_cert_check = TRUE,
+                              cert = "") {
   test <- new_test()
   res <- random_stoch_data(test, same_countries, simple_outcomes,
                            single_file_per_scenario, include_run_id,
                            include_disease)
+
+  if (is.na(cert)) {
+    cert <- valid_certificate(test$con)
+  }
 
   index_start <- NA
   index_end <- NA
@@ -355,14 +361,16 @@ stochastic_runner <- function(same_countries = TRUE,
   }
 
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
-                           res$resps$scenario, test$path, res$files, "",
+                           res$resps$scenario, test$path, res$files,
+                           cert = cert,
                            index_start, index_end, test$path,
                            deaths, cases, dalys,
                            runid_from_file = !include_run_id,
                            allow_missing_disease = !include_disease,
                            upload_to_annex = upload, annex = test$con,
                            allow_new_database = allow_new_database,
-                           testing = TRUE, bypass_cert_check = TRUE)
+                           bypass_cert_check = bypass_cert_check,
+                           testing = TRUE)
   list(
     test = test,
     data = res$data,
@@ -434,6 +442,17 @@ test_that("Stochastic - same countries, multi outcomes, multi files", {
 
 test_that("Stochastic - differing countries", {
   compare_all(stochastic_runner(same_countries = FALSE))
+})
+
+test_that("Stochastic - cert not found", {
+  expect_error(
+    stochastic_runner(bypass_cert_check = FALSE, cert = "non_existing.json"),
+    "Certificate not found: non_existing.json")
+})
+
+test_that("Stochastic - cert OK", {
+  expect_success(
+    stochastic_runner(bypass_cert_check = FALSE, cert = NA))
 })
 
 test_that("Stochastic - check database table exists", {
