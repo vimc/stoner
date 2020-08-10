@@ -19,7 +19,8 @@ Imports:
     RPostgres,
     utils,
     data.table,
-    readr    
+    readr,
+    jsonlite
 Language: en-GB
 RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)

@@ -4,7 +4,6 @@
 ##'
 ##' @export
 ##' @title Validate stochastic parameter certificate
-##' @import jsonlite
 ##' @param con DBI connection to production. Used for verifying certificate
 ##' against expected properties
 ##' @param certfile Name of the certificate file accompanying the estimates
