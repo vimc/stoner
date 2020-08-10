@@ -796,6 +796,51 @@ there is no data for a particular scenario will have `NA` for those scenarios.
 Care might be needed in analysis later on in ensuring comparisons or impact
 calculations only occur where all the values are not `NA`.
 
+#### Certificate validation
+
+When groups upload the parameters for their stochastic runs into Montagu,
+they are provided with a certificate - a small JSON file providing
+metadata, and confirmation of the upload information. The certificate
+should be provided by the group along with the stochastic data files that
+were produced using the parameters they uploaded.
+
+By default, stoner will verify that the certificate file exists, and
+checks that the metadata (modelling group, touchstone, disaease) on production 
+that match the certificate also match with the arguments you provide when you call 
+stoner_stochastic_process.
+
+Should you be lacking a group's certificate, but still want to attempt to
+process the stochastic data, then set the option `bypass_cert_check` to be
+TRUE:-
+
+```
+  stone_stochastic_process(
+    con = con,
+    modelling_group = "IC-Garske",
+    disease = "YF",
+    touchstone = "201910gavi-4",
+    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                  "yf-preventive-default", "yf-routine-bestcase",
+                  "yf-routine-default", "yf-stop"),
+    in_path = "E:/Dropbox/File Requests/IC-Garske",
+    file = ":scenario_:index.csv.xz",
+    cert = "",
+    index_start = 1, index_end = 200,
+    out_path = "E:/Stochastic_Outputs"),
+    bypass_cert_check = TRUE)
+```
+
+You can also manually perform validation of a certificate file without
+processing stochastic data, with the call:-
+
+```
+  stone_stochastic_cert_verify(con, "certfile", "IC-Garske", "201910gavi-5", "YF")
+```
+
+This call will stop with an error if either the modelling group, or the touchstone
+do not match with the details used to submit the parameter set, and retrieve the
+`certfile` provided here.
+
 ### Uploading to the annex database
 
 #### Uploading after processing

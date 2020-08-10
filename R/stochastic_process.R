@@ -158,7 +158,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     if (!file.exists(cert)) {
       stop(sprintf("Certificate not found: %s", cert))
     }
-    stone_stochastic_cert_verify(con, cert, modelling_group, touchstone)
+    stone_stochastic_cert_verify(con, cert, modelling_group,
+                                 touchstone, disease)
   }
 
   # Check number of file patterns is 1 for all, or 1 per scenario

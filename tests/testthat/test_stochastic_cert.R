@@ -25,19 +25,23 @@ test_that("Bad arguments", {
   writeLines(dummy, new_file)
 
   expect_error(stoner::stone_stochastic_cert_verify(
-    test$con , new_file, "Rudolph", "ivinghoe-beacon-1"),
+    test$con , new_file, "Rudolph", "ivinghoe-beacon-1", ""),
     "Unknown modelling group: Rudolph")
 
   expect_error(stoner::stone_stochastic_cert_verify(
-    test$con, new_file, "LAP-elf", "ivinghoe-beacon-1"),
+    test$con, new_file, "LAP-elf", "ivinghoe-beacon-1", ""),
     "Unknown touchstone:")
 
   expect_error(stoner::stone_stochastic_cert_verify(
-    test$con, tempfile(), "LAP-elf", "nevis-1"),
+    test$con, new_file, "LAP-elf", "nevis-1", "frostbite"),
+    "Unknown disease: frostbite")
+
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con, tempfile(), "LAP-elf", "nevis-1", "flu"),
     "Stochastic certificate not found")
 
   expect_error(stoner::stone_stochastic_cert_verify(
-    test$con, NULL, "LAP-elf", "nevis-1"),
+    test$con, NULL, "LAP-elf", "nevis-1", "flu"),
     "Stochastic certificate not found")
 })
 
@@ -52,13 +56,17 @@ test_that("Mismatched certificate arguments", {
   new_file <- valid_certificate(test$con)
 
   expect_error(stoner::stone_stochastic_cert_verify(
-    test$con, new_file, "EBHQ-bunny", "nevis-1"),
+    test$con, new_file, "EBHQ-bunny", "nevis-1", "flu"),
     "Modelling group mismatch - expected LAP-elf")
 
   expect_error(stoner::stone_stochastic_cert_verify(
-    test$con, new_file, "LAP-elf", "kili-1"),
+    test$con, new_file, "LAP-elf", "kili-1", "flu"),
     "Touchstone mismatch - expected nevis-1")
 
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con, new_file, "LAP-elf", "nevis-1", "piles"),
+    "Disease mismatch - expected flu")
+
   expect_invisible(stoner::stone_stochastic_cert_verify(
-    test$con, new_file, "LAP-elf", "nevis-1"))
+    test$con, new_file, "LAP-elf", "nevis-1", "flu"))
 })
