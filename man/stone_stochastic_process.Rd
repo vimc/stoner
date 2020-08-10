@@ -24,6 +24,7 @@ stone_stochastic_process(
   upload_to_annex = FALSE,
   annex = NULL,
   allow_new_database = FALSE,
+  bypass_cert_check = FALSE,
   testing = FALSE
 )
 }
@@ -94,6 +95,9 @@ relative fast; creating the csvs is slower and worth caching)}
 
 \item{allow_new_database}{If uploading, then set this to TRUE to enable
 creating the stochastic_file table if it is not found.}
+
+\item{bypass_cert_check}{If TRUE, then no checks are carried out on the
+parameter certificate (if provided).}
 
 \item{testing}{For internal use only.}
 }

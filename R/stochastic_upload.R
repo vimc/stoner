@@ -1,3 +1,5 @@
+##' Upload the reduced csvs produced by stoner_stochastic_process into
+##' the annex database.
 ##' @export
 ##' @title Upload stochastic data to annex
 ##' @import data.table

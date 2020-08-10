@@ -56,6 +56,8 @@
 ##' @param annex DBI connection to annex, used if upload_to_annex is TRUE.
 ##' @param allow_new_database If uploading, then set this to TRUE to enable
 ##' creating the stochastic_file table if it is not found.
+##' @param bypass_cert_check If TRUE, then no checks are carried out on the
+##' parameter certificate (if provided).
 ##' @param testing For internal use only.
 
 
@@ -69,6 +71,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      upload_to_annex = FALSE,
                                      annex = NULL,
                                      allow_new_database = FALSE,
+                                     bypass_cert_check = FALSE,
                                      testing = FALSE) {
 
   #######################################################################
@@ -148,6 +151,15 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     stop(sprintf("Input path not found: ", in_path))
   }
   stopifnot(file.exists(in_path))
+
+  # Certificate check (if enabled).
+
+  if (!bypass_cert_check) {
+    if (!file.exists(cert)) {
+      stop(sprintf("Certificate not found: ", cert))
+      stone_stochastic_cert_verify(con, cert, modelling_group, touchstone)
+    }
+  }
 
   # Check number of file patterns is 1 for all, or 1 per scenario
 

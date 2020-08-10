@@ -56,99 +56,108 @@ test_that("Bad arguments", {
   do_test(test)
 
   expect_error(stoner::stone_stochastic_process(test$con,
-    "Rudolph", "", "", "", "", "", "", NA, NA),
+    "Rudolph", "", "", "", "", "", "", NA, NA, bypass_cert_check = TRUE),
     "Unknown modelling group:")
 
   expect_error(stoner::stone_stochastic_process(test$con,
-    "LAP-elf", "Plague", "", "", "", "", "", NA, NA),
+    "LAP-elf", "Plague", "", "", "", "", "", NA, NA, bypass_cert_check = TRUE),
     "Unknown disease:")
 
   expect_error(stoner::stone_stochastic_process(test$con,
-    "LAP-elf", "flu", "snowdon", "", "", "", "", NA, NA),
+    "LAP-elf", "flu", "snowdon", "", "", "", "", NA, NA,
+    bypass_cert_check = TRUE),
     "Unknown touchstone:")
 
   expect_error(stoner::stone_stochastic_process(test$con,
-    "LAP-elf", "flu", "nevis-1", "potato", "", "", "", NA, NA),
+    "LAP-elf", "flu", "nevis-1", "potato", "", "", "", NA, NA,
+    bypass_cert_check = TRUE),
     "scenario potato not found in touchstone nevis-1")
 
   expect_error(stoner::stone_stochastic_process(test$con,
-    "LAP-elf", "piles", "nevis-1", "hot_chocolate", "", "", "", NA, NA),
+    "LAP-elf", "piles", "nevis-1", "hot_chocolate", "", "", "", NA, NA,
+    bypass_cert_check = TRUE),
     "scenario_description hot_chocolate not valid for disease piles")
 
   expect_error(stoner::stone_stochastic_process(test$con,
-    "R-deer", "flu", "nevis-1", "hot_chocolate", "", "", "", NA, NA),
+    "R-deer", "flu", "nevis-1", "hot_chocolate", "", "", "", NA, NA,
+    bypass_cert_check = TRUE),
     "No responsibility_set for group R-deer in touchstone nevis-1")
 
   expect_error(stoner::stone_stochastic_process(test$con,
-    "EBHQ-bunny", "flu", "nevis-1", "hot_chocolate", "", "", "", NA, NA),
+    "EBHQ-bunny", "flu", "nevis-1", "hot_chocolate", "", "", "", NA, NA,
+    bypass_cert_check = TRUE),
     paste("No responsibility for group EBHQ-bunny,",
           "scenario hot_chocolate, touchstone nevis-1"))
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", file.path(test$path, "potato"),
-    "", "", NA, NA),
+    "", "", NA, NA, bypass_cert_check = TRUE),
     "Input path not found:")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    c("file1", "file2"), "", NA, NA),
+    c("file1", "file2"), "", NA, NA, bypass_cert_check = TRUE),
     "Incorrect files param - length should be 1 or 3")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", c(NA, NA), NA),
+    "file_template", "", c(NA, NA), NA, bypass_cert_check = TRUE),
     "Incorrect index_start - can be NA, or length 1 or 3")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", NA, c(NA, NA)),
+    "file_template", "", NA, c(NA, NA), bypass_cert_check = TRUE),
     "Incorrect index_end - can be NA, or length 1 or 3")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", c(NA, NA, NA), c(NA, NA, "bob")),
+    "file_template", "", c(NA, NA, NA), c(NA, NA, "bob"),
+    bypass_cert_check = TRUE),
     "index_end must be all NA or integers")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", c(NA, NA, "gladys"), c(NA, NA, NA)),
+    "file_template", "", c(NA, NA, "gladys"), c(NA, NA, NA),
+    bypass_cert_check = TRUE),
     "index_start must be all NA or integers")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", c(NA, NA, 1), 2),
+    "file_template", "", c(NA, NA, 1), 2,
+    bypass_cert_check = TRUE),
     "Mismatches of NA between index_start and index_end")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    c("f", "f:index", "f"), "", c(1, NA, 1), c(2, NA, 2)),
+    c("f", "f:index", "f"), "", c(1, NA, 1), c(2, NA, 2),
+    bypass_cert_check = TRUE),
     "Mismatch between NA in index_start, and :index placeholder in files")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1),
+    "", 1, 1, bypass_cert_check = TRUE),
     "File not found: (.*)non_exist1.xz")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, "", c("deaths", "deaths")),
+    "", 1, 1, "", c("deaths", "deaths"), bypass_cert_check = TRUE),
     "Duplicated outcome in deaths")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, "", "deaths", "cases", "piles_dalys"),
+    "", 1, 1, "", "deaths", "cases", "piles_dalys", bypass_cert_check = TRUE),
     "Outcomes not found, dalys \\('piles_dalys'\\)")
 
   expect_error(stoner::stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, "", "deaths", "cases", "dalys", TRUE),
+    "", 1, 1, "", "deaths", "cases", "dalys", TRUE, bypass_cert_check = TRUE),
     "Must have index_start and index_end as 1..200 to imply run_id")
 })
 
@@ -353,7 +362,7 @@ stochastic_runner <- function(same_countries = TRUE,
                            allow_missing_disease = !include_disease,
                            upload_to_annex = upload, annex = test$con,
                            allow_new_database = allow_new_database,
-                           testing = TRUE)
+                           testing = TRUE, bypass_cert_check = TRUE)
   list(
     test = test,
     data = res$data,

@@ -42,5 +42,6 @@ does not exist. Should only be needed first time on a new database.}
 \item{testing}{For internal use only.}
 }
 \description{
-Upload stochastic data to annex
+Upload the reduced csvs produced by stoner_stochastic_process into
+the annex database.
 }

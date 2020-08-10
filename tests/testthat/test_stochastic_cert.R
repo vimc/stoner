@@ -1,0 +1,101 @@
+context("stochastic_cert")
+
+# Some tests for stochastic model run parameter set certificate validation.
+# stone_stochastic_cert_verify <- function(con, certfile, modelling_group,
+#                                          touchstone) {
+
+test_that("Bad arguments", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  do_test(test)
+
+
+  new_file <- tempfile(fileext = ".json")
+  dummy <-'[
+    {
+      "id": 74,
+      "disease": "HepB",
+      "uploaded_by": "wes",
+      "uploaded_on": "2020-07-27T15:14:27.969Z"
+    },
+    {
+      "signature": "sigdata"
+    }
+  ]'
+  writeLines(dummy, new_file)
+
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con , new_file, "Rudolph", "ivinghoe-beacon-1"),
+    "Unknown modelling group: Rudolph")
+
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con, new_file, "LAP-elf", "ivinghoe-beacon-1"),
+    "Unknown touchstone:")
+
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con, tempfile(), "LAP-elf", "nevis-1"),
+    "Stochastic certificate not found")
+
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con, NULL, "LAP-elf", "nevis-1"),
+    "Stochastic certificate not found")
+})
+
+test_that("Mismatched certificate arguments", {
+  test <- new_test()
+  standard_disease_touchstones(test)
+  standard_responsibility_support(test)
+  resp <- default_responsibility()
+  create_responsibilities(test, resp)
+  do_test(test)
+
+  resp_set <- DBI::dbGetQuery(test$con,
+    "SELECT * FROM responsibility_set LIMIT 1")
+
+  upload_info <- DBI::dbGetQuery(test$con, "
+    INSERT INTO upload_info (uploaded_by, uploaded_on)
+    VALUES ('comet', NOW()) RETURNING id")$id
+
+  DBI::dbExecute(test$con, "
+    INSERT INTO model (id, modelling_group, description, disease,
+                       gender_specific)
+          VALUES ('test_model', 'LAP-elf', 'Description', 'flu', FALSE)")
+
+  model_version <- DBI::dbGetQuery(test$con, "
+    INSERT INTO model_version (model, version)
+          VALUES ('test_model', 1) RETURNING id")
+
+  mrps_id <- DBI::dbGetQuery(test$con, sprintf("
+    INSERT INTO model_run_parameter_set
+                (responsibility_set, upload_info, model_version)
+        VALUES (%s, %s, %s) RETURNING id",
+      resp_set$id, upload_info, model_version))$id
+
+
+  new_file <- tempfile(fileext = ".json")
+  dummy <- sprintf('[
+    {
+      "id": %s,
+      "disease": "flu",
+      "uploaded_by": "comet",
+      "uploaded_on": "2020-07-27T15:14:27.969Z"
+    },
+    {
+      "signature": "sigdata"
+    }
+  ]', mrps_id)
+
+  writeLines(dummy, new_file)
+
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con, new_file, "EBHQ-bunny", "nevis-1"),
+    "Modelling group mismatch - expected LAP-elf")
+
+  expect_error(stoner::stone_stochastic_cert_verify(
+    test$con, new_file, "LAP-elf", "kili-1"),
+    "Touchstone mismatch - expected nevis-1")
+
+  expect_invisible(stoner::stone_stochastic_cert_verify(
+    test$con, new_file, "LAP-elf", "nevis-1"))
+})
