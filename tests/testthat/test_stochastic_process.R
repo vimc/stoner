@@ -451,8 +451,7 @@ test_that("Stochastic - cert not found", {
 })
 
 test_that("Stochastic - cert OK", {
-  expect_success(
-    stochastic_runner(bypass_cert_check = FALSE, cert = NA))
+  compare_all(stochastic_runner(bypass_cert_check = FALSE, cert = NA))
 })
 
 test_that("Stochastic - check database table exists", {
