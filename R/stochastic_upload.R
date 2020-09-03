@@ -166,7 +166,7 @@ stone_stochastic_upload <- function(file, con, annex, modelling_group,
   # when we're testing. Want to do this in a way that preserves
   # code coverage...
 
-  grant <- "GRANT SELECT ON ALL TABLES IN SCHEME public TO readonly"
+  grant <- "GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly"
 
   if (testing) {
     grant <- paste("/*", grant, " */")
