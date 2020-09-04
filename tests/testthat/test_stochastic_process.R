@@ -341,7 +341,7 @@ stochastic_runner <- function(same_countries = TRUE,
                            include_disease)
 
   if (is.na(cert)) {
-    cert <- valid_certificate(test$con)
+    cert <- valid_certificate(test$con, test$path)
   }
 
   index_start <- NA
@@ -447,7 +447,7 @@ test_that("Stochastic - differing countries", {
 test_that("Stochastic - cert not found", {
   expect_error(
     stochastic_runner(bypass_cert_check = FALSE, cert = "non_existing.json"),
-    "Certificate not found: non_existing.json")
+    "Certificate not found:")
 })
 
 test_that("Stochastic - cert OK", {

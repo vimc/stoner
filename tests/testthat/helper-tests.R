@@ -340,7 +340,7 @@ default_responsibility <- function() {
   )
 }
 
-valid_certificate <- function(con) {
+valid_certificate <- function(con, path) {
 
   resp_set <- DBI::dbGetQuery(con,
                               "SELECT * FROM responsibility_set LIMIT 1")
@@ -365,7 +365,7 @@ valid_certificate <- function(con) {
                                                resp_set$id, upload_info, model_version))$id
 
 
-  new_file <- tempfile(fileext = ".json")
+  new_file <- tempfile(fileext = ".json", tmpdir = path)
   dummy <- sprintf('[
     {
       "id": %s,
@@ -379,7 +379,7 @@ valid_certificate <- function(con) {
   ]', mrps_id)
 
   writeLines(dummy, new_file)
-  new_file
+  basename(new_file)
 }
 
 test_run_import <- function(path, con = NULL, ...) {

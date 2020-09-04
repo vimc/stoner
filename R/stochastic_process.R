@@ -153,7 +153,10 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   stopifnot(file.exists(in_path))
 
   # Certificate check (if enabled).
-  cert <- file.path(in_path, cert)
+  if (!is.na(cert)) {
+    cert <- file.path(in_path, cert)
+  }
+
   if (!bypass_cert_check) {
     if (!file.exists(cert)) {
       stop(sprintf("Certificate not found: %s", cert))

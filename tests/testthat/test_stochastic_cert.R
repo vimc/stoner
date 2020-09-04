@@ -53,7 +53,7 @@ test_that("Mismatched certificate arguments", {
   create_responsibilities(test, resp)
   do_test(test)
 
-  new_file <- valid_certificate(test$con)
+  new_file <- file.path(test$path, valid_certificate(test$con, test$path))
 
   expect_error(stoner::stone_stochastic_cert_verify(
     test$con, new_file, "EBHQ-bunny", "nevis-1", "flu"),
