@@ -56,17 +56,23 @@ stone_stochastic_cert_verify <- function(con, certfile, modelling_group,
          ON scenario.scenario_description = scenario_description.id
         WHERE model_run_parameter_set.id = $1",params_id)
 
-  if (mrps_info$modelling_group != modelling_group) {
+  # A model_run_parameter_set links to a responsibility_set, not responsibility
+  # hence, for groups with multiple diseases (JHU-Tam, LSHTM-Clark, LSHTM-Jit),
+  # we may get multiple rows here. modelling_group and touchstone will be the
+  # same for all rows, but disease may not be. So the best we can do is verify
+  # that the disease is among the expected diseases for the responsibility_set.
+
+  if (all(mrps_info$modelling_group != modelling_group)) {
     stop(sprintf("Modelling group mismatch - expected %s",
                  mrps_info$modelling_group))
   }
 
-  if (mrps_info$disease != disease) {
-    stop(sprintf("Disease mismatch - expected %s",
-                 mrps_info$disease))
+  if (!disease %in% mrps_info$disease) {
+    stop(sprintf("Disease %s not found in %s", disease,
+                 paste(mrps_info$disease, collapse = ", ")))
   }
 
-  if (mrps_info$touchstone != touchstone) {
+  if (all(mrps_info$touchstone != touchstone)) {
     stop(sprintf("Touchstone mismatch - expected %s"
                  ,mrps_info$touchstone))
   }
