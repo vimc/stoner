@@ -72,6 +72,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      annex = NULL,
                                      allow_new_database = FALSE,
                                      bypass_cert_check = FALSE,
+                                     zero_dalys = FALSE,
                                      testing = FALSE) {
 
   #######################################################################
@@ -148,7 +149,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
   assert_scalar_character(in_path)
   if (!file.exists(in_path)) {
-    stop(sprintf("Input path not found: ", in_path))
+    stop(sprintf("Input path not found: %s", in_path))
   }
   stopifnot(file.exists(in_path))
 
@@ -308,7 +309,9 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         }
 
         for (outcome in meta_cols) {
-          col_list[[outcome]] <- readr::col_double()
+          if (!is.na(outcome)) {
+            col_list[[outcome]] <- readr::col_double()
+          }
         }
 
         columns <- do.call(readr::cols_only, col_list)
@@ -368,6 +371,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
             csv[['dalys']] <- dalys_total
             dalys_total <- NULL
           }
+        } else {
+          csv[['dalys']] <- NA
         }
         csv
       }
