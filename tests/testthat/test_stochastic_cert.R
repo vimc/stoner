@@ -65,7 +65,7 @@ test_that("Mismatched certificate arguments", {
 
   expect_error(stoner::stone_stochastic_cert_verify(
     test$con, new_file, "LAP-elf", "nevis-1", "piles"),
-    "Disease mismatch - expected flu")
+    "Disease piles not found in")
 
   expect_invisible(stoner::stone_stochastic_cert_verify(
     test$con, new_file, "LAP-elf", "nevis-1", "flu"))
