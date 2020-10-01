@@ -72,7 +72,6 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      annex = NULL,
                                      allow_new_database = FALSE,
                                      bypass_cert_check = FALSE,
-                                     zero_dalys = FALSE,
                                      testing = FALSE) {
 
   #######################################################################
