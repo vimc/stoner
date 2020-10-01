@@ -178,14 +178,16 @@ reduce_outcomes <- function(data, scenario) {
     data$cases_acute <- NULL
     data$cases_chronic <- NULL
   }
-  if (!"dalys" %in% names(data)) {
+  if ((!"dalys" %in% names(data)) && ("dalys_men" %in% names(data))) {
     data[['dalys']] <- data$dalys_men + data$dalys_pneumo
     data$dalys_men <- NULL
     data$dalys_pneumo <- NULL
   }
   names(data)[names(data) == 'deaths'] <- paste0("deaths_", scenario)
   names(data)[names(data) == 'cases'] <- paste0("cases_", scenario)
-  names(data)[names(data) == 'dalys'] <- paste0("dalys_", scenario)
+  if ('dalys' %in% names(data)) {
+    names(data)[names(data) == 'dalys'] <- paste0("dalys_", scenario)
+  }
   data
 }
 
@@ -256,7 +258,8 @@ random_stoch_data <- function(test, same_countries = TRUE,
                               simple_outcomes = TRUE,
                               single_file_per_scenario = TRUE,
                               include_run_id = TRUE,
-                              include_disease = TRUE) {
+                              include_disease = TRUE,
+                              skip_dalys = FALSE) {
 
   resps <- create_dummy_stoch(test, same_countries, simple_outcomes)
   create_responsibilities(test, resps)
@@ -275,6 +278,9 @@ random_stoch_data <- function(test, same_countries = TRUE,
     years <- resps$year_min_inclusive[i]:resps$year_max_inclusive[i]
     n_years <- length(years)
     outcomes <- split_semi(resps$outcomes[i])
+    if (skip_dalys) {
+      outcomes <- outcomes[!grepl("dalys", outcomes)]
+    }
     n_rows <- n_runs * n_countries * n_years * n_ages
     scenario <- resps$scenario[i]
 
@@ -334,11 +340,12 @@ stochastic_runner <- function(same_countries = TRUE,
                               upload = FALSE,
                               allow_new_database = TRUE,
                               bypass_cert_check = TRUE,
+                              skip_dalys = FALSE,
                               cert = "") {
   test <- new_test()
   res <- random_stoch_data(test, same_countries, simple_outcomes,
                            single_file_per_scenario, include_run_id,
-                           include_disease)
+                           include_disease, skip_dalys)
 
   if (is.na(cert)) {
     cert <- valid_certificate(test$con, test$path)
@@ -358,6 +365,10 @@ stochastic_runner <- function(same_countries = TRUE,
     deaths <- c("deaths_acute", "deaths_chronic")
     cases <- c("cases_acute", "cases_chronic")
     dalys <- c("dalys_men", "dalys_pneumo")
+  }
+
+  if (skip_dalys) {
+    dalys <- NA
   }
 
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
@@ -464,6 +475,17 @@ test_that("Stochastic - check database table exists", {
   expect_error(stoner::stone_stochastic_upload(new_file, test$con, test$con,
     "LAP-elf", "flu", "nevis-1", FALSE, FALSE, FALSE),
     "stochastic_file database table not found")
+})
+
+test_that("Stochastic - with missing DALYs", {
+  result <- stochastic_runner(upload = FALSE, skip_dalys = TRUE,
+                              simple_outcomes = TRUE)
+  for (table in c("cal", "cal_u5", "coh", "coh_u5")) {
+    for (col in c("dalys_holly", "dalys_pies", "dalys_hot_chocolate")) {
+      expect_true(col %in% names(result[[table]]))
+      expect_true(all(is.na(result[[table]][[col]])))
+    }
+  }
 })
 
 test_that("Stochastic - with upload", {
