@@ -53,9 +53,9 @@ test_that("Asserts", {
   test <- new_test()
   expect_invisible(assert_connection(test$con))
 
-  expect_error(assert_scalar_logical(c("FALSE", "TRUE"), "(.*) must be a scalar"))
-  expect_error(assert_scalar_logical(c(T, F), "(.*) must be a scalar"))
-  expect_error(assert_scalar_logical("FALSE"), "(.*) must be a logical")
+  expect_error(assert_scalar_logical(c("FALSE", "TRUE")), "'c\\(\"FALSE\", \"TRUE\")' must be a logical")
+  expect_error(assert_scalar_logical(c(TRUE, FALSE)), "'c\\(TRUE, FALSE)' must be a scalar")
+  expect_error(assert_scalar_logical("FALSE"), "'\"FALSE\"' must be a logical")
   expect_invisible(assert_scalar_logical(FALSE))
 
 })
