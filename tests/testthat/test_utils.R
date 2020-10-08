@@ -33,3 +33,29 @@ test_that("null_or_empty works", {
   expect_true(null_or_empty(NULL))
   expect_true(null_or_empty(mtcars[mtcars$mpg>99999, ]))
 })
+
+test_that("Asserts", {
+  expect_error(assert_nonmissing(NA), "'NA' must not be NA")
+  expect_invisible(assert_nonmissing(c(1, 2, 3)))
+
+  expect_error(assert_scalar(c(1,2)), "(.*) must be a scalar")
+  expect_invisible(assert_scalar(123))
+
+  expect_error(assert_character(123), "(.*) must be a character")
+  expect_invisible(assert_character(c("1","2")))
+
+  expect_error(assert_scalar_character(c("1","2"), "(.*) must be a scalar"))
+  expect_error(assert_scalar_character(123), "(.*) must be a character")
+  expect_invisible(assert_scalar_character("a"))
+  expect_error(assert_scalar_character(""), "(.*) must be nonempty")
+
+  expect_error(assert_connection(mtcars), "(.*) must be a PqConnection object")
+  test <- new_test()
+  expect_invisible(assert_connection(test$con))
+
+  expect_error(assert_scalar_logical(c("FALSE", "TRUE")), "'c\\(\"FALSE\", \"TRUE\")' must be a logical")
+  expect_error(assert_scalar_logical(c(TRUE, FALSE)), "'c\\(TRUE, FALSE)' must be a scalar")
+  expect_error(assert_scalar_logical("FALSE"), "'\"FALSE\"' must be a logical")
+  expect_invisible(assert_scalar_logical(FALSE))
+
+})

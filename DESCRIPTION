@@ -1,10 +1,10 @@
 Package: stoner
 Title: Support for building VIMC Montagu Touchstones, using dettl
-Version: 0.0.7
+Version: 0.0.8
 Authors@R:
-    c(person("Wes", "Hinsley",role = c("aut", "cre", "cst", "dnc", "itr", "sng"),
+    c(person("Wes", "Hinsley",role = c("aut", "cre", "cst", "dnc", "elg", "itr", "sng"),
            email = "w.hinsley@imperial.ac.uk"),
-      person("Rich", "Fitzjohn", role = c("aut", "sng")))
+      person("Rich", "Fitzjohn", role = c("aut", "csl", "sng")))
 URL: https://github.com/vimc/stoner
 BugReports: https://github.com/vimc/stoner/issues
 Description: For montagu-imports that create touchstones, or augment existing
@@ -17,9 +17,12 @@ LazyData: true
 Imports:
     DBI,
     RPostgres,
-    utils
+    utils,
+    data.table,
+    readr,
+    jsonlite
 Language: en-GB
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)
 Suggests:
     knitr,

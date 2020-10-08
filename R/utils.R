@@ -87,6 +87,15 @@ db_get <- function(con, table, id_field = NULL, id_values = NULL, select = "*") 
   DBI::dbGetQuery(con, sql)
 }
 
+db_exists <- function(con, table, field, value) {
+  if (is.character(value)) {
+    value <- sprintf("'%s'", value)
+  }
+  sql <- sprintf("SELECT COUNT(*) FROM %s WHERE %s = %s",
+                 table, field, value)
+  DBI::dbGetQuery(con, sql)$count == 1
+}
+
 # Return a vector of characters for a table, each entry being all the fields
 # of that table mashed together, separated by '\r'
 
