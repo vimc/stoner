@@ -43,7 +43,7 @@
 ##' remaining group that does not provide DALYs, you can supply a data
 ##' frame here, and stoner will calculate DALYs using that recipe. The
 ##' data frame must have names `outcome`, `proportion`, `average_duration`
-##' and `disability_weight`.
+##' and `disability_weight`. See [stoner_calculate_dalys].
 ##' @param runid_from_file Occasionally groups have omitted the run_id
 ##' from the stochastic file, and provided 200 files, one per run_id. Set
 ##' runid_from_file to TRUE if this is the case, to deduce the run_id from

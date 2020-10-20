@@ -77,7 +77,7 @@ is the existing DALYs burden_outcome. Alternatively, for the one
 remaining group that does not provide DALYs, you can supply a data
 frame here, and stoner will calculate DALYs using that recipe. The
 data frame must have names \code{outcome}, \code{proportion}, \code{average_duration}
-and \code{disability_weight}.}
+and \code{disability_weight}. See \link{stoner_calculate_dalys}.}
 
 \item{runid_from_file}{Occasionally groups have omitted the run_id
 from the stochastic file, and provided 200 files, one per run_id. Set
