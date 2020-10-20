@@ -27,6 +27,7 @@ new_test <- function(clear_db = TRUE, clear_files = TRUE) {
     DBI::dbExecute(res$con, "DELETE FROM model_version")
     DBI::dbExecute(res$con, "DELETE FROM model")
     DBI::dbExecute(res$con, "DELETE FROM upload_info")
+    DBI::dbExecute(res$con, "DELETE FROM demographic_statistic")
     DBI::dbExecute(res$con, "DELETE FROM touchstone_demographic_dataset")
     DBI::dbExecute(res$con, "DELETE FROM demographic_dataset")
     DBI::dbExecute(res$con, "DELETE FROM demographic_statistic_type")
