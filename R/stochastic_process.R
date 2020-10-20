@@ -37,11 +37,13 @@
 ##' @param cases If cases must be calculated as a sum of other burden
 ##' outcomes, then provide a vector of the outcome names here. The default
 ##' is the existing cases burden_outcome.
-##' @param dalys If dalys must be calculated as a sum of other burden
+##' @param dalys If DALYs must be calculated as a sum of other burden
 ##' outcomes, then provide a vector of the outcome names here. The default
-##' is the existing dalys burden_outcome. Additionally, for the one
-##' remaining group that does not provide dalys, you can set dalys to
-##' NA here, and stoner will calculate them.
+##' is the existing DALYs burden_outcome. Alternatively, for the one
+##' remaining group that does not provide DALYs, you can supply a data
+##' frame here, and stoner will calculate DALYs using that recipe. The
+##' data frame must have names `outcome`, `proportion`, `average_duration`
+##' and `disability_weight`.
 ##' @param runid_from_file Occasionally groups have omitted the run_id
 ##' from the stochastic file, and provided 200 files, one per run_id. Set
 ##' runid_from_file to TRUE if this is the case, to deduce the run_id from
@@ -78,6 +80,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   # Do all the parameter and file testing upfront, as this can be a very
   # time-consuming process...
 
+  cache_life_table <- NULL
+
   assert_connection(con)
   if (upload_to_annex) {
     assert_connection(annex)
@@ -98,6 +102,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   assert_scalar_character(touchstone)
   if (!db_exists(con, "touchstone", "id", touchstone)) {
     stop(sprintf("Unknown touchstone: %s", touchstone))
+  }
+
+  if (is.data.frame(dalys)) {
+    stopifnot(all.equal(sort(names(dalys)),
+      c("average_duration", "disability_weight", "outcome", "proportion")))
   }
 
   # Scenario-specific tests:
@@ -251,14 +260,16 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
   check_outcomes("cases", cases)
   check_outcomes("deaths", deaths)
-  if (!is.na(dalys[1])) {
+
+  if (is.data.frame(dalys)) {
+    check_outcomes("dalys", unique(dalys$outcome))
+
+  } else {
     check_outcomes("dalys", dalys)
   }
 
   # dry_run below is so that we can test all the files exists
   # before we bother reading any of them.
-
-
 
   all_scenarios <- function(dry_run = FALSE) {
 
@@ -291,6 +302,24 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
       read_xz_csv <- function(the_file, meta_cols, allow_missing_disease,
                               runid_from_file, run_id) {
+
+        calc_outcomes <- function(csv, outcomes, single_outcome) {
+
+          # If the outcome we want is the sum of other outcomes...
+
+          if (!identical(outcomes, single_outcome)) {
+            total <- csv[[outcomes[1]]]
+            if (length(outcomes) > 1) {
+              for (i in 2:length(outcomes)) {
+                total <- total + csv[[outcomes[i]]]
+              }
+            }
+            csv[[single_outcome]] <- total
+          }
+
+          csv
+        }
+
         col_list <- list(
           year = readr::col_integer(),
           age = readr::col_integer(),
@@ -331,49 +360,21 @@ stone_stochastic_process <- function(con, modelling_group, disease,
 
         csv$country <- countries$nid[match(csv$country, countries$id)]
 
-        if (!identical(deaths, 'deaths')) {
-          deaths_total <- csv[[deaths[1]]]
-          csv[[deaths[1]]] <- NULL
-          if (length(deaths) > 1) {
-            for (i in 2:length(deaths)) {
-              deaths_total <- deaths_total + csv[[deaths[i]]]
-              csv[[deaths[i]]] <- NULL
-            }
+        if (is.data.frame(dalys)) {
+          res <- stoner_calculate_dalys(con, touchstone, csv, dalys, cache_life_table)
+          csv <- res$data
+          if (is.null(cache_life_table)) {
+            cache_life_table <- res$life_table
           }
-          csv[['deaths']] <- deaths_total
-          deaths_total <- NULL
-        }
 
-        if (!identical(cases, 'cases')) {
-          cases_total <- csv[[cases[1]]]
-          csv[[cases[1]]] <- NULL
-          if (length(cases) > 1) {
-            for (i in 2:length(cases)) {
-              cases_total <- cases_total + csv[[cases[i]]]
-              csv[[cases[i]]] <- NULL
-            }
-          }
-          csv[['cases']] <- cases_total
-          cases_total <- NULL
-        }
-
-        if (!is.na(dalys[1])) {
-          if (!identical(dalys, 'dalys')) {
-            dalys_total <- csv[[dalys[1]]]
-            csv[[dalys[1]]] <- NULL
-            if (length(dalys) > 1) {
-              for (i in 2:length(dalys)) {
-                dalys_total <- dalys_total + csv[[dalys[i]]]
-                csv[[dalys[i]]] <- NULL
-              }
-            }
-            csv[['dalys']] <- dalys_total
-            dalys_total <- NULL
-          }
         } else {
-          csv[['dalys']] <- NA
+          csv <- calc_outcomes(csv, dalys, "dalys")
         }
-        csv
+
+        csv <- calc_outcomes(csv, deaths, "deaths")
+        csv <- calc_outcomes(csv, cases, "cases")
+
+        csv[, c("run_id", "year", "age", "country", "deaths", "cases" ,"dalys")]
       }
 
       ################################################################
@@ -393,11 +394,17 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         }
         if (!dry_run) {
           message(the_file)
-          scenario_data[[i]] <- read_xz_csv(the_file,
-                                              c(deaths, cases, dalys),
-                                              allow_missing_disease,
-                                              runid_from_file, i
-                                              )
+          if (is.data.frame(dalys)) {
+            dalys_cols <- unique(dalys$outcome)
+          } else {
+            dalys_cols <- dalys
+          }
+
+          scenario_data[[i]] <-
+            read_xz_csv(the_file,
+                        unique(c(deaths, cases, dalys_cols)),
+                        allow_missing_disease,
+                        runid_from_file, i)
         }
       }
 

@@ -267,6 +267,7 @@ random_stoch_data <- function(test, same_countries = TRUE,
   runs <- 1:200
   n_runs <- 200
   data <- list()
+  raw <- list()
   files <- list()
 
   for (i in seq_along(resps$scenario)) {
@@ -284,22 +285,22 @@ random_stoch_data <- function(test, same_countries = TRUE,
     n_rows <- n_runs * n_countries * n_years * n_ages
     scenario <- resps$scenario[i]
 
-    data[[scenario]] <- data_frame(
+    raw[[scenario]] <- data_frame(
       run_id = rep(runs, n_countries * n_ages * n_years),
       country = rep(rep(countries, each = n_runs), n_ages * n_years),
       year = rep(rep(years, each = n_runs * n_countries), n_ages),
       age = rep(ages, each = n_runs * n_countries * n_years))
     if (include_disease) {
-      data[[i]]$disease <- resps$disease[i]
+      raw[[i]]$disease <- resps$disease[i]
     }
-    data[[scenario]]$country_name <- data[[i]]$country
-    data[[scenario]]$cohort_size <- round(runif(n_rows) * 100000)
+    raw[[scenario]]$country_name <- raw[[i]]$country
+    raw[[scenario]]$cohort_size <- round(runif(n_rows) * 100000)
     for (outcome in outcomes) {
-      data[[scenario]][[outcome]] <- round(runif(n_rows) * 100000)
+      raw[[scenario]][[outcome]] <- round(runif(n_rows) * 100000)
     }
 
     if (single_file_per_scenario) {
-      write_csv(data[[scenario]],
+      write_csv(raw[[scenario]],
         file.path(test$path, sprintf("LAP-elf_%s.csv", scenario)))
 
       files[[i]] <- "LAP-elf_:scenario.csv"
@@ -307,7 +308,7 @@ random_stoch_data <- function(test, same_countries = TRUE,
     } else {
 
       for (j in seq_len(n_runs)) {
-        d <- data[[i]]
+        d <- raw[[i]]
         d <- d[d$run_id == j, ]
         if (!include_run_id) {
           d$run_id <- NULL
@@ -318,16 +319,15 @@ random_stoch_data <- function(test, same_countries = TRUE,
       }
       files[[i]] <- "LAP-elf_:scenario_:index.csv"
     }
-    data[[scenario]] <- reduce_outcomes(data[[scenario]], scenario)
+    data[[scenario]] <- reduce_outcomes(raw[[scenario]], scenario)
   }
 
   all_countries <- unique(unlist(lapply(data,
                     function(x) unique(x$country))))
-
   data <- expand_countries(data, all_countries)
   data <- bind_columns(data)
   data <- convert_country(test, data)
-  list(data = data, resps = resps, files = unlist(files))
+  list(raw = raw, data = data, resps = resps, files = unlist(files))
 }
 
 ###############################################################################
@@ -340,12 +340,19 @@ stochastic_runner <- function(same_countries = TRUE,
                               upload = FALSE,
                               allow_new_database = TRUE,
                               bypass_cert_check = TRUE,
-                              skip_dalys = FALSE,
+                              dalys_df = NULL,
                               cert = "") {
+
   test <- new_test()
+
   res <- random_stoch_data(test, same_countries, simple_outcomes,
                            single_file_per_scenario, include_run_id,
-                           include_disease, skip_dalys)
+                           include_disease, !is.null(dalys_df))
+
+  if (is.data.frame(dalys_df)) {
+    fake_lifetable_db(test$con)
+  }
+
 
   if (is.na(cert)) {
     cert <- valid_certificate(test$con, test$path)
@@ -367,8 +374,8 @@ stochastic_runner <- function(same_countries = TRUE,
     dalys <- c("dalys_men", "dalys_pneumo")
   }
 
-  if (skip_dalys) {
-    dalys <- NA
+  if (!is.null(dalys_df)) {
+    dalys <- dalys_df
   }
 
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
@@ -384,6 +391,7 @@ stochastic_runner <- function(same_countries = TRUE,
                            testing = TRUE)
   list(
     test = test,
+    raw = res$raw,
     data = res$data,
     cal = read_csv(file.path(test$path, "LAP-elf_flu_calendar.csv")),
     cal_u5 = read_csv(file.path(test$path, "LAP-elf_flu_calendar_u5.csv")),
@@ -477,17 +485,6 @@ test_that("Stochastic - check database table exists", {
     "stochastic_file database table not found")
 })
 
-test_that("Stochastic - with missing DALYs", {
-  result <- stochastic_runner(upload = FALSE, skip_dalys = TRUE,
-                              simple_outcomes = TRUE)
-  for (table in c("cal", "cal_u5", "coh", "coh_u5")) {
-    for (col in c("dalys_holly", "dalys_pies", "dalys_hot_chocolate")) {
-      expect_true(col %in% names(result[[table]]))
-      expect_true(all(is.na(result[[table]][[col]])))
-    }
-  }
-})
-
 test_that("Stochastic - with upload", {
   result <- stochastic_runner(upload = TRUE)
   meta <- DBI::dbReadTable(result$test$con, "stochastic_file")
@@ -531,4 +528,104 @@ test_that("Stochastic - with upload", {
   expect_equal(2, new_meta$version[!new_meta$is_cohort & !new_meta$is_under5])
 })
 
+##############################################################################
+# DALYs related.
 
+fake_lifetable_db <- function(con) {
+  value_years <- DBI::dbGetQuery(con, "
+      SELECT id FROM demographic_value_unit WHERE name='Years'")$id
+
+  variant <- DBI::dbGetQuery(con, "
+      INSERT INTO demographic_variant (code, name)
+           VALUES ('elf_estimates', 'ELF Estimates')
+        RETURNING id")$id
+
+  source <- DBI::dbGetQuery(con, "
+      INSERT INTO demographic_source (code, name)
+           VALUES ('elf_2020', 'Elf dataset')
+        RETURNING id")$id
+
+  dst_life_ex <- DBI::dbGetQuery(con, "
+      INSERT INTO demographic_statistic_type
+                  (code, age_interpretation, name, year_step_size,
+                   reference_date, gender_is_applicable, demographic_value_unit,
+                   default_variant)
+           VALUES ('life_ex', 'Age', 'life_ex', 5, '2000-07-01', TRUE, $1, $2)
+        RETURNING id", list(value_years, variant))$id
+
+  dataset <- DBI::dbGetQuery(con, "
+      INSERT INTO demographic_dataset (description, demographic_source,
+                                       demographic_statistic_type)
+           VALUES ('Elf dataset', $1, $2)
+        RETURNING id", list(source, dst_life_ex))$id
+
+  tdd <- DBI::dbGetQuery(con, "
+      INSERT INTO touchstone_demographic_dataset
+                  (touchstone, demographic_dataset)
+           VALUES ('nevis-1', $1)
+        RETURNING id", dataset)$id
+
+  both_gender <- DBI::dbGetQuery(con, "SELECT * FROM gender WHERE code='both'")$id
+
+  age_from <- c(0, 1, seq(5, 100, by = 5))
+  age_to <- c(0, 4,seq(9, 99, by = 5), 120)
+  years <- seq(1950, 2095, by = 5)
+
+  fake_life_ex <- data_frame(
+    year = rep(years, each = length(age_from)),
+    age_from = age_from,
+    age_to = age_to,
+    value = 120 - age_from,
+    country = rep(c("AFG", "ZWE"), each = length(age_from) * length(years)),
+    demographic_variant = variant,
+    demographic_source = source,
+    demographic_statistic_type = dst_life_ex,
+    demographic_dataset = dataset,
+    gender = both_gender)
+
+  DBI::dbWriteTable(con, "demographic_statistic", fake_life_ex, append = TRUE)
+}
+
+test_that("Stochastic - with DALYs", {
+  dalys_df <- data_frame(
+    outcome = c("cases_acute", "deaths_chronic"),
+    proportion = c(0.1, 0.2),
+    average_duration = c(20, 1000),
+    disability_weight = c(0.4, 0.6))
+
+  result <- stochastic_runner(upload = FALSE, dalys_df = dalys_df,
+                              simple_outcomes = FALSE)
+
+  lt <- stoner_life_table(result$test$con, "nevis-1", 2000, 2100, TRUE)
+
+  result$raw$pies <- result$raw$pies[result$raw$pies$country == 'AFG', ]
+
+  result$raw$pies$.code <-
+    paste(result$raw$pies$country, result$raw$pies$year, result$raw$pies$age, sep="-")
+
+  result$raw$pies$life_ex <- lt$value[match(result$raw$pies$.code, lt$.code)]
+
+  result$raw$pies$dalys_pies <-
+    (result$raw$pies$cases_acute * 0.1 * pmin(20, result$raw$pies$life_ex) * 0.4) +
+    (result$raw$pies$deaths_chronic * 0.2 * result$raw$pies$life_ex * 0.6)
+
+  split_runs <- split(result$raw$pies, result$raw$pies$run_id)
+
+  df_all <- NULL
+  for (run in split_runs) {
+    df_yr <- NULL
+    years <- split(run, run$year)
+    for (year in years) {
+      df_yr <- rbind(df_yr, data_frame(
+        run_id = unique(run$run_id),
+        year = unique(year$year),
+        dalys = sum(year$dalys_pies)
+      ))
+    }
+    df_all <- rbind(df_all, df_yr)
+  }
+
+  expect_true(all.equal(df_all$dalys,
+                        result$cal$dalys_pies[result$cal$country == 4]))
+
+})

@@ -1,3 +1,7 @@
+## 0.0.9
+
+Support for adding DALYs to a dataset, including inline with stochastic processing
+
 ## 0.0.8
 
 Support for stochastic processing and upload
