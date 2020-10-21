@@ -598,34 +598,83 @@ test_that("Stochastic - with DALYs", {
 
   lt <- stoner_life_table(result$test$con, "nevis-1", 2000, 2100, TRUE)
 
-  result$raw$pies <- result$raw$pies[result$raw$pies$country == 'AFG', ]
+  for (country in c("AFG", "ZWE")) {
 
-  result$raw$pies$.code <-
-    paste(result$raw$pies$country, result$raw$pies$year, result$raw$pies$age, sep="-")
+    country_nid <- DBI::dbGetQuery(result$test$con,
+      "SELECT nid FROM country WHERE id=$1", country)$nid
 
-  result$raw$pies$life_ex <- lt$value[match(result$raw$pies$.code, lt$.code)]
+    for (scenario in c("pies", "holly", "hot_chocolate")) {
+      dalys <- paste0("dalys_", scenario)
+      data <- result$raw[[scenario]][result$raw[[scenario]]$country == country, ]
+      data$.code <- paste(data$country, data$year, data$age, sep="-")
+      data$life_ex <- lt$value[match(data$.code, lt$.code)]
+      data[[dalys]] <-
+        (data$cases_acute * 0.1 * pmin(20, data$life_ex) * 0.4) +
+        (data$deaths_chronic * 0.2 * data$life_ex * 0.6)
 
-  result$raw$pies$dalys_pies <-
-    (result$raw$pies$cases_acute * 0.1 * pmin(20, result$raw$pies$life_ex) * 0.4) +
-    (result$raw$pies$deaths_chronic * 0.2 * result$raw$pies$life_ex * 0.6)
+      split_runs <- split(data, data$run_id)
 
-  split_runs <- split(result$raw$pies, result$raw$pies$run_id)
+      df_cal_all <- NULL
+      df_cal_u5_all <- NULL
+      df_coh_all <- NULL
+      df_coh_u5_all <- NULL
 
-  df_all <- NULL
-  for (run in split_runs) {
-    df_yr <- NULL
-    years <- split(run, run$year)
-    for (year in years) {
-      df_yr <- rbind(df_yr, data_frame(
-        run_id = unique(run$run_id),
-        year = unique(year$year),
-        dalys = sum(year$dalys_pies)
-      ))
+      for (run in split_runs) {
+
+        #### Calendar
+
+        df_cal <- NULL
+        df_cal_u5 <- NULL
+        years <- split(run, run$year)
+        for (year in years) {
+          df_cal <- rbind(df_cal, data_frame(
+            run_id = unique(run$run_id),
+            year = unique(year$year),
+            dalys = sum(year[[dalys]])
+          ))
+
+          year <- year[year$age < 5, ]
+          df_cal_u5 <- rbind(df_cal_u5, data_frame(
+            run_id = unique(run$run_id),
+            year = unique(year$year),
+            dalys = sum(year[[dalys]])
+          ))
+
+        }
+        df_cal_all <- rbind(df_cal_all, df_cal)
+        df_cal_u5_all <- rbind(df_cal_u5_all, df_cal_u5)
+
+        #### Cohort
+
+        run$cohort <- run$year - run$age
+        df_coh <- NULL
+        df_coh_u5 <- NULL
+        cohorts <- split(run, run$cohort)
+        for (cohort in cohorts) {
+          df_coh <- rbind(df_coh, data_frame(
+            run_id = unique(run$run_id),
+            cohort = unique(cohort$cohort),
+            dalys = sum(cohort[[dalys]])
+          ))
+
+          cohort <- cohort[cohort$age < 5, ]
+          if (nrow(cohort) > 0) {
+            df_coh_u5 <- rbind(df_coh_u5, data_frame(
+              run_id = unique(run$run_id),
+              cohort = unique(cohort$cohort),
+              dalys = sum(cohort[[dalys]])
+            ))
+          }
+        }
+        df_coh_all <- rbind(df_coh_all, df_coh)
+        df_coh_u5_all <- rbind(df_coh_u5_all, df_coh_u5)
+      }
+
+      threshold <- 1e-7
+      expect_true(all(abs(df_cal_all$dalys - result$cal[[dalys]][result$cal$country == country_nid]) < threshold))
+      expect_true(all(abs(df_coh_all$dalys - result$cah[[dalys]][result$coh$country == country_nid]) < threshold))
+      expect_true(all(abs(df_cal_u5_all$dalys - result$cal_u5[[dalys]][result$cal_u5$country == country_nid]) < threshold))
+      expect_true(all(abs(df_coh_u5_all$dalys - result$coh_u5[[dalys]][result$coh_u5$country == country_nid]) < threshold))
     }
-    df_all <- rbind(df_all, df_yr)
   }
-
-  expect_true(all.equal(df_all$dalys,
-                        result$cal$dalys_pies[result$cal$country == 4]))
-
 })

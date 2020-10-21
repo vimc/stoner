@@ -41,19 +41,11 @@
 ##' and `data` is a version of the original dataset, now with a `dalys` column. Note that
 ##' if `data` already contained a `dalys` column when provided to the function, that column will
 ##' be overwritten with the new results.
-
 stoner_calculate_dalys <- function(con, touchstone, data, dalys_params, life_table = NULL,
                                    year_min = 2000, year_max = 2100) {
   # Type tests
 
-  assert_connection(con)
-  assert_character(touchstone)
-  assertthat::are_equal(class(dalys_params), "data.frame")
-  assertthat::are_equal(sort(names(dalys_params)),
-    c("average_duration", "disability_weight","outcome", "proportion"))
-  if (!is.null(life_table)) {
-    assertthat::are_equal(class(life_table), "data.frame")
-  }
+  test_args(con, dalys_params, life_table)
 
   # Accept countries as either character or numerical id.
 
@@ -90,6 +82,26 @@ stoner_calculate_dalys <- function(con, touchstone, data, dalys_params, life_tab
   res
 }
 
+test_args <- function(con, dalys_params, life_table) {
+  assert_connection(con)
+
+  if (class(dalys_params) != "data.frame") {
+    stop("dalys_params must be a data.frame")
+  }
+  if (!identical(sort(names(dalys_params)),
+                 c("average_duration", "disability_weight","outcome", "proportion"))) {
+    stop("dalys_params needs columns outcome, proportion, average_duration and disablility_weight")
+  }
+
+  if (!is.null(life_table)) {
+    if (class(life_table) != "data.frame") {
+      stop("life_table (if specified) must be data.frame")
+    }
+    if (!identical(sort(names(life_table)), c(".code", "value"))) {
+      stop("life_table (if specified) must have columns .code and value")
+    }
+  }
+}
 
 
 ##' @title Calculate life expectancy table
@@ -204,14 +216,16 @@ stoner_dalys_for_db <- function(con, dalys_params, modelling_group = NULL, disea
                             scenario = NULL, burden_estimate_set_id = NULL, output_file = NULL,
                             life_table = NULL, year_min = 2000, year_max = 2100) {
 
+  test_args(con, dalys_params, life_table)
+
   if (is.null(burden_estimate_set_id)) {
     if ((is.null(modelling_group)) || (is.null(disease)) ||
-        (is.null(touchstone)) || (is.nll(scenario))) {
+        (is.null(touchstone)) || (is.null(scenario))) {
       stop("No burden_estimate_id given - need modelling_group, disease, touchstone and scenario")
     }
   } else {
     if ((!is.null(modelling_group)) || (!is.null(disease)) ||
-        (!is.null(touchstone)) || (!is.nll(scenario))) {
+        (!is.null(touchstone)) || (!is.null(scenario))) {
       stop("Provide either burden_estimate_id, or {modelling_group, disease, touchstone, scenario} - not both")
     }
   }
@@ -265,7 +279,6 @@ stoner_dalys_for_db <- function(con, dalys_params, modelling_group = NULL, disea
   data <- data[[1]]
 
   # Now calculate DALYs.
-
 
   data_dalys <- stoner_calculate_dalys(con, touchstone, data, dalys_params, life_table,
                                        year_min, year_max)
