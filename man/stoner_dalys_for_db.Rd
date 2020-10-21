@@ -22,6 +22,18 @@ stoner_dalys_for_db(
 \item{con}{DBI connection to a Montagu database, for retrieving
 the burden_estimate set.}
 
+\item{dalys_params}{A data.frame containing how to calculate dalys; each row
+represents a condition, and the four columns describe how to calculate the cost of
+that condition across the population in that year. For each condition, the \code{outcome}
+column must provide a burden outcome (which will be a column name in \code{data}). The
+\code{proportion} is the proportion of people reported as that outcome, who suffer this
+condition. \code{average_duration} is the number of years for which the condition is
+suffered, set to greater than 120 for a life-long period. And \code{disability_weight}
+is a measure of how severe the implications are of this particular condition. See
+http://ghdx.healthdata.org/record/ihme-data/gbd-2017-disability-weights for where
+these figures come from; the final figures are decided in discussion with the
+groups.}
+
 \item{modelling_group}{If the modelling group, disease, touchstone and scenario are all
 provided, then we lookup the current (most recently uploaded) burden estimate set matching
 those details.}
