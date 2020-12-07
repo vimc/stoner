@@ -46,7 +46,7 @@ test_that("Touchstone demographic dataset - touchstone not exist", {
   standard_demography(test)
   create_ts_dds(test$path, "nevis-1", "S1", "T1")
   expect_error(do_test(test),
-    "Touchstones in touchstone_demographic_dataset exist isn't true.",
+    "Touchstones in touchstone_demographic_dataset exist",
     class = "expectation_failure")
 })
 
@@ -56,7 +56,7 @@ test_that("Touchstone demographic dataset - demographic source not exist", {
   standard_demography(test, make_source = FALSE)
   create_ts_dds(test$path, "nevis-1", "S1", "T1")
   expect_error(do_test(test),
-    "demographic sources in touchstone_demographic_dataset exist isn't true.",
+    "demographic sources in touchstone_demographic_dataset exist",
     class = "expectation_failure")
 })
 
@@ -66,7 +66,7 @@ test_that("Touchstone demographic dataset - demographic stat type not exist", {
   standard_demography(test, make_type = FALSE)
   create_ts_dds(test$path, "nevis-1", "S1", "T1")
   expect_error(do_test(test),
-    "demog. statistic types in touchstone_demographic_dataset exist isn't true.",
+    "demog. statistic types in touchstone_demographic_dataset exist",
     class = "expectation_failure")
 })
 
@@ -76,7 +76,7 @@ test_that("Touchstone demographic dataset - demographic dataset not exist", {
   standard_demography(test, make_dataset = FALSE)
   create_ts_dds(test$path, "nevis-1", "S1", "T1")
   expect_error(do_test(test),
-    "Demographic datasets already exist isn't true.",
+    "Demographic datasets already exist",
     class = "expectation_failure")
 })
 
