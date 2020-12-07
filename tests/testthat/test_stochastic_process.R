@@ -598,6 +598,7 @@ test_that("Stochastic - with DALYs", {
 
   lt <- stoner_life_table(result$test$con, "nevis-1", 2000, 2100, TRUE)
 
+  dalys_pies <- NULL
   for (country in c("AFG", "ZWE")) {
 
     country_nid <- DBI::dbGetQuery(result$test$con,
@@ -611,6 +612,11 @@ test_that("Stochastic - with DALYs", {
       data[[dalys]] <-
         (data$cases_acute * 0.1 * pmin(20, data$life_ex) * 0.4) +
         (data$deaths_chronic * 0.2 * data$life_ex * 0.6)
+
+      if (scenario == "pies") {
+        dalys_pies <- rbind(dalys_pies,
+          data[data$run_id == 1,])
+      }
 
       split_runs <- split(data, data$run_id)
 
@@ -677,4 +683,114 @@ test_that("Stochastic - with DALYs", {
       expect_true(all(abs(df_coh_u5_all$dalys - result$coh_u5[[dalys]][result$coh_u5$country == country_nid]) < threshold))
     }
   }
+
+  # Also test non-stochastic DALYs here, since we have the data we need...
+
+  # Create a burden estimate set, and all the table support that goes with...
+
+  pies <- result$raw$pies
+  con <- result$test$con
+  resp_id <- DBI::dbGetQuery(con, "
+    SELECT responsibility.id FROM responsibility
+      JOIN responsibility_set
+        ON responsibility.responsibility_set = responsibility_set.id
+      JOIN scenario
+        ON responsibility.scenario = scenario.id
+     WHERE scenario_description = 'pies'
+       AND modelling_group = 'LAP-elf'
+       AND responsibility_set.touchstone = 'nevis-1'")$id
+
+  DBI::dbExecute(con, "
+    INSERT INTO model
+                (id, modelling_group, description, is_current)
+        VALUES ('LAP-elf', 'LAP-elf', 'Ho, ho, ho', TRUE)")
+
+  model_version <- DBI::dbGetQuery(con, "
+    INSERT INTO model_version
+                (model, version)
+         VALUEs ('LAP-elf', 1)
+      RETURNING id")$id
+
+  DBI::dbExecute(con, "
+    INSERT INTO app_user
+                (username, name, email)
+         VALUES ('Elf','Head Elf', 'head@lapland.edu')")
+
+  new_bes <- DBI::dbGetQuery(con, "
+    INSERT INTO burden_estimate_set
+                (model_version, responsibility, run_info, interpolated, complete,
+                 uploaded_by)
+         VALUES ($1, $2, 'Info', FALSE, TRUE, 'Elf')
+      RETURNING id", list(model_version, resp_id))$id
+
+  burdens <- DBI::dbGetQuery(con, "
+    SELECT id, code
+      FROM burden_outcome
+     WHERE code IN ('deaths_acute', 'deaths_chronic',
+                    'cases_acute', 'cases_chronic', 'cohort_size')")
+
+  countries <- DBI::dbGetQuery(con, "
+    SELECT id, nid FROM country WHERE id in ('AFG','ZWE')")
+
+
+  pies <- pies[pies$run_id == 1,]
+
+  # Bake pies into burden_estimate format
+
+  pies$disease <- NULL
+  pies$run_id <- NULL
+  pies$country_name <- NULL
+  pies$country <- countries$nid[match(pies$country, countries$id)]
+
+  for (outcome in c("deaths_acute", "deaths_chronic", "cases_acute",
+                    "cases_chronic", "cohort_size")) {
+    data <- pies[, c("country", "year", "age", outcome)]
+    data$burden_estimate_set <- new_bes
+    data$burden_outcome <- burdens$id[burdens$code == outcome]
+    names(data)[names(data) == outcome] <- "value"
+    data$model_run <- NA
+    DBI::dbWriteTable(con, "burden_estimate", data, append = TRUE)
+  }
+
+  DBI::dbExecute(con,
+    "UPDATE responsibility
+        SET current_burden_estimate_set = $1
+      WHERE id = $2", list(new_bes, resp_id))
+
+  # Hurrah. We can *finally* test DALYs.
+
+  out <- tempfile(fileext = ".csv")
+  dat <- stoner::stoner_dalys_for_db(con, dalys_df,
+                              burden_estimate_set_id = new_bes,
+                              output_file = out)
+  dat2 <- stoner::stoner_dalys_for_db(con, dalys_df,
+                                     "LAP-elf", "flu", "nevis-1", "pies",
+                                     output_file = out)
+
+  csv <- read.csv(out)
+
+  expect_identical(dat, dat2)
+  expect_equal(dat$data$dalys, csv$dalys)
+  unlink(out)
+
+  # Check db method got the same answer as doing dalys from the files
+
+  dalys_pies <- dalys_pies[
+    order(dalys_pies$country, dalys_pies$year, dalys_pies$age), ]
+
+  expect_equal(dat$data$dalys, dalys_pies$dalys_pies)
+
+  # Clean-up.
+
+  DBI::dbExecute(con,
+                 "UPDATE responsibility
+        SET current_burden_estimate_set = NuLL
+      WHERE id = $1", list(resp_id))
+
+  DBI::dbExecute(con, "DELETE FROM burden_estimate")
+  DBI::dbExecute(con, "DELETE FROM burden_estimate_set")
+  DBI::dbExecute(con, "DELETE FROM model_version")
+  DBI::dbExecute(con, "DELETE FROM app_user")
+  DBI::dbExecute(con, "DELETE FROM model")
+
 })

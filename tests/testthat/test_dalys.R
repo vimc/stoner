@@ -28,7 +28,3 @@ test_that("Bad arguments", {
                "life_table \\(if specified) must have columns")
 
 })
-
-# stoner_dalys_for_db <- function(con, dalys_params, modelling_group = NULL, disease = NULL, touchstone = NULL,
-                                # scenario = NULL, burden_estimate_set_id = NULL, output_file = NULL,
-                                # life_table = NULL, year_min = 2000, year_max = 2100)

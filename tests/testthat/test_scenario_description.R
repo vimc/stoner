@@ -19,7 +19,7 @@ test_that("Invalid disease", {
   create_scen_type_csv(test$path, "def", "Default type")
   create_scen_desc_csv(test$path, "pies", "campaign", "reindeer_flu", "def")
   expect_error(do_test(test),
-               "Diseases in scenario_description are valid isn't true",
+               "Diseases in scenario_description are valid is not TRUE",
                class = "expectation_failure")
 })
 
@@ -40,7 +40,7 @@ test_that("Duplicate ids in scenario_description.csv", {
   create_scen_desc_csv(test$path, c("pies", "pies"), c("routine", "routine"),
                              c("piles", "flu"), "def")
   expect_error(do_test(test),
-               "Duplicate ids in scenario_description.csv isn't false.",
+               "Duplicate ids in scenario_description.csv is not FALSE",
                class = "expectation_failure")
 })
 
@@ -103,6 +103,6 @@ test_that("Invalid columns", {
   create_scen_desc_csv(test$path, "hot_chocolate", "enhanced", "piles", "def")
   mess_with(test$path, "scenario_description.csv", "severity", 1, "severe")
   expect_error(do_test(test),
-               "Column names correct in scenario_description.csv isn't true",
+               "Column names correct in scenario_description.csv is not TRUE",
                class = "expectation_failure")
 })
