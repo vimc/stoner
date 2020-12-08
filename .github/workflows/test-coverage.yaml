@@ -42,13 +42,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          install.packages(c("remotes", "devtools"))
+          install.packages(c("remotes"))
           remotes::install_deps(dependencies = TRUE)
           remotes::install_cran("covr")
         shell: Rscript {0}
 
       - name: Test coverage
         run: |
+          install.packages("devtools")
           devtools::build(path='.'); 
           covr::codecov()
         shell: Rscript {0}
