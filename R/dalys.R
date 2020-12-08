@@ -201,6 +201,7 @@ stoner_life_table <- function(con, touchstone, year_min, year_max,
   )))
 }
 
+##' @export
 ##' @title Create CSV with DALYs for an uploaded burden estimate set
 ##' @importFrom utils write.csv
 ##' @description When a group has uploaded a burden estimate set without DALYs,
