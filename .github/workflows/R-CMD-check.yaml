@@ -67,7 +67,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install docker-machine docker
-          sudo docker -version
+          sudo docker --version
 
       - name: Install dependencies
         run: |

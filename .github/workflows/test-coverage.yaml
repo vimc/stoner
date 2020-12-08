@@ -19,7 +19,7 @@ jobs:
       - name: Docker
         run: |
           brew install docker-machine docker
-          sudo docker -version
+          sudo docker --version
 
       - uses: actions/checkout@v2
 
