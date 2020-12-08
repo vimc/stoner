@@ -20,6 +20,7 @@ jobs:
         run: |
           brew install docker-machine docker
           sudo docker --version
+          sudo docker-machine create --driver virtualbox default
 
       - uses: actions/checkout@v2
 
