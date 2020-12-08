@@ -26,7 +26,7 @@ test_that("Invalid country in touchstone_country", {
   standard_disease_touchstones(test)
   create_ts_country_csv(test$path, "nevis-1", "flu", "ZMB;ZWE;ELF")
   expect_error(do_test(test),
-    "All countries in touchstone_country are recognised isn't true",
+    "All countries in touchstone_country are recognised",
     class = "expectation_failure")
 })
 
@@ -35,7 +35,7 @@ test_that("Invalid disease in touchstone_country", {
   standard_disease_touchstones(test)
   create_ts_country_csv(test$path, "nevis-1", "gout", "ZMB;ZWE")
   expect_error(do_test(test),
-    "All diseases in touchstone_country are recognised isn't true",
+    "All diseases in touchstone_country are recognised",
        class = "expectation_failure")
 })
 
@@ -44,7 +44,7 @@ test_that("Invalid touchstone in touchstone_country", {
   standard_disease_touchstones(test)
   create_ts_country_csv(test$path, "snowdon-1", "flu", "ZMB;ZWE")
   expect_error(do_test(test),
-    "All touchstones in touchstone_country are recognised isn't true",
+    "All touchstones in touchstone_country are recognised",
     class = "expectation_failure")
 })
 

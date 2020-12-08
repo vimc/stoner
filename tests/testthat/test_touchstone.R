@@ -97,7 +97,7 @@ test_that("Add touchstone, name not found", {
   test <- new_test()
   create_touchstone_csv(test$path, "nevis", 1)
   expect_error(do_test(test),
-    "All touchstone.touchstone_name are known isn't true",
+    "All touchstone.touchstone_name are known",
     class = "expectation_failure")
 })
 
@@ -107,7 +107,7 @@ test_that("Add touchstone, bad version", {
   create_touchstone_csv(test$path, "nevis", 2)
   mess_with(test$path, "touchstone.csv", "description", 1, "nevis (version 1)")
   expect_error(do_test(test),
-    "All touchstone.description are formatted correctly isn't true",
+    "All touchstone.description are formatted correctly",
                class = "expectation_failure")
 })
 
@@ -117,7 +117,7 @@ test_that("Add touchstone, bad id format", {
   create_touchstone_csv(test$path, "nevis", 1)
   mess_with(test$path, "touchstone.csv", "id", 1, "nevis#1")
   expect_error(do_test(test),
-               "All touchstone.id are touchstone_name-version isn't true",
+               "All touchstone.id are touchstone_name-version",
                class = "expectation_failure")
 })
 
@@ -167,7 +167,7 @@ test_that("Duplicate touchstone id in csv", {
   create_touchstone_csv(test$path, c("nevis", "nevis"), c(1, 1))
   create_touchstone_name_csv(test$path, "nevis")
   expect_error(do_test(test),
-               "No duplicate ids in touchstone.csv isn't false.",
+               "No duplicate ids in touchstone.csv",
                class = "expectation_failure")
 })
 
@@ -176,7 +176,7 @@ test_that("Duplicate touchstone_name in csv", {
   create_touchstone_name_csv(test$path, c("nevis", "nevis"))
   create_touchstone_csv(test$path, "nevis", 1)
   expect_error(do_test(test),
-               "No duplicate ids in touchstone_name.csv isn't false.",
+               "No duplicate ids in touchstone_name.csv",
                class = "expectation_failure")
 })
 
@@ -186,7 +186,7 @@ test_that("Add touchstone, bad status", {
   create_touchstone_csv(test$path, "nevis", 1)
   mess_with(test$path, "touchstone.csv", "status", 1, "half-baked")
   expect_error(do_test(test),
-               "All touchstone.status are valid isn't true.",
+               "All touchstone.status are valid",
                class = "expectation_failure")
 })
 
@@ -197,7 +197,7 @@ test_that("Edit touchstone, bad status", {
   create_touchstone_csv(test$path, "nevis", 1)
   mess_with(test$path, "touchstone.csv", "status", 1, "gooey")
   expect_error(do_test(test),
-               "All touchstone.status are valid isn't true.",
+               "All touchstone.status are valid",
                class = "expectation_failure")
 })
 

@@ -11,7 +11,7 @@ test_that("Bad arguments", {
 
   expect_error(stoner::stone_stochastic_upload(
     file.path(tempfile(), "non_existent_file.csv")),
-      "file(.*)exists(.*) is not TRUE")
+      "file(.*)exists(.*)")
 
   new_file <- tempfile(fileext = ".csv")
   write.csv(x = mtcars, file = new_file)
