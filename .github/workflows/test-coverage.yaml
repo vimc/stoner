@@ -49,8 +49,5 @@ jobs:
 
       - name: Test coverage
         run: |
-          install.packages("roxygen2")  
-          install.packages("devtools")
-          devtools::build(path='.'); 
           covr::codecov()
         shell: Rscript {0}
