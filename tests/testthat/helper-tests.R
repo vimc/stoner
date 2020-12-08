@@ -23,6 +23,11 @@ new_test <- function(clear_db = TRUE, clear_files = TRUE) {
   cache$con <- cache$con %||% test_db_connection()
   res$con <- cache$con
   if (clear_db) {
+    DBI::dbExecute(res$con, "UPDATE responsibility
+                                SET current_burden_estimate_set = NULL")
+    DBI::dbExecute(res$con, "DELETE FROM burden_estimate")
+    DBI::dbExecute(res$con, "DELETE FROM burden_estimate_set")
+    DBI::dbExecute(res$con, "DELETE FROM app_user")
     DBI::dbExecute(res$con, "DELETE FROM model_run_parameter_set")
     DBI::dbExecute(res$con, "DELETE FROM model_version")
     DBI::dbExecute(res$con, "DELETE FROM model")

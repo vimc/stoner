@@ -780,17 +780,4 @@ test_that("Stochastic - with DALYs", {
 
   expect_equal(dat$data$dalys, dalys_pies$dalys_pies)
 
-  # Clean-up.
-
-  DBI::dbExecute(con,
-                 "UPDATE responsibility
-        SET current_burden_estimate_set = NuLL
-      WHERE id = $1", list(resp_id))
-
-  DBI::dbExecute(con, "DELETE FROM burden_estimate")
-  DBI::dbExecute(con, "DELETE FROM burden_estimate_set")
-  DBI::dbExecute(con, "DELETE FROM model_version")
-  DBI::dbExecute(con, "DELETE FROM app_user")
-  DBI::dbExecute(con, "DELETE FROM model")
-
 })
