@@ -22,39 +22,44 @@ demographic data for life expectancy.}
 data retrieved will be specific to this touchstone.}
 
 \item{data}{A data.frame containing burden estimates - either central or
-stochastic. The columns for both kinds will include \code{country} (which may be a Montagu
-numerical id, or the 3-letter code), \code{year}, \code{age}, and a number of burden outcomes.
-Stochastic data will also have a \code{run_id}.}
+stochastic. The columns for both kinds will include \code{country} (which may be
+a Montagu numerical id, or the 3-letter code), \code{year}, \code{age}, and a number
+of burden outcomes.Stochastic data will also have a \code{run_id}.}
 
-\item{dalys_params}{A data.frame containing how to calculate dalys; each row
-represents a condition, and the four columns describe how to calculate the cost of
-that condition across the population in that year. For each condition, the \code{outcome}
-column must provide a burden outcome (which will be a column name in \code{data}). The
-\code{proportion} is the proportion of people reported as that outcome, who suffer this
-condition. \code{average_duration} is the number of years for which the condition is
-suffered, set to greater than 120 for a life-long period. And \code{disability_weight}
-is a measure of how severe the implications are of this particular condition. See
-http://ghdx.healthdata.org/record/ihme-data/gbd-2017-disability-weights for where
-these figures come from; the final figures are decided in discussion with the
-groups.}
+\item{dalys_params}{A data.frame containing how to calculate dalys; each
+row represents a condition, and the four columns describe how to calculate
+the cost of that condition across the population in that year. For each
+condition, the \code{outcome} column must provide a burden outcome (which will
+be a column name in \code{data}). The \code{proportion} is the proportion of people
+reported as that outcome, who suffer this condition. \code{average_duration} is
+the number of years for which the condition is suffered, set to greater
+than 120 for a life-long period. And \code{disability_weight} is a measure of
+how severe the implications are of this particular condition. See
+http://ghdx.healthdata.org/record/ihme-data/gbd-2017-disability-weights
+for where these figures come from; the final figures are decided in
+discussion with the groups.}
 
 \item{life_table}{If \code{NULL}, then the life table will be looked up and
-interpolated to yearly for age and time. This takes a bit of time, so the resulting
-data is part of what this function returns, and the life table part can be
-provided here to speed things up. If provided, it should be a data.frame with
-the columns \code{value} and \code{.code}; the latter is in the format country-year-age. The
-type of country in \code{.code} should match with the type of the country in \code{data}. The years
-and ages will be interpolated down to single-years.}
+interpolated to yearly for age and time. This takes a bit of time, so the
+resulting data is part of what this function returns, and the life table
+part can be provided here to speed things up. If provided, it should be a
+data.frame with the columns \code{value} and \code{.code}; the latter is in the
+format country-year-age. The type of country in \code{.code} should match with
+the type of the country in \code{data}. The years and ages will be interpolated
+down to single-years.}
 
-\item{year_min}{The first year of the range in which to calculate DALYs. (Default 2000)}
+\item{year_min}{The first year of the range in which to calculate DALYs.
+(Default 2000)}
 
-\item{year_max}{The final year of the range in which to calculate DALYs. (Default 2100)}
+\item{year_max}{The final year of the range in which to calculate DALYs.
+(Default 2100)}
 }
 \value{
-A list with two named components; \code{life_table} is the result of calling the
-life-table function, which can then be specified in subsequent calls to \code{stoner_calculate_dalys},
-and \code{data} is a version of the original dataset, now with a \code{dalys} column. Note that
-if \code{data} already contained a \code{dalys} column when provided to the function, that column will
+A list with two named components; \code{life_table} is the result of
+calling the life-table function, which can then be specified in subsequent
+calls to \code{stoner_calculate_dalys}, and \code{data} is a version of the original
+dataset, now with a \code{dalys} column. Note that if \code{data} already contained
+a \code{dalys} column when provided to the function, that column will
 be overwritten with the new results.
 }
 \description{
