@@ -22,7 +22,6 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest, r: 'release'}
           - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
           - {os: ubuntu-20.04, r: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
 
@@ -62,16 +61,6 @@ jobs:
           do
             eval sudo $cmd
           done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
-
-      - name: Docker on macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install docker-machine docker
-          sudo docker --version
-          sudo docker-machine create --driver virtualbox default
-          sudo docker-machine ls
-          sudo docker-machine env default
-          sudo eval $(docker-machine env default)
 
       - name: Install dependencies
         run: |
