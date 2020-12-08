@@ -69,6 +69,9 @@ jobs:
           brew install docker-machine docker
           sudo docker --version
           sudo docker-machine create --driver virtualbox default
+          sudo docker-machine ls
+          sudo docker-machine env default
+          sudo eval $(docker-machine env default)
 
       - name: Install dependencies
         run: |
