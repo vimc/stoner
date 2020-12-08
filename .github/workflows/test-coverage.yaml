@@ -16,6 +16,9 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Install OS dependencies
+        run: |
+          sudo apt-get install libcurl libcurl4-openssl-dev
 
       - uses: actions/checkout@v2
 
