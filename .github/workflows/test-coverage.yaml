@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Install OS dependencies
         run: |
-          sudo apt-get install libcurl-dev
+          sudo apt-get install libcurl4-openssl-dev
 
       - uses: actions/checkout@v2
 
