@@ -1,7 +1,8 @@
 # stoner
 
-[![Travis-CI Build Status](https://travis-ci.org/vimc/stoner.svg?branch=master)](https://travis-ci.org/vimc/stoner)
-[![codecov.io](https://codecov.io/github/vimc/stoner/coverage.svg?branch=master)](https://codecov.io/github/vimc/stoner?branch=master)
+<!-- badges: start -->
+[![R build status](https://github.com/vimc/stoner/workflows/R-CMD-check/badge.svg)](https://github.com/vimc/stoner/actions)
+<!-- badges: end -->
 
 <pre>
      .-'''-. ,---------.    ,-----.    ,---.   .--.    .-''-.  .-------.

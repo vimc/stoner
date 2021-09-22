@@ -71,11 +71,13 @@ is the existing deaths burden_outcome.}
 outcomes, then provide a vector of the outcome names here. The default
 is the existing cases burden_outcome.}
 
-\item{dalys}{If dalys must be calculated as a sum of other burden
+\item{dalys}{If DALYs must be calculated as a sum of other burden
 outcomes, then provide a vector of the outcome names here. The default
-is the existing dalys burden_outcome. Additionally, for the one
-remaining group that does not provide dalys, you can set dalys to
-NA here, and stoner will calculate them.}
+is the existing DALYs burden_outcome. Alternatively, for the one
+remaining group that does not provide DALYs, you can supply a data
+frame here, and stoner will calculate DALYs using that recipe. The
+data frame must have names \code{outcome}, \code{proportion}, \code{average_duration}
+and \code{disability_weight}. See \link{stoner_calculate_dalys}.}
 
 \item{runid_from_file}{Occasionally groups have omitted the run_id
 from the stochastic file, and provided 200 files, one per run_id. Set
