@@ -259,7 +259,15 @@ stone_dump <- function(con, touchstone, path, include_deps = FALSE) {
       vapply(seq_len(nrow(csv)),
         function(x) {
           vals <- expecs[[name]][expecs$expecid == csv$expecid[x]]
-          stopifnot(sum(duplicated(vals)) == length(vals) - 1)
+          if (sum(duplicated(vals)) != length(vals) - 1) {
+            message(sprintf(paste0(
+              "Error detected in DB - \n",
+              "burden_estimate_expectation with id=%d is shared ",
+              "between groups:\n(%s)"),
+              csv$expecid[x], paste(unique(vals), collapse=", ")))
+
+            stop()
+          }
           vals[1]
         }, vtype)
     }
