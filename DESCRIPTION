@@ -27,5 +27,6 @@ Roxygen: list(markdown = TRUE)
 Suggests:
     knitr,
     rmarkdown,
+    rcmdcheck,
     testthat
 VignetteBuilder: knitr
