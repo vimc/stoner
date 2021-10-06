@@ -385,6 +385,7 @@ test_responsibilities_helper <- function(no_countries, no_outcomes) {
   test_dump_db_modelling_group(tmp)
   test_dump_db_disease(tmp)
   expect_equal(length(list.files(tmp)), 11)
+  test
 }
 
 # Now test with responsibilities and expectations, but no
@@ -414,5 +415,32 @@ test_that("Dump (responbilities, no countries)", {
 # we are dumping, and responsibility.expectations cannot be NA.
 
 test_that("Complete Dump (fake expectations)", {
-  test_responsibilities_helper(no_countries = FALSE, no_outcomes = FALSE)
+  test <- test_responsibilities_helper(no_countries = FALSE, no_outcomes = FALSE)
+
+  # Now hack a situation where there are multiple groups
+  # sharing an expectation. Create a fake modelling group...
+
+  DBI::dbExecute(test$con, "
+    INSERT INTO modelling_group
+      (id, institution, pi, description) VALUES
+      ('dup','DUP', 'DUP', 'Dup')")
+
+  # Create fake responsibility set...
+
+  rset <- DBI::dbGetQuery(test$con, "
+    INSERT INTO responsibility_set
+      (modelling_group, touchstone, status) VALUES
+      ('dup', 'nevis-1', 'incomplete') RETURNING id")$id
+
+  resp <- DBI::dbGetQuery(test$con, "
+     SELECT * FROM responsibility LIMIT 1")
+
+  resp$id <- NULL
+  resp$responsibility_set <- rset
+  DBI::dbAppendTable(test$con, "responsibility", resp)
+
+  tmp <- empty_dump()
+  expect_error(
+    stoner::stone_dump(test$con, "nevis-1", tmp, TRUE),
+    "Error detected in DB(.*)")
 })

@@ -1,6 +1,6 @@
 Package: stoner
 Title: Support for Building VIMC Montagu Touchstones, using Dettl
-Version: 0.0.9
+Version: 0.1.0
 Authors@R:
     c(person("Wes", "Hinsley",role = c("aut", "cre", "cst", "dnc", "elg", "itr", "sng"),
            email = "w.hinsley@imperial.ac.uk"),
@@ -27,5 +27,6 @@ Roxygen: list(markdown = TRUE)
 Suggests:
     knitr,
     rmarkdown,
+    rcmdcheck,
     testthat
 VignetteBuilder: knitr
