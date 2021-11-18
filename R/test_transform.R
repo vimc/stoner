@@ -21,4 +21,5 @@ stone_test_transform <- function(transformed_data) {
   test_transform_touchstone_demographic_dataset(transformed_data)
   test_transform_touchstone_country(transformed_data)
   test_transform_responsibilities(transformed_data)
+  test_transform_fast_forward(transformed_data)
 }

@@ -7,7 +7,9 @@ extract_touchstone <- function(e, path, con) {
 
   ts <- unique(c(e$touchstone_csv$id,
                  e$touchstone_countries_csv$touchstone,
-                 e$responsibilities_csv$touchstone)) %||% ""
+                 e$responsibilities_csv$touchstone,
+                 e$fast_forward_csv$touchstone_from,
+                 e$fast_forward_csv$touchstone_to)) %||% ""
 
   tsn <- unique(c(e$touchstone_name_csv$id,
                   e$touchstone_csv$touchstone_name)) %||% ""
@@ -53,7 +55,7 @@ test_extract_touchstone <- function(e) {
                 c(e[['touchstone_name_csv']]$id,
                   e[['touchstone_name']]$id)),
       label = "All touchstone.touchstone_name are known")
-    
+
     testthat::expect_true(all(
       ts$id == sprintf("%s-%s", ts$touchstone_name, ts$version)),
         label = "All touchstone.id are touchstone_name-version")
