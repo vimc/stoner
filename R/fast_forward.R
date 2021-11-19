@@ -316,9 +316,9 @@ test_extract_fast_forward <- function(e) {
 
   if (!is.null(e$fast_forward_csv)) {
     test_extract_fast_forward_csv(e)
-    testtthat::expect_true(!is.null(e$ff_info))
-    testtthat::expect_true(!is.null(e$resp_comments))
-    testtthat::expect_true(!is.null(e$rset_comments))
+    testthat::expect_true(!is.null(e$ff_info))
+    testthat::expect_true(!is.null(e$resp_comments))
+    testthat::expect_true(!is.null(e$rset_comments))
 
     testthat::expect_equal(sort(names(ff)),
                            sort(c("modelling_group", "scenario",
@@ -378,8 +378,9 @@ transform_fast_forward <- function(e) {
   # Create new responsibilites (will pick up the dummy ids created above)
 
 
-  resps <- unique(ff_na_resp_to[is.na(ff$resp_to), c("rset_to", "scid", "bes", "sbes",
-                                          "is_open", "expectations")])
+  resps <- unique(ff[is.na(ff$resp_to),
+                      c("rset_to", "scid", "bes", "sbes",
+                        "is_open", "expectations")])
 
   rename_resps <- function(resps) {
     names(resps)[names(resps) == "rset_to"] <- "responsibility_set"
@@ -487,7 +488,7 @@ load_fast_forward <- function(transformed_data, con) {
   rscneg <- rsc[rsc[['responsibility_set']] < 0, ]
   rscpos <- rsc[rsc[['responsibility_set']] >= 0, ]
   rscneg[['responsibility_set']] <-
-    rs$newid[march(rcneg[['responsibility_set']], rs$id)]
+    rs$newid[match(rcneg[['responsibility_set']], rs$id)]
   rsc <- rbind(rscneg, rscpos)
 
   r <- rbind(rneg, rpos)
@@ -513,7 +514,7 @@ load_fast_forward <- function(transformed_data, con) {
   rcneg <- rc[rc[['responsibility']] < 0, ]
   rcpos <- rc[rc[['responsibility']] >= 0, ]
   rcneg[['responsibility']] <-
-    rneg$newid[march(rcneg[['responsibility']], rneg$id)]
+    rneg$newid[match(rcneg[['responsibility']], rneg$id)]
   rc <- rbind(rcneg, rcpos)
 
 
