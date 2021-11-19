@@ -283,14 +283,14 @@ transform_responsibilities <- function(e, t_so_far) {
   # Start with non-changing stuff - NA
   # for burden_sets, and is_open = TRUE
 
-  res$responsibility <- data_frame(
+  res[['responsibility']] <- data_frame(
     is_open = rep(TRUE, nrow(ecsv)),
     current_burden_estimate_set = NA,
     current_stochastic_burden_estimate_set = NA)
 
   # Look up scenario ids from res$scenario
 
-  res$responsibility$scenario <- res$scenario$id[
+  res[['responsibility']]$scenario <- res$scenario$id[
     match(paste(ecsv$touchstone, ecsv$scenario, sep = "\r"),
           paste(res$scenario$touchstone, res$scenario$scenario_description,
                 sep = "\r"))]
@@ -299,7 +299,7 @@ transform_responsibilities <- function(e, t_so_far) {
   # status for new rows will be "incomplete" (and other rows won't get added,
   # so it doesn't matter what their status is).
 
-  res$responsibility_set <- data_frame(
+  res[['responsibility_set']] <- data_frame(
     modelling_group = ecsv$modelling_group,
     touchstone = ecsv$touchstone,
     status = "incomplete")
@@ -308,22 +308,22 @@ transform_responsibilities <- function(e, t_so_far) {
   # Remove duplicate (modelling_group, touchstone)
   # Then look up existing ids; assign negatives for new ones.l
 
-  res$responsibility_set <- res$responsibility_set[!duplicated(
-    paste(res$responsibility_set$modelling_group,
-          res$responsibility_set$touchstone, sep = '\r')), ]
+  res[['responsibility_set']] <- res[['responsibility_set']][!duplicated(
+    paste(res[['responsibility_set']]$modelling_group,
+          res[['responsibility_set']]$touchstone, sep = '\r')), ]
 
   fields <- c("modelling_group", "touchstone")
-  res$responsibility_set <- assign_serial_ids(
-    res$responsibility_set, e$resp_responsibility_set, "responsibility_set",
+  res[['responsibility_set']] <- assign_serial_ids(
+    res[['responsibility_set']], e$resp_responsibility_set, "responsibility_set",
     fields, fields)
 
-  # Populate res$responsibility$responsibility_set with ids
+  # Populate res[['responsibility']][['responsibility_set']] with ids
 
-  res$responsibility$responsibility_set <-
-    res$responsibility_set$id[match(
+  res[['responsibility']][['responsibility_set']] <-
+    res[['responsibility_set']]$id[match(
       paste(ecsv$modelling_group, ecsv$touchstone, sep = '\r'),
-      paste(res$responsibility_set$modelling_group,
-            res$responsibility_set$touchstone, sep = '\r'))]
+      paste(res[['responsibility_set']]$modelling_group,
+            res[['responsibility_set']]$touchstone, sep = '\r'))]
 
   # Next burden_estimate_expectation. The other tables (responsibility,
   # burden_estimate_country_expectation and
@@ -373,12 +373,12 @@ transform_responsibilities <- function(e, t_so_far) {
     res$burden_estimate_expectation, e$resp_expectations,
       "burden_estimate_expectation", fields, fields)
 
-  # And now assign the expectation id to res$responsibility, which will
+  # And now assign the expectation id to res[['responsibility']], which will
   # be a bit messy - multi-column match between the expectation details
   # in ecsv, and those we just made in res$burden_estimate_expectation
 
 
-  res$responsibility$expectations <-
+  res[['responsibility']]$expectations <-
     res$burden_estimate_expectation$id[match(
       paste(ecsv$age_max_inclusive,
             ecsv$age_min_inclusive,
@@ -397,14 +397,14 @@ transform_responsibilities <- function(e, t_so_far) {
             res$burden_estimate_expectation$description,
             res$burden_estimate_expectation$version, sep = '\r'))]
 
-  # res$responsibility now has all the fields, except the id, so look up
+  # res[['responsibility']] now has all the fields, except the id, so look up
   # to see if they exist, or assign negative ids otherwise. Using [[' ']]
   # here rather than $ because we have responsibility_set as well as
-  # responsibility, and we don't want autocomplete to happen.
+  # responsibility, and we don't want auto-complete to happen.
 
 
   fields <- c("responsibility_set", "scenario", "expectations")
-  res$responsibility <- assign_serial_ids(res[['responsibility']],
+  res[['responsibility']] <- assign_serial_ids(res[['responsibility']],
                                           e[['resp_responsibility']],
                                           "responsibility", fields, fields)
 
@@ -540,7 +540,7 @@ transform_responsibilities <- function(e, t_so_far) {
     # Now lookup responsibility->responsibility_set->touchstone->status
     # and stop if any are not "in-preparation"
 
-    t_resp$touchstone <- e_rset$touchstone[match(t_resp$responsibility_set,
+    t_resp$touchstone <- e_rset$touchstone[match(t_resp[['responsibility_set']],
                                                  e_rset$id)]
     t_resp$status <- e_ts$status[match(t_resp$touchstone, e_ts$id)]
 
@@ -589,8 +589,8 @@ load_responsibilities <- function(transformed_data, con) {
 
     negs <- which(t[['responsibility']]$scenario < 0)
 
-    t$responsibility$scenario[negs] <-res$adds$id[match(
-      t$responsibility$scenario[negs],
+    t[['responsibility']]$scenario[negs] <-res$adds$id[match(
+      t[['responsibility']]$scenario[negs],
       res$adds$fake_ids)]
 
     t
@@ -600,21 +600,21 @@ load_responsibilities <- function(transformed_data, con) {
 
   load_responsibility_sets <- function(t, con) {
 
-    if (is.null(t$responsibility_set)) {
+    if (is.null(t[['responsibility_set']])) {
       return(t)
     }
 
-    if (nrow(t$responsibility_set) == 0) {
+    if (nrow(t[['responsibility_set']]) == 0) {
       return(t)
     }
     res <- add_serial_rows("responsibility_set", t, con)
 
     # Replace fake ids with real ids in responsibility.scenario
 
-    negs <- which(t$responsibility$responsibility_set < 0)
+    negs <- which(t[['responsibility']][['responsibility_set']] < 0)
 
-    t[['responsibility']]$responsibility_set[negs] <- res$adds$id[match(
-                  t[['responsibility']]$responsibility_set[negs],
+    t[['responsibility']][['responsibility_set']][negs] <- res$adds$id[match(
+                  t[['responsibility']][['responsibility_set']][negs],
                   res$adds$fake_ids)]
 
     t

@@ -20,14 +20,16 @@ stone_transform <- function(extracted_data) {
   )
 
   t <- c(t, transform_responsibilities(extracted_data, t))
-  t <- c(t, transform_fast_forward(extracted_data, t))
+  t <- c(t, transform_fast_forward(extracted_data))
 
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).
 
   for (table in names(t)) {
-    t[[table]] <- t[[table]][!t[[table]]$already_exists_db, ]
-    t[[table]]$already_exists_db <- NULL
+    if (("already_exists_db") %in% names(t[[table]])) {
+      t[[table]] <- t[[table]][!t[[table]]$already_exists_db, ]
+      t[[table]]$already_exists_db <- NULL
+    }
   }
 
   t

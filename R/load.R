@@ -29,7 +29,7 @@ stone_load <- function(transformed_data, con,
   load_touchstone_demographic_dataset(transformed_data, con)
   load_touchstone_country(transformed_data, con)
   load_responsibilities(transformed_data, con)
-  load_fast_forward(transformed_data, con)
+  #load_fast_forward(transformed_data, con)
 
   check_faulty_serials(con)
 }

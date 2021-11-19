@@ -21,9 +21,18 @@ stone_extract <- function(path, con) {
     scenario_description_csv = read_meta(path, "scenario_description.csv"),
     touchstone_demographic_dataset_csv = read_meta(path, "touchstone_demographic_dataset.csv"),
     touchstone_countries_csv = read_meta(path, "touchstone_country.csv"),
-    responsibilities_csv = extract_responsibilities_csv(path),
-    fast_forward_csv = read_meta(path, "fast_forward.csv")
+    responsibilities_csv = extract_responsibilities_csv(path)
+    #fast_forward_csv = read_meta(path, "fast_forward.csv")
   )
+
+  # If fast-forwarding, then that must be the only CSV
+
+#  if (!is.null(e$fast_forward_csv)) {
+#    other_csvs <- sum(!is.null(unlist(lapply(e, is.null))))
+#    if (other_csvs > 1) {
+#      stop("fast_forward.csv, if specified, must be the only csv")
+#    }
+#  }
 
   # Remove any NULLs
 
