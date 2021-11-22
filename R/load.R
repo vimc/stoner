@@ -20,16 +20,23 @@
 stone_load <- function(transformed_data, con,
                        allow_overwrite_scenario_description = FALSE,
                        allow_overwrite_scenario_type = FALSE) {
-  load_touchstone_name(transformed_data, con)
-  load_touchstone(transformed_data, con)
-  load_scenario_type(transformed_data, con,
-                     allow_overwrite_scenario_type)
-  load_scenario_description(transformed_data, con,
-                            allow_overwrite_scenario_description)
-  load_touchstone_demographic_dataset(transformed_data, con)
-  load_touchstone_country(transformed_data, con)
-  load_responsibilities(transformed_data, con)
-  #load_fast_forward(transformed_data, con)
+
+  # This is a bit crude, but detect fast-forward, so we don't use
+  # load_responsibilities.
+
+  if ("responsibility_comment" %in% names(transformed_data)) {
+    load_fast_forward(transformed_data, con)
+  } else {
+    load_touchstone_name(transformed_data, con)
+    load_touchstone(transformed_data, con)
+    load_scenario_type(transformed_data, con,
+                       allow_overwrite_scenario_type)
+    load_scenario_description(transformed_data, con,
+                              allow_overwrite_scenario_description)
+    load_touchstone_demographic_dataset(transformed_data, con)
+    load_touchstone_country(transformed_data, con)
+    load_responsibilities(transformed_data, con)
+  }
 
   check_faulty_serials(con)
 }

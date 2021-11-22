@@ -17,10 +17,10 @@
 
 expand_ff_csv <- function(csv, con) {
 
-  missing_things <- function(items, table, con) {
+  missing_things <- function(items, table, con, id_field = "id") {
     items <- unique(items)
     db_things <- DBI::dbGetQuery(con, sprintf(
-      "SELECT id FROM %s", table))$id
+      "SELECT %s FROM %s", id_field, table))[[id_field]]
     items[!items %in% db_things]
   }
 
@@ -93,7 +93,8 @@ expand_ff_csv <- function(csv, con) {
 
   # Test required scenarios exist
 
-  scs <- missing_things(unique(csv$scenario), "scenario", con)
+  scs <- missing_things(unique(csv$scenario), "scenario", con,
+                        "scenario_description")
   if (length(scs) > 0) {
     stop(sprintf("Scenario(s) not found: %s",
                     paste(scs, collapse = ", ")))
@@ -447,12 +448,12 @@ test_transform_fast_forward <- function(transformed_data) {
 load_fast_forward <- function(transformed_data, con) {
   t <- transformed_data
 
-  # So... 4 tables to work on. Shortern their names...
+  # So... 4 tables to work on. Shorten names to make this code easier.
 
   rs <- t[['responsibility_set']]
   r <- t[['responsibility']]
 
-  # No work to do:-
+  # No work to do?
 
   if (is.null(r)) {
     return(NULL)
@@ -473,7 +474,8 @@ load_fast_forward <- function(transformed_data, con) {
   new_ids <- DBI::dbGetQuery(con, sprintf("
     SELECT id, CONCAT(modelling_group, '\r', touchstone) AS mash
       FROM responsibility_set
-     WHERE mash IN ('%s')", paste(rs$mash, collapse = "','")))
+     WHERE CONCAT(modelling_group, '\r', touchstone) IN ('%s')",
+       paste(rs$mash, collapse = "','")))
 
   rs$newid <- new_ids$id[match(rs$mash, new_ids$mash)]
 
@@ -488,7 +490,7 @@ load_fast_forward <- function(transformed_data, con) {
   rscneg <- rsc[rsc[['responsibility_set']] < 0, ]
   rscpos <- rsc[rsc[['responsibility_set']] >= 0, ]
   rscneg[['responsibility_set']] <-
-    rs$newid[match(rcneg[['responsibility_set']], rs$id)]
+    rs$newid[match(rscneg[['responsibility_set']], rs$id)]
   rsc <- rbind(rscneg, rscpos)
 
   r <- rbind(rneg, rpos)
@@ -497,15 +499,18 @@ load_fast_forward <- function(transformed_data, con) {
   #                    - add, remembering the mapping again...
 
   rneg <- r[r$id < 0, ]
-  DBI::dbAppendTable(con, "responsibility", rneg)
-  rneg$mash <- paste(rneg[['responsibility_set']], rneg$scenario)
+  rneg_no_id <- rneg
+  rneg_no_id$id <- NULL
+  DBI::dbAppendTable(con, "responsibility", rneg_no_id)
+  rneg$mash <- paste(rneg[['responsibility_set']], rneg$scenario, sep = "\r")
 
   # Fetch the new ids mapping...
 
   new_ids <- DBI::dbGetQuery(con, sprintf("
     SELECT id, CONCAT(responsibility_set, '\r', scenario) AS mash
       FROM responsibility
-     WHERE mash IN ('%s')", paste(rneg$mash, collapse = "','")))
+     WHERE CONCAT(responsibility_set, '\r', scenario) IN ('%s')",
+      paste(rneg$mash, collapse = "','")))
 
   rneg$newid <- new_ids$id[match(rneg$mash, new_ids$mash)]
 
@@ -518,7 +523,7 @@ load_fast_forward <- function(transformed_data, con) {
   rc <- rbind(rcneg, rcpos)
 
 
-  # - For responsibilites that already had ids,
+  # - For responsibilities that already had ids,
   # - Update current_burden_estimate_set.
 
   for (i in seq_len(nrow(rpos))) {

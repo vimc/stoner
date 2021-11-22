@@ -29,8 +29,6 @@ new_test <- function(clear_db = TRUE, clear_files = TRUE) {
     DBI::dbExecute(res$con, "DELETE FROM burden_estimate_set")
     DBI::dbExecute(res$con, "DELETE FROM app_user")
     DBI::dbExecute(res$con, "DELETE FROM model_run_parameter_set")
-    DBI::dbExecute(res$con, "DELETE FROM model_version")
-    DBI::dbExecute(res$con, "DELETE FROM model")
     DBI::dbExecute(res$con, "DELETE FROM upload_info")
     DBI::dbExecute(res$con, "DELETE FROM demographic_statistic")
     DBI::dbExecute(res$con, "DELETE FROM touchstone_demographic_dataset")
@@ -47,9 +45,12 @@ new_test <- function(clear_db = TRUE, clear_files = TRUE) {
     DBI::dbExecute(res$con, "DELETE FROM scenario")
     DBI::dbExecute(res$con, "DELETE FROM scenario_description")
     DBI::dbExecute(res$con, "DELETE FROM scenario_type")
-    DBI::dbExecute(res$con, "DELETE FROM disease")
     DBI::dbExecute(res$con, "DELETE FROM touchstone")
     DBI::dbExecute(res$con, "DELETE FROM touchstone_name")
+    DBI::dbExecute(res$con, "UPDATE model SET current_version = NULL")
+    DBI::dbExecute(res$con, "DELETE FROM model_version")
+    DBI::dbExecute(res$con, "DELETE FROM model")
+    DBI::dbExecute(res$con, "DELETE FROM disease")
     DBI::dbExecute(res$con, "DELETE FROM modelling_group")
 
     # Scramble serial ids
