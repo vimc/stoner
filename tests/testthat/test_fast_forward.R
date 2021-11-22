@@ -145,10 +145,10 @@ test_that("Main FF functionality", {
   write.csv(rbind(
     read.csv(sc_file),
     data.frame(
-      id = 2:4,
-      touchstone = c("nevis-2", "kili-1", "kili-2"),
-      scenario_description = c("hot_chocolate", "pies", "pies"),
-      focal_coverage_set = c(NA, NA, NA))), sc_file, row.names = FALSE)
+      id = 2:6,
+      touchstone = c("nevis-2", "kili-1", "kili-2", "nevis-1", "nevis-2"),
+      scenario_description = c("hot_chocolate", "pies", "pies", "pies", "pies"),
+      focal_coverage_set = NA)), sc_file, row.names = FALSE)
 
   # Now we can import all the db_ files, then remove them,
   # so following import will be just the FF.csv file
@@ -222,17 +222,17 @@ test_that("Main FF functionality", {
     DBI::dbExecute(con, "DELETE FROM responsibility_set")
   }
 
-  add_responsibility_set <- function(con, group, touchstone) {
-    DBI::dbGetQuery(con, "
+  add_responsibility_set <- function(group, touchstone) {
+    DBI::dbGetQuery(test$con, "
       INSERT INTO responsibility_set (modelling_group, touchstone, status)
              VALUES ($1, $2, $3) RETURNING id",
       list(group, touchstone, "incomplete"))$id
   }
 
-  add_responsibility <- function(con, touchstone, responsibility_set,
+  add_responsibility <- function(touchstone, responsibility_set,
                                  scenario_description) {
 
-    scenario_id <- DBI::dbGetQuery(con, "
+    scenario_id <- DBI::dbGetQuery(test$con, "
       SELECT id FROM scenario
        WHERE scenario_description = $1
          AND touchstone = $2",
@@ -244,18 +244,19 @@ test_that("Main FF functionality", {
         list(responsibility_set, scenario_id))$id
   }
 
-  add_burden_estimate_set <- function(con, responsibility) {
-    DBI::dbGetQuery(con, "
+  add_burden_estimate_set <- function(responsibility) {
+    mv <- DBI::dbGetQuery(test$con, "SELECT id FROM model_version")$id
+    DBI::dbGetQuery(test$con, "
       INSERT INTO burden_estimate_set (responsibility, model_version,
                                        run_info, interpolated, uploaded_by)
-           VALUES ($1, '1', 'dummy', FALSE, 'Elf') RETURNING id",
-                    list(responsibility))$id
+           VALUES ($1, $2, 'dummy', FALSE, 'Elf') RETURNING id",
+                    list(responsibility, mv))$id
   }
 
-  add_burden_estimates <- function(con, df, bes, resp) {
+  add_burden_estimates <- function(df, bes, resp) {
     df$burden_estimate_set <- bes
-    DBI::dbAppendTable(con, "burden_estimate", df)
-    DBI::dbExecute(con, "UPDATE responsibility
+    DBI::dbAppendTable(test$con, "burden_estimate", df)
+    DBI::dbExecute(test$con, "UPDATE responsibility
                             SET current_burden_estimate_set = $1
                           WHERE id = $2", list(bes, resp))
   }
@@ -263,16 +264,16 @@ test_that("Main FF functionality", {
   # And finally we are ready to do proper tests.
   ###################################################################
   # 1. Single group.
-  # 2. Responsibility_set (and hence responsibility) doesn't exist
-  # 3. Single scenario
-  # 4. Model group and scenario named explicitly in file
+  #    Responsibility_set (and hence responsibility) doesn't exist
+  #    Single scenario
+  #    Model group and scenario named explicitly in file
   ###################################################################
 
   clear(test$con)
-  resp_set <- add_responsibility_set(test$con, "LAP-elf", "nevis-1")
-  resp <- add_responsibility(test$con, "nevis-1", resp_set, "hot_chocolate")
-  bes <- add_burden_estimate_set(test$con, resp)
-  add_burden_estimates(test$con, pathetic_data, bes, resp)
+  resp_set <- add_responsibility_set("LAP-elf", "nevis-1")
+  resp <- add_responsibility("nevis-1", resp_set, "hot_chocolate")
+  bes <- add_burden_estimate_set(resp)
+  add_burden_estimates(pathetic_data, bes, resp)
   write_ff_csv(test, "LAP-elf", "hot_chocolate", "nevis-1", "nevis-2")
 
   # To be sure, the 2nd responsibility_set doesn't exist.
@@ -322,4 +323,74 @@ test_that("Main FF functionality", {
   old_resp <- get_responsibilities(responsibility = resp)
   expect_true(is.na(old_resp$current_burden_estimate_set))
 
- })
+  ###################################################################
+  # 2. Two out of three groups, same scenario
+  #    Test with semi-colon in modelling-group, and also
+  #    separate lines.
+  ###################################################################
+
+  test2 <- function(pass) {
+    clear(test$con)
+    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
+    resp_set_b1 <- add_responsibility_set("R-deer", "nevis-1")
+    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
+    resp_b1 <- add_responsibility("nevis-1", resp_set_b1, "hot_chocolate")
+    bes_a1 <- add_burden_estimate_set(resp_a1)
+    bes_b1 <- add_burden_estimate_set(resp_b1)
+    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+    add_burden_estimates(pathetic_data, bes_b1, resp_b1)
+    if (pass == 1) {
+      write_ff_csv(test, "LAP-elf;R-deer", "hot_chocolate", "nevis-1", "nevis-2")
+    } else if (pass == 2) {
+      write_ff_csv(test, c("LAP-elf", "R-deer"), "hot_chocolate", "nevis-1", "nevis-2")
+    }
+    do_test(test)
+    expect_true(is.na(get_responsibilities(responsibility = resp_a1)$current_burden_estimate_set))
+    expect_true(is.na(get_responsibilities(responsibility = resp_b1)$current_burden_estimate_set))
+    new_resp_set_a1 <- get_responsibility_set("LAP-elf", "nevis-2")
+    new_resp_set_b1 <- get_responsibility_set("R-deer", "nevis-2")
+    expect_equal(bes_a1, get_responsibilities(responsibility_set = new_resp_set_a1)$current_burden_estimate_set)
+    expect_equal(bes_b1, get_responsibilities(responsibility_set = new_resp_set_b1)$current_burden_estimate_set)
+
+
+  }
+  test2(1)
+  test2(2)
+
+  ###################################################################
+  # Multiple groups, multiple scenarios
+  # Test *, semi-colon, and multi-line.
+  ###################################################################
+  test3 <- function(pass) {
+    clear(test$con)
+    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
+    resp_set_b1 <- add_responsibility_set("R-deer", "nevis-1")
+    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
+    resp_b1 <- add_responsibility("nevis-1", resp_set_b1, "pies")
+    bes_a1 <- add_burden_estimate_set(resp_a1)
+    bes_b1 <- add_burden_estimate_set(resp_b1)
+    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+    add_burden_estimates(pathetic_data, bes_b1, resp_b1)
+
+    if (pass %in% c(1,4,7)) ts <- "LAP-elf;R-deer"
+    if (pass %in% c(2,5,8)) ts <- c("LAP-elf", "R-deer")
+    if (pass %in% c(3,6,9)) ts <- "*"
+    if (pass %in% c(1,2,3)) sc <- "hot_chocolate;pies"
+    if (pass %in% c(4,5,6)) sc <- c("hot_chocolate", "pies")
+    if (pass %in% c(7,8,9)) sc <- "*"
+
+    write_ff_csv(test, ts, sc, "nevis-1", "nevis-2")
+    do_test(test)
+    expect_true(is.na(get_responsibilities(responsibility = resp_a1)$current_burden_estimate_set))
+    expect_true(is.na(get_responsibilities(responsibility = resp_b1)$current_burden_estimate_set))
+    new_resp_set_a1 <- get_responsibility_set("LAP-elf", "nevis-2")
+    new_resp_set_b1 <- get_responsibility_set("R-deer", "nevis-2")
+    expect_equal(bes_a1, get_responsibilities(responsibility_set = new_resp_set_a1)$current_burden_estimate_set)
+    expect_equal(bes_b1, get_responsibilities(responsibility_set = new_resp_set_b1)$current_burden_estimate_set)
+  }
+
+  for (i in 1:9) test3(i)
+
+
+
+})

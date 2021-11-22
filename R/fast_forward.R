@@ -180,23 +180,26 @@ expand_ff_csv <- function(csv, con) {
       FROM responsibility_set
      WHERE touchstone IN %s", all_touchstone_to))
 
-  csv$mash <- paste(csv$modelling_group, csv$touchstone_to, sep = "\r")
-  csv$rset_to <- NA
-  csv$rset_to <- next_rsets$id[match(csv$mash, next_rsets$mash)]
+  if (nrow(csv) > 0) {
 
-  next_resps <- DBI::dbGetQuery(con, sprintf("
-    SELECT responsibility.id as id,
-           CONCAT(responsibility.id, '\r', scenario_description) AS mash
-      FROM responsibility
-      JOIN scenario
-        ON responsibility.scenario = scenario.id
-     WHERE scenario.touchstone IN %s", all_touchstone_to))
+    csv$mash <- paste(csv$modelling_group, csv$touchstone_to, sep = "\r")
+    csv$rset_to <- NA
+    csv$rset_to <- next_rsets$id[match(csv$mash, next_rsets$mash)]
 
-  csv$mash <- paste(csv$resp, csv$scenario, sep = "\r")
-  csv$resp_to <- NA
-  csv$rset_to <- next_resps$id[match(csv$mash, next_resps$mash)]
+    next_resps <- DBI::dbGetQuery(con, sprintf("
+      SELECT responsibility.id as id,
+             CONCAT(responsibility.id, '\r', scenario_description) AS mash
+        FROM responsibility
+        JOIN scenario
+          ON responsibility.scenario = scenario.id
+       WHERE scenario.touchstone IN %s", all_touchstone_to))
 
-  csv$mash <- NULL
+    csv$mash <- paste(csv$resp, csv$scenario, sep = "\r")
+    csv$resp_to <- NA
+    csv$rset_to <- next_resps$id[match(csv$mash, next_resps$mash)]
+
+    csv$mash <- NULL
+  }
   unique(csv)
 }
 
