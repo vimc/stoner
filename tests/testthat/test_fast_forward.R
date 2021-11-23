@@ -222,7 +222,9 @@ test_that("Main FF functionality", {
     DBI::dbExecute(test$con, "UPDATE responsibility SET current_burden_estimate_set = NULL")
     DBI::dbExecute(test$con, "DELETE FROM burden_estimate")
     DBI::dbExecute(test$con, "DELETE FROM burden_estimate_set")
+    DBI::dbExecute(test$con, "DELETE FROM responsibility_comment")
     DBI::dbExecute(test$con, "DELETE FROM responsibility")
+    DBI::dbExecute(test$con, "DELETE FROM responsibility_set_comment")
     DBI::dbExecute(test$con, "DELETE FROM responsibility_set")
   }
 
