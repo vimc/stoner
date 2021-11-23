@@ -291,6 +291,45 @@ test_that("Main FF functionality", {
 
   expect_equal(0, length(get_responsibility_set("LAP-Elf", "nevis-2")))
 
+  ##########################################################
+  # Add some comments for the responsibility / set
+
+  add_comment <- function(id, comment, type, date) {
+    DBI::dbGetQuery(test$con, sprintf("
+      INSERT INTO %s_comment (%s, comment, added_by, added_on)
+           VALUES ($1, $2, $3, $4) RETURNING id", type, type),
+                    list(id, comment, "Elf", date))$id
+  }
+
+  add_comment_rs <- function(id, comment, date) {
+    add_comment(id, comment, "responsibility_set", date)
+  }
+
+  add_comment_r <- function(id, comment, date) {
+    add_comment(id, comment, "responsibility", date)
+  }
+
+  # Get comment for the responsibility set
+
+  get_comment <- function(id, type) {
+    DBI::dbGetQuery(test$con, sprintf("
+      SELECT CONCAT(comment,'\r',%s) AS result FROM %s_comment
+       WHERE id = $1", type, type), id)$result
+  }
+
+  get_comment_rs <- function(id) {
+    get_comment(id, "responsibility_set")
+  }
+
+  get_comment_r <- function(id) {
+    get_comment(id, "responsibility")
+  }
+
+  rs_c1 <- add_comment_rs(resp_set, "A partridge in a pear-tree", as.Date("2021-01-01"))
+  rs_c2 <- add_comment_rs(resp_set, "Two turtle doves", as.Date("2021-01-02"))
+  r_c1 <- add_comment_r(resp, "Three French hens", as.Date("2021-01-03"))
+  r_c2 <- add_comment_r(resp, "Four colly birds", as.Date("2021-01-04"))
+
   # Run the FF import.
 
   do_test(test)
@@ -326,6 +365,39 @@ test_that("Main FF functionality", {
 
   old_resp <- get_responsibilities(responsibility = resp)
   expect_true(is.na(old_resp$current_burden_estimate_set))
+
+  #   5. Comments... expect original comments to remain.
+
+  expect_equal(get_comment_rs(rs_c1),
+                paste("A partridge in a pear-tree", resp_set, sep = '\r'))
+  expect_equal(get_comment_rs(rs_c2),
+                paste("Two turtle doves", resp_set, sep = '\r'))
+  expect_equal(get_comment_r(r_c1),
+                paste("Three French hens", resp, sep = '\r'))
+  expect_equal(get_comment_r(r_c2),
+                paste("Four colly birds", resp, sep = '\r'))
+
+  # Except one modified comment in the new resp_set and new responsibility
+
+  expect_equal(DBI::dbGetQuery(test$con,
+    "SELECT COUNT(*) FROM responsibility_set_comment
+                    WHERE responsibility_set = $1", new_rset)$count, 1)
+
+  expect_equal(DBI::dbGetQuery(test$con,
+    "SELECT COUNT(*) FROM responsibility_comment
+                    WHERE responsibility = $1", new_resps$id)$count, 1)
+
+  expect_equal(DBI::dbGetQuery(test$con,
+    "SELECT comment FROM responsibility_set_comment
+                   WHERE responsibility_set = $1", new_rset)$comment,
+               "Two turtle doves - Fast-forwarded from nevis-1")
+
+  expect_equal(DBI::dbGetQuery(test$con,
+    "SELECT comment FROM responsibility_comment
+                   WHERE responsibility = $1", new_resps$id)$comment,
+               "Four colly birds - Fast-forwarded from nevis-1")
+
+
 
   ###################################################################
   # 2. Two out of three groups, same scenario

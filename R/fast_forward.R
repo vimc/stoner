@@ -334,7 +334,7 @@ transform_fast_forward <- function(e) {
   ff_non_na_rset_to <- ff[!is.na(ff$rset_to), ]
   ff_na_rset_to <- ff[is.na(ff$rset_to), ]
 
-  rsets <- unique(ff_na_rset_to[, c("modelling_group", "touchstone_to")])
+  rsets <- unique(ff_na_rset_to[, c("rset", "modelling_group", "touchstone_to")])
   rsets$status <- "incomplete"
   names(rsets)[names(rsets) == "touchstone_to"] <- "touchstone"
   rsets$id <- seq(-1, by = -1, length.out = nrow(rsets))
@@ -350,15 +350,39 @@ transform_fast_forward <- function(e) {
   rsets$mash <- NULL
   ff_na_rset_to$mash <- NULL
 
+  # Update comments for responsibility_set
+
+  update_comments <- function(d, ff, ff_field, comm_field) {
+    d$id <- seq(-1, by = -1, length.out = nrow(d))
+    d$comment <- unlist(lapply(seq_len(nrow(d)), function(x) {
+      x <- d[x, ]
+      touchstone <-
+        unique(ff$touchstone_from[ff[[ff_field]] == x[[comm_field]]])
+      paste0(x$comment, " - Fast-forwarded from ", touchstone)
+    }))
+    d
+  }
+
+  # Set responsibility_set_comment.responsibility_set to the new
+  # (maybe negative) id for the responsibility_set.
+
+  t[['responsibility_set_comment']] <-
+    update_comments(e$rset_comments, ff, "rset", "responsibility_set")
+
+  t[['responsibility_set_comment']]$responsibility_set <-
+    rsets$id[match(t[['responsibility_set_comment']]$responsibility_set,
+                   rsets$rset)]
+
+  rsets$rset <- NULL
+
   t[['responsibility_set']] <- rsets
 
   ff <- rbind(ff_non_na_rset_to, ff_na_rset_to)
 
   # Create new responsibilites (will pick up the dummy ids created above)
 
-
   resps <- unique(ff[is.na(ff$resp_to),
-                      c("rset_to", "scid", "bes", "sbes",
+                      c("resp", "rset_to", "scid", "bes", "sbes",
                         "is_open", "expectations")])
 
   rename_resps <- function(resps) {
@@ -373,9 +397,20 @@ transform_fast_forward <- function(e) {
   }
 
   resps <- rename_resps(resps)
-  resps$id <- seq(-1, by = -1, length.out = nrow(resps))
+  resps$newid <- seq(-1, by = -1, length.out = nrow(resps))
+
+  # Update responsibility comments
+
+  t[['responsibility_comment']] <-
+    update_comments(e$resp_comments, ff, "resp", "responsibility")
 
 
+  t[['responsibility_comment']]$responsibility  <-
+    resps$newid[match(t[['responsibility_comment']]$responsibility, resps$id)]
+
+
+  resps$id <- resps$newid
+  resps$newid <- NULL
 
   # Add the update for responsibilities that already exist.
 
@@ -395,23 +430,7 @@ transform_fast_forward <- function(e) {
 
   t[['responsibility']] <- rbind(resps, resps_existing, resps_remove_bes)
 
-  # Now migrate the comments.
 
-  update_comments <- function(d, ff, ff_field, comm_field) {
-    d$id <- seq(-1, by = -1, length.out = nrow(d))
-    d$comment <- unlist(lapply(seq_len(nrow(d)), function(x) {
-      x <- d[x, ]
-      touchstone <-
-        unique(ff$touchstone_from[ff[[ff_field]] == x[[comm_field]]])
-      paste0(x$comment, " - Fast-forwarded from ", touchstone)
-    }))
-    d
-  }
-
-  t[['responsibility_set_comment']] <-
-    update_comments(e$rset_comments, ff, "rset", "responsibility_set")
-  t[['responsibility_comment']] <-
-    update_comments(e$resp_comments, ff, "resp", "responsibility")
   t
 }
 
@@ -464,12 +483,10 @@ load_fast_forward <- function(transformed_data, con) {
   rneg[['responsibility_set']] <-
     rs$newid[match(rneg[['responsibility_set']], rs$id)]
 
-  #    and responsibility_set_comment with the new serial ids
-  rscneg <- rsc[rsc[['responsibility_set']] < 0, ]
-  rscpos <- rsc[rsc[['responsibility_set']] >= 0, ]
-  rscneg[['responsibility_set']] <-
-    rs$newid[match(rscneg[['responsibility_set']], rs$id)]
-  rsc <- rbind(rscneg, rscpos)
+  # responsibility_set_comment with the new serial ids
+
+  rsc[['responsibility_set']] <-
+    rs$newid[match(rsc[['responsibility_set']], rs$id)]
 
   r <- rbind(rneg, rpos)
 
@@ -494,12 +511,8 @@ load_fast_forward <- function(transformed_data, con) {
 
   # And apply to responsibility_comment
 
-  rcneg <- rc[rc[['responsibility']] < 0, ]
-  rcpos <- rc[rc[['responsibility']] >= 0, ]
-  rcneg[['responsibility']] <-
-    rneg$newid[match(rcneg[['responsibility']], rneg$id)]
-  rc <- rbind(rcneg, rcpos)
-
+  rc[['responsibility']] <-
+    rneg$newid[match(rc[['responsibility']], rneg$id)]
 
   # - For responsibilities that already had ids,
   # - Update current_burden_estimate_set.
@@ -513,7 +526,11 @@ load_fast_forward <- function(transformed_data, con) {
   }
 
   # responsibility_set_comment and responsibility_comment
-  # are now ready to go
+  # are now ready to go. These are just additions, so id can
+  # be left as serial.
+
+  rsc$id <- NULL
+  rc$id <- NULL
 
   DBI::dbAppendTable(con, "responsibility_set_comment", rsc)
   DBI::dbAppendTable(con, "responsibility_comment", rc)
