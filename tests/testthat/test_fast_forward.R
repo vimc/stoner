@@ -214,12 +214,12 @@ test_that("Main FF functionality", {
   # The rest will all be do with with responsibility_set
   # and responsibility, so...
 
-  clear <- function(con) {
-    DBI::dbExecute(con, "UPDATE responsibility SET current_burden_estimate_set = NULL")
-    DBI::dbExecute(con, "DELETE FROM burden_estimate")
-    DBI::dbExecute(con, "DELETE FROM burden_estimate_set")
-    DBI::dbExecute(con, "DELETE FROM responsibility")
-    DBI::dbExecute(con, "DELETE FROM responsibility_set")
+  clear <- function() {
+    DBI::dbExecute(test$con, "UPDATE responsibility SET current_burden_estimate_set = NULL")
+    DBI::dbExecute(test$con, "DELETE FROM burden_estimate")
+    DBI::dbExecute(test$con, "DELETE FROM burden_estimate_set")
+    DBI::dbExecute(test$con, "DELETE FROM responsibility")
+    DBI::dbExecute(test$con, "DELETE FROM responsibility_set")
   }
 
   add_responsibility_set <- function(group, touchstone) {
@@ -238,7 +238,7 @@ test_that("Main FF functionality", {
          AND touchstone = $2",
       list(scenario_description, touchstone))$id
 
-    DBI::dbGetQuery(con, "
+    DBI::dbGetQuery(test$con, "
       INSERT INTO responsibility (responsibility_set, scenario)
            VALUES ($1, $2) RETURNING id",
         list(responsibility_set, scenario_id))$id
@@ -269,7 +269,7 @@ test_that("Main FF functionality", {
   #    Model group and scenario named explicitly in file
   ###################################################################
 
-  clear(test$con)
+  clear()
   resp_set <- add_responsibility_set("LAP-elf", "nevis-1")
   resp <- add_responsibility("nevis-1", resp_set, "hot_chocolate")
   bes <- add_burden_estimate_set(resp)
@@ -330,7 +330,7 @@ test_that("Main FF functionality", {
   ###################################################################
 
   test2 <- function(pass) {
-    clear(test$con)
+    clear()
     resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
     resp_set_b1 <- add_responsibility_set("R-deer", "nevis-1")
     resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
@@ -362,7 +362,7 @@ test_that("Main FF functionality", {
   # Test *, semi-colon, and multi-line.
   ###################################################################
   test3 <- function(pass) {
-    clear(test$con)
+    clear()
     resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
     resp_set_b1 <- add_responsibility_set("R-deer", "nevis-1")
     resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
@@ -390,7 +390,5 @@ test_that("Main FF functionality", {
   }
 
   for (i in 1:9) test3(i)
-
-
 
 })
