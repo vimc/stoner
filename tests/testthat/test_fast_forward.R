@@ -38,8 +38,12 @@ ff_csv <- function(modelling_group, scenario, touchstone_from, touchstone_to) {
              touchstone_to = touchstone_to)
 }
 
-test_that("FF CSV cannot coexist with other CSVs", {
+test_that("FF CSV content / cannot coexist with other CSVs", {
   test <- new_test()
+  write.csv(data.frame(wrong = "mushrooms"),
+            file.path(test$path, "meta", "fast_forward.csv"))
+  expect_error(do_test(test), "Incorrect columns in fast_forward.csv")
+
   write_ff_csv(test, "*", "*", "t1", "t2")
   write.csv(ff_csv("*", "*", "t1", "t2"),
             file.path(test$path, "meta", "touchstone.csv"),

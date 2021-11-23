@@ -17,6 +17,12 @@
 
 expand_ff_csv <- function(csv, con) {
 
+  if (!identical(sort(names(csv)),
+                       sort(c("modelling_group", "scenario",
+                              "touchstone_from", "touchstone_to")))) {
+    stop("Incorrect columns in fast_forward.csv")
+  }
+
   missing_things <- function(items, table, con, id_field = "id") {
     items <- unique(items)
     db_things <- DBI::dbGetQuery(con, sprintf(
@@ -290,41 +296,12 @@ extract_fast_forward <- function(e, path, con) {
 
 test_extract_fast_forward <- function(e) {
 
-  test_extract_fast_forward_csv <- function(e) {
-    ff <- e$fast_forward_csv
-    testthat::expect_equal(sort(names(ff)),
-                           sort(c("modelling_group", "scenario",
-                                  "touchstone_from", "touchstone_to")),
-                           label = "Correct columns in fast_forward.csv")
-
-    testthat::expect_true(all(ff$touchstone_from %in%
-                                c(e[['touchstone_name_csv']]$id,
-                                  e[['touchstone_name']]$id)),
-                      label = "All fast-forward touchstone_from are known")
-
-    groups <- unique(unlist(
-      lapply(ff$modelling_group, function(x) strsplit(x, ";"))))
-
-    groups <- groups[groups != "*"]
-
-    testthat::expect_true(all(groups %in% e[['modelling_group']]),
-                      label = "All fast-forward modelling groups are known")
-
-    testthat::expect_true(all(ff$touchstone_to %in%
-                                c(e[['touchstone_name_csv']]$id,
-                                  e[['touchstone_name']]$id)),
-                      label = "All fast-forward touchstone_to are known")
-  }
-
-  # If there's a CSV, nothing should be NULL.
-
-  if (!is.null(e$fast_forward_csv)) {
-    test_extract_fast_forward_csv(e)
+  if (!is.null(e$ff_info)) {
     testthat::expect_true(!is.null(e$ff_info))
     testthat::expect_true(!is.null(e$resp_comments))
     testthat::expect_true(!is.null(e$rset_comments))
 
-    testthat::expect_equal(sort(names(ff)),
+    testthat::expect_equal(sort(names(e$ff_info)),
                            sort(c("modelling_group", "scenario",
                                   "touchstone_from", "touchstone_to",
                                   "resp", "rset", "bes", "rset_to",
@@ -333,8 +310,6 @@ test_extract_fast_forward <- function(e) {
                            label = "Correct columns in expanded ff csv")
   }
 
-  # Other than that, not much we can test here, as there may not be
-  # any comments or work to do.
 }
 
 ###############################################################################
