@@ -110,15 +110,6 @@ test_that("FF CSV with incorrect modelling_group / scenario / touchstone", {
       fast_forward_csv = ff_csv("LAP-elf", c("hot_potato", "hot_chocolate"),
                                 "kili-1", "nevis-1")), "", test$con),
     "Scenario\\(s) not found: hot_potato")
-
-  expect_error(
-    extract_fast_forward(list(
-      fast_forward_csv = ff_csv("LAP-elf",
-                                c("hot_potato", "hot_chocolate"),
-                                c("kili-1", "kili-2"),
-                                c("kili-2", "kili-2"))), "", test$con),
-    "Same touchstone appears in both touchstone_to and touchstone_from.")
-
 })
 
 test_that("Main FF functionality", {
@@ -168,6 +159,16 @@ test_that("Main FF functionality", {
   # so following import will be just the FF.csv file
 
   do_test(test)
+
+  expect_error(
+    extract_fast_forward(list(
+      fast_forward_csv = ff_csv("LAP-elf",
+                                c("hot_chocolate"),
+                                c("kili-1", "kili-2"),
+                                c("kili-2", "nevis-1"))), "", test$con),
+    "Same touchstone appears in both touchstone_to and touchstone_from.")
+
+
   dbfiles <- list.files(file.path(test$path, "meta"))
   unlink(file.path(test$path, "meta", dbfiles))
 
