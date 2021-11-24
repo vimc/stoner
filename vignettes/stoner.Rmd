@@ -9,31 +9,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-<style>
-body .main-container {
-  max-width: 800px !important;
-  width: 800px !important;
-  margin-left: auto;
-  margin-right: auto;
-}
-body {
-  max-width: 800px !important;
-  text-align: justify;
-  font-family: "Calibri", Arial, sans-serif;
-  font-size: 1em;
-  line-height: 125%;
-}
-
-li {
-  margin-bottom: 5px;
-}
-
-ul {
-  margin-top: 5px;
-}
-
-</style>
-
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -66,8 +41,7 @@ often been possible to review a new import as a diff to a previously reviewed
 import.
 
 Stoner takes this a step further by allowing the touchstone creation to be
-expressed in csv meta-data, providing function calls for the extract, transform
-and load stages.
+expressed in csv meta-data, providing function calls for the extract, transform and load stages.
 
 ### The R code
 
@@ -209,8 +183,8 @@ knitr::kable(data_frame(
   existing ones.
 * The touchstone `id` must exist in the database already, or in the
   `touchstone.csv` file included in your import.
-* Semi-colon separates lists are acceptable for the disease and country, since
-  several diseaes share the same list of relevant countries.
+* Semi-colon separated lists are acceptable for the disease and country, since
+  several diseases share the same list of relevant countries.
 * All diseases must be found in the `id` field of the `disease` table. Stoner
   cannot currently add new diseases.
 * All countries must be found in the `id` column of the `country` table. Stoner
@@ -270,7 +244,7 @@ knitr::kable(data_frame(
     looks up the status of any touchstones that refer to that
     scenario_description, and will only perform the update if all are in the
     `in-preparation` state.
-  * **However**, you can overide this requirement by using this in your load
+  * **However**, you can override this requirement by using this in your load
     phase:-
     <br/><p style="font-size:0.8em">
     &nbsp; &nbsp;```stoner::stone_load(transformed_data, con, allow_overwrite_scenario_type = TRUE)```
@@ -290,7 +264,7 @@ knitr::kable(data_frame(
                 "`stop`")))
 ```
 
-* `id` has conventially been in lower-case, and in the form
+* `id` has conventionally been in lower-case, and in the form
   `disease-coverage_type`.
 * If the scenario_description `id` does not exist in the database, stoner
   will add the new scenario_description.
@@ -301,7 +275,7 @@ knitr::kable(data_frame(
     and the touchstone associated with that scenario is not in the
     `in-preparation` state, then the import fails with an error.
   * **However**, on occasion it has been desirable to change the description
-    of a scenario while a touchstone referring to it is open. To overide the
+    of a scenario while a touchstone referring to it is open. To override the
     `in-preparation` requirement, in the load phase of the import, use:
     <br/><p style="font-size:0.8em">
     &nbsp; &nbsp;```stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)```
@@ -361,7 +335,7 @@ knitr::kable(data_frame(
   The `responsibilities.csv` file may cause changes to the `scenario`,
   `responsibility_set`, `responsibility`, `burden_estimate_expectation`,
   `burden_estimate_country_expectation` and `burden_estimate_outcome_expectation`
-  tables. Where possible, existing rows are re-used, rather then creating
+  tables. Where possible, existing rows are re-used, rather than creating
   duplicates.
 
 * **scenario table**
@@ -483,6 +457,89 @@ testthat::test_that("Expected rows added", {
 For this though, you will have to have prior knowledge about how many of the
 rows in your various CSV files exist already in the database, and how many
 you are expecting will need to be created.
+
+## Advanced usage
+
+### Fast-forwarding
+
+The need for fast-forwarding arises when the following events happen.
+
+* Modelling groups upload burden estimates to a certain touchstone version.
+* A coverage issue is discovered that affects some groups.
+* A new touchstone version is created which fixes the coverage issue.
+* For unaffected groups (ie, coverage did not change for them), we
+  may want their burden estimates to appear in the same touchstone version
+  as the newer groups.
+  
+Therefore, fast-forwarding is a process where burden estimates are moved
+from one touchstone to another - or more specifically, one responsibility_set
+to another (since responsibility_set is defined by modelling_group and
+touchstone).
+
+#### What fast-forwarding does...
+
+Suppose then, that we the new touchstone ready, and we have, potentially,
+some burden estimate sets to migrate. Fast-forwarding would do the following.
+Let's consider it first for a single scenario, and a single modelling_group.
+
+* We specify that we want to fast-forward an existing burden estimate set
+  for a certain modelling_group and scenario, from one touchstone to another.
+  We'll see how to specify that in a simple CSV file shortly. A stoner import
+  running on that CSV file then does essentially the following:-
+  
+* If necessary, create a new `responsibility_set` for the modelling_group,
+  in the destination touchstone. 
+    * If, on the other hand, a `responsibility_set`
+      already exists, that's fine, we'll use the existing one.
+* If necessary, create a new `responsibility` within the new 
+  `responsibility_set`, for the specified scenario. 
+    * If a suitable `responsibility` already exists, but there is no burden
+      estimate set associated with it, then we can continue using the existing
+      `responsibility`. 
+    * If, though, a burden estimate does exist in that target
+      `responsibility`, we abort and don't fast forward.
+* Fast-forwarding a burden_estimate_set then means copying the
+  `current_burden_estimate_set` value from one responsibility to another;
+  from the older into the newer, and setting the older to `NA`.
+
+* Additionally, when a new `responsibility_set` is created by stoner, it will
+  copy the most recent `responsibility_set_comment` from the old, to the new
+  `responsibility_set`, noting that the new one was created by fast-forwding.
+* For `responsibility_comment`s - if any work is done (either creating a 
+  new responsibility, or setting `current_burden_estimate_set` on the new
+  responsibility for the first time, then the most recent
+  `responsibility_comment` (if there is one) will be copied to the new
+  responsibility, with a note about fast-forwarding.
+  
+#### How to write a fast-forwarding import
+
+Write a `fast_forward.csv` file in the following form.
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Column` = c("modelling_group", "scenario", "touchstone_from", "touchstone_to"),
+
+  `Example` = c("IC-Hallett;Li",
+                "hepb-no-vaccination",
+                "202110gavi-2", "202110gavi-3")
+))  
+```
+
+* Note that fast-forwarding must be the only thing in the import, and the
+  only .csv file in use. Combining fast-forwarding with other touchstone
+  creation or management functions is too stressful to contemplate. Do 
+  them separate, and test them separately.
+  
+* The `modelling_group` and `scenario` columns can either be single items,
+  with multiple rows in the csv file. Or, they can be semi-colon separated,
+  to give multiple combinations of groups and scenarios. Finally, they can
+  be wildcard `*` to match anything.
+  
+* Include all the standard stoner one-lines, for the extract, test-extract, 
+  transform, test-transform, and load stages, as above, and ensure that in 
+  `dettl.yml` for the report, automatic loading is not enabled. 
+
 
 ## Using stoner as a standalone package (without Dettl)
 
@@ -639,7 +696,7 @@ knitr::kable(data_frame(
   ))
 ```
 The `cohort` is calculated by subtracting `age` from `year`; it asks the question
-when were people of a certin age in a certain calendar year born. Notice the
+when were people of a certain age in a certain calendar year born. Notice the
 `cohort` column instead of `year`. This model includes 100-year-olds alive in
 calendar year 2000, so these were born in the year 1900, but no yellow fever
 cases or deaths for these scenarios are recorded for that birth cohort.
@@ -713,7 +770,7 @@ otherwise not.
 
 Some groups provide multiple deaths or cases categories which need to be summed
 to give the total deaths or cases. The example below uses the optional `deaths`,
-`cases` and `dalys` arguments, where a vector of outcomes are provided (which
+`cases` and `dalys` arguments, where a vector of outcomes is provided (which
 must exist in the incoming data, and in the responsibilities for that group
 and disease too), to be summed to give the final outcome.
 
@@ -805,7 +862,7 @@ should be provided by the group along with the stochastic data files that
 were produced using the parameters they uploaded.
 
 By default, stoner will verify that the certificate file exists, and
-checks that the metadata (modelling group, touchstone, disaease) on production 
+checks that the metadata (modelling group, touchstone, disease) on production 
 that match the certificate also match with the arguments you provide when you call 
 stoner_stochastic_process.
 
@@ -897,7 +954,7 @@ of the final CSV files. If further uploads are made that match the `touchstone`,
 will overwrite the existing data, and the `version` and `creation_date` in the
 table above will be updated.
 
-#### Uploading seprately from processing
+#### Uploading separately from processing
 
 You can also call the `stone_stochastic_upload` directly, if you have CSV
 files ready to upload. Call the function as below, to upload a single CSV file.
