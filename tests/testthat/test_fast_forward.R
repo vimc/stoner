@@ -327,6 +327,20 @@ test_that("Main FF functionality", {
     get_comment(id, "responsibility")
   }
 
+  no_neg_ids <- function() {
+    pos_or_na <- function(table) {
+      count <- DBI::dbGetQuery(test$con,
+        sprintf("SELECT COUNT(*) FROM %s", table))$count
+      if (count == 0) return(0)
+      DBI::dbGetQuery(test$con, sprintf("SELECT MIN(id) FROM %s", table))$min
+    }
+
+    expect_gte(pos_or_na("responsibility_set"), 0)
+    expect_gte(pos_or_na("responsibility"), 0)
+    expect_gte(pos_or_na("responsibility_comment"), 0)
+    expect_gte(pos_or_na("responsibility_set_comment"), 0)
+  }
+
   rs_c1 <- add_comment_rs(resp_set, "A partridge in a pear-tree", as.Date("2021-01-01"))
   rs_c2 <- add_comment_rs(resp_set, "Two turtle doves", as.Date("2021-01-02"))
   r_c1 <- add_comment_r(resp, "Three French hens", as.Date("2021-01-03"))
@@ -399,6 +413,8 @@ test_that("Main FF functionality", {
                    WHERE responsibility = $1", new_resps$id)$comment,
                "Four colly birds - Fast-forwarded from nevis-1")
 
+  no_neg_ids()
+
 
 
   ###################################################################
@@ -429,7 +445,7 @@ test_that("Main FF functionality", {
     new_resp_set_b1 <- get_responsibility_set("R-deer", "nevis-2")
     expect_equal(bes_a1, get_responsibilities(responsibility_set = new_resp_set_a1)$current_burden_estimate_set)
     expect_equal(bes_b1, get_responsibilities(responsibility_set = new_resp_set_b1)$current_burden_estimate_set)
-
+    no_neg_ids()
 
   }
   test2(1)
@@ -465,8 +481,138 @@ test_that("Main FF functionality", {
     new_resp_set_b1 <- get_responsibility_set("R-deer", "nevis-2")
     expect_equal(bes_a1, get_responsibilities(responsibility_set = new_resp_set_a1)$current_burden_estimate_set)
     expect_equal(bes_b1, get_responsibilities(responsibility_set = new_resp_set_b1)$current_burden_estimate_set)
+    no_neg_ids()
   }
 
   for (i in 1:9) test3(i)
+
+  #########################################################################
+  # A group where there is an existing responsibility_set in the new
+  # touchstone, but no new responsiblity yet.
+
+  test4 <- function(pass) {
+    clear()
+    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
+    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
+    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
+    bes_a1 <- add_burden_estimate_set(resp_a1)
+    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+    rsc1 <- add_comment_rs(resp_set_a1, "Five gold rings", as.Date("2021-01-01"))
+    rc1 <- add_comment_r(resp_a1, "Six dplyers dplying", as.Date("2021-01-01"))
+    write_ff_csv(test, "*", "*", "nevis-1", "nevis-2")
+    old_resp1 <- get_responsibilities(responsibility_set = resp_set_a1)
+    old_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
+    do_test(test)
+
+    # We're expecting the bes to be fast-forwarded to the second touchstoe
+    # as before - just without having to create the responsibility_set
+
+    new_resp1 <- get_responsibilities(responsibility_set = resp_set_a1)
+    new_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
+    expect_equal(1, nrow(old_resp1))
+    expect_equal(0, nrow(old_resp2))
+    expect_true(is.na(new_resp1$current_burden_estimate_set))
+    expect_equal(bes_a1, new_resp2$current_burden_estimate_set)
+
+    # Responsibility set comment should not have moved
+
+    expect_equal(1, as.integer(DBI::dbGetQuery(test$con, "
+      SELECT COUNT(*) FROM responsibility_set_comment
+                     WHERE responsibility_set = $1", resp_set_a1)$count))
+
+    expect_equal("Five gold rings", DBI::dbGetQuery(test$con,
+      "SELECT comment FROM responsibility_set_comment")$comment)
+
+    expect_equal(0, as.integer(DBI::dbGetQuery(test$con, "
+      SELECT COUNT(*) FROM responsibility_set_comment
+                     WHERE responsibility_set = $1", resp_set_a2)$count))
+
+    # Responsibility comment should have been copied updated.
+
+    expect_equal(1, as.integer(DBI::dbGetQuery(test$con, "
+      SELECT COUNT(*) FROM responsibility_comment
+                     WHERE responsibility = $1", resp_a1)$count))
+
+    expect_equal("Six dplyers dplying", DBI::dbGetQuery(test$con,
+      "SELECT comment FROM responsibility_comment
+        WHERE responsibility = $1", resp_a1)$comment)
+
+    expect_equal(1, as.integer(DBI::dbGetQuery(test$con, "
+      SELECT COUNT(*) FROM responsibility_comment
+                     WHERE responsibility = $1", new_resp2$id)$count))
+
+    expect_equal("Six dplyers dplying - Fast-forwarded from nevis-1",
+      DBI::dbGetQuery(test$con,
+       "SELECT comment FROM responsibility_comment
+        WHERE responsibility = $1", new_resp2$id)$comment)
+    no_neg_ids()
+  }
+  test4()
+
+  #########################################################
+  # Now where responsibility_set exists, so does responsibility,
+  # but current_burden_estimate_set for the new responsibility
+  # is NA. Should slot into existing responsibility
+
+  test5 <- function(pass) {
+    clear()
+    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
+    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
+    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
+    resp_a2 <- add_responsibility("nevis-2", resp_set_a2, "hot_chocolate")
+    bes_a1 <- add_burden_estimate_set(resp_a1)
+    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+
+    # So we should have a non-NA, and an NA bes...
+
+    expect_true(!is.na(get_responsibilities(responsibility = resp_a1)$current_burden_estimate_set))
+    expect_true(is.na(get_responsibilities(responsibility = resp_a2)$current_burden_estimate_set))
+
+    rsc1 <- add_comment_rs(resp_set_a1, "Seven farmers farting", as.Date("2021-01-01"))
+    rc1 <- add_comment_r(resp_a1, "Eight coders coding", as.Date("2021-01-02"))
+    write_ff_csv(test, "*", "*", "nevis-1", "nevis-2")
+
+    old_resp1 <- get_responsibilities(responsibility_set = resp_set_a1)
+    old_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
+
+    do_test(test)
+
+    new_resp1 <- get_responsibilities(responsibility_set = resp_set_a1)
+    new_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
+
+    # Should still be only 2 responsibilities
+
+    expect_equal(2, as.integer(DBI::dbGetQuery(test$con,
+      "SELECT COUNT(*) FROM responsibility")$count))
+
+    # BES should have moved to existing responsibility.
+
+    expect_true(is.na(new_resp1$current_burden_estimate_set))
+    expect_true(!is.na(new_resp2$current_burden_estimate_set))
+    expect_equal(new_resp2$id, old_resp2$id)
+
+    # No new resp sets/responsibility should have been created
+
+    expect_equal(1, nrow(old_resp1))
+    expect_equal(1, nrow(old_resp2))
+    expect_equal(1, nrow(new_resp1))
+    expect_equal(1, nrow(new_resp2))
+
+    # Should still be one responsibility_set comment, the same as before
+
+    expect_equal(rsc1, DBI::dbGetQuery(test$con, "
+      SELECT id FROM responsibility_set_comment")$id)
+
+    # Should be two responsibility comments.
+
+    new_rcs <- DBI::dbGetQuery(test$con, "SELECT * FROM responsibility_comment")
+    expect_equal(nrow(new_rcs), 2)
+    new_rcs <- new_rcs[new_rcs$id != rc1, ]
+    expect_equal(nrow(new_rcs), 1)
+    expect_equal(new_rcs$responsibility, new_resp2$id)
+    expect_equal(new_rcs$comment, "Eight coders coding - Fast-forwarded from nevis-1")
+    no_neg_ids()
+  }
+  test5()
 
 })

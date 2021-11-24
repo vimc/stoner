@@ -3,19 +3,24 @@
 #
 # Sort out the incoming CSV. Going to assume Fastforwarding is a standalone
 # action - no other CSVs involved. (Otherwise it would get nasty with
-# potentially adding responsibilities or repsonsibility_sets in
+# potentially adding responsibilities or responsibility_sets in
 # different places within the same stoner import.
 #
 # Take a csv that may have * or ; in its
 # modelling_group or scenario fields, and
 # expand to singles per row.
 #
-# Pull this out so we can test it more easily.
+# Also, we'll need to extract information about other related
+# responsibility_sets and responsibilities, to work out if we need
+# to create new ones, or (in the case of responsibilities) edit
+# existing ones.
 #
 # All the work really happens in expand_ff_csv to sort out what we want
 # to do and what we need to know to do it...
 
 expand_ff_csv <- function(csv, con) {
+
+  # Check columns in CSV are sensible
 
   if (!identical(sort(names(csv)),
                        sort(c("modelling_group", "scenario",
@@ -23,12 +28,22 @@ expand_ff_csv <- function(csv, con) {
     stop("Incorrect columns in fast_forward.csv")
   }
 
-  missing_things <- function(items, table, con, id_field = "id") {
-    items <- unique(items)
+  # Generic function to check that all "values" exist in
+  # the "table" in the database, in column "id_field".
+  # Values missing from the db table are returned
+
+  missing_things <- function(values, table, con, id_field = "id") {
+    values <- unique(values)
     db_things <- DBI::dbGetQuery(con, sprintf(
       "SELECT %s FROM %s", id_field, table))[[id_field]]
-    items[!items %in% db_things]
+    values[!values %in% db_things]
   }
+
+  # The modelling_group and scenario fields in the incoming csv
+  # may be multi-line, with semi-colon separated elements in
+  # any/all lines. Here, for a single field, expand so that
+  # semi-colon-separated items become multiple table lines
+  # with a single item in each.
 
   expand_semicolons <- function(csv, field) {
     new_csv <- NULL
@@ -50,7 +65,10 @@ expand_ff_csv <- function(csv, con) {
   csv <- expand_semicolons(csv, "modelling_group")
   csv <- expand_semicolons(csv, "scenario")
 
-  # Expand modelling group wildcard (*)
+  # This is a little clumsy, but if there is a modelling_group '*',
+  # expand this so we have a line with a named modelling_group
+  # for each that already has a
+  # responsibility_set in the origin touchstone.
 
   while (any(csv$modelling_group == "*")) {
     i <- which(csv$modelling_group == "*")[1]
@@ -58,7 +76,9 @@ expand_ff_csv <- function(csv, con) {
     mgs <- DBI::dbGetQuery(con, "
       SELECT DISTINCT modelling_group
         FROM responsibility_set
-       WHERE touchstone = $1", csv$touchstone_from[i])$modelling_group
+       WHERE touchstone = $1",
+          csv$touchstone_from[i])$modelling_group
+
     csv <- csv[-i, ]
     for (mg in mgs) {
       row$modelling_group <- mg
@@ -66,7 +86,8 @@ expand_ff_csv <- function(csv, con) {
     }
   }
 
-  # Test required modelling groups exist
+  # Having done all the expansion of modelling groups,
+  # all items in that column should now exist.
 
   mgs <- missing_things(unique(csv$modelling_group), "modelling_group", con)
   if (length(mgs) > 0) {
@@ -74,7 +95,10 @@ expand_ff_csv <- function(csv, con) {
                  paste(mgs, collapse = ", ")))
   }
 
-  # Expand scenario wildcard (*)
+  # We also allow wildcard for scenarios...
+  # Here expand that now ito separate rows for individual scenarios,
+  # that the (already single) modelling group has in
+  # the origin touchstone.
 
   while (any(csv$scenario == "*")) {
     i <- which(csv$scenario == "*")[1]
@@ -96,8 +120,9 @@ expand_ff_csv <- function(csv, con) {
     }
   }
 
-
-  # Test required scenarios exist
+  # Having expanded scenarios to one per line, check they
+  # all exist - noting we are keeping these human readable,
+  # so are really scenario.scenario_description
 
   scs <- missing_things(unique(csv$scenario), "scenario", con,
                         "scenario_description")
@@ -106,13 +131,22 @@ expand_ff_csv <- function(csv, con) {
                     paste(scs, collapse = ", ")))
   }
 
-  # We'll settle for that, without rejecting particular
-  # {group,scenario}, to allow easier specification of
-  # "these groups, these scenarios" on one line.
+  # So now we have a list of jobs to do:-
+  #
+  # modelling_group, touchstone_from, touchstone_to, scenario
 
-  # We'll just remove any invalid combos. Build a hash of
-  # touchstone_from \r modelling_group \r scenario where a
-  # burden_estimate_set exists for that combination.
+  # We'll remove any invalid combos. Build a hash of
+  # touchstone_from \r modelling_group \r scenario and
+  # touchstone_to \r modelling_group \r scenario to see
+  # what exists in the database.
+
+  # We'll drop anything in the CSV that doesn't exist in the origin
+  # touchstone, as there's nothing to fast-forward. But let's not
+  # make that an error, otherwise we'll get lots of false errors
+  # if we expand (*, *)
+
+  # burden_estimate_set exists for that combination,
+  # and also note all the interesting ids.
 
   db_mash <- function(touchstones) {
     DBI::dbGetQuery(con, sprintf("
@@ -124,20 +158,27 @@ expand_ff_csv <- function(csv, con) {
              responsibility.id as resp,
              current_burden_estimate_set as bes,
              current_stochastic_burden_estimate_set as sbes,
-             is_open, expectations
+             is_open, expectations,
+             responsibility_set.touchstone as touchstone,
+             modelling_group,
+             scenario_description
         FROM responsibility_set
         JOIN responsibility
           ON responsibility_set.id = responsibility.responsibility_set
         JOIN scenario
           ON responsibility.scenario = scenario.id
-       WHERE current_burden_estimate_set IS NOT NULL
-         AND responsibility_set.touchstone IN %s", touchstones))
+       WHERE responsibility_set.touchstone IN %s", touchstones))
   }
+
+  # Look up all the responsibilities we *might* fast-forward...
 
   all_touchstone_from <-
     paste0("('", paste(unique(csv$touchstone_from), collapse = "','"), "')")
 
   db_mash1 <- db_mash(all_touchstone_from)
+
+  # Bind some columns onto our expanded CSV file, by matching on
+  # (modelling_group \r touchstone_from \t scenario)
 
   csv$mash <- paste(csv$modelling_group, csv$touchstone_from, csv$scenario,
                     sep = "\r")
@@ -151,61 +192,70 @@ expand_ff_csv <- function(csv, con) {
   csv$is_open <- db_mash1$is_open[matches]
   csv$expectations <- db_mash1$expectations[matches]
 
-  # Like Columbo, just one more thing. Don't fast-forward if there is
-  # already a burden estimate for that group/scenario in the destination
-  # touchstone. So, look up and mash all
-  # modelling_group \r touchstone_to \r scenario
+  # Now look up all the responsibilities which *might* already exist
+  # in the destination touchstone - which we'll need to decide what
+  # to do about.
 
   all_touchstone_to <-
     paste0("('", paste(unique(csv$touchstone_to), collapse = "','"), "')")
 
   db_mash2 <- db_mash(all_touchstone_to)
 
-  # And remove any matches, reporting.
+  # And see if they coincide with the destinations we want to fastforward into
+  # (modelling_group \r touchstone_to \r scenario)
 
   csv$mash <- paste(csv$modelling_group, csv$touchstone_to, csv$scenario,
                     sep = "\r")
-  ignoring <- csv[csv$mash %in% db_mash2$mash, ]
-  csv <- csv[!csv$mash %in% db_mash2$mash, ]
 
-  if (nrow(ignoring) > 0) {
+  # If burden_estimates are already uploaded, then we can't fast-forward
+  # so we'll leave a message about it, but continue doing the others.
+
+  already_bes <- csv[csv$mash %in% db_mash2$mash[!is.na(db_mash2$bes)], ]
+  csv <- csv[!csv$mash %in% db_mash2$mash[!is.na(db_mash2$bes)], ]
+
+  if (nrow(already_bes) > 0) {
     message("Estimates found in target touchstone for: ")
-    for (i in seq_len(nrow(ignoring))) {
-      message(paste(ignoring$touchstone_to, ignoring$modelling_group,
-                    ignoring$scenario, sep = " - "))
+    for (i in seq_len(nrow(already_bes))) {
+      message(paste(already_bes$touchstone_to, already_bes$modelling_group,
+                    already_bes$scenario, sep = " - "))
     }
   }
 
-  # Actually, there's two more things. We may need to create more
-  # responsibility_sets if they don't exist in the new touchstone.
-  # So we'll look up the ids if those responsibility_sets exist.
-  # And the same for responsibilities afterwards.
+  # Additionally, there may be NA for the burden_estimate_set, but
+  # already a responsibility, in which case we want to set
+  # resp_to to point to that responsibility, rather than NA, which
+  # will mean "create a new one".
+
+  csv$resp_to <- NA
+
+  for (i in seq_len(nrow(csv))) {
+    match_db <- db_mash2[db_mash2$touchstone == csv$touchstone_to[i] &
+                         db_mash2$modelling_group == csv$modelling_group[i] &
+                         db_mash2$scenario_description == csv$scenario[i] &
+                         is.na(db_mash2$bes), ]
+    if (nrow(match_db) == 1) {
+      csv$resp_to[i] <- match_db$resp
+    }
+  }
+
+  # Possibly we already have no work to do.
+
+  if (nrow(csv) == 0) {
+    return(csv)
+  }
+
+  # We also might need to create new responsibility_sets...
 
   next_rsets <- DBI::dbGetQuery(con, sprintf("
     SELECT id, CONCAT(modelling_group, '\r', touchstone) AS mash
       FROM responsibility_set
      WHERE touchstone IN %s", all_touchstone_to))
-
-  if (nrow(csv) > 0) {
-
+  csv$rset_to <- NA
+  if (nrow(next_rsets) > 0) {
     csv$mash <- paste(csv$modelling_group, csv$touchstone_to, sep = "\r")
-    csv$rset_to <- NA
     csv$rset_to <- next_rsets$id[match(csv$mash, next_rsets$mash)]
-
-    next_resps <- DBI::dbGetQuery(con, sprintf("
-      SELECT responsibility.id as id,
-             CONCAT(responsibility.id, '\r', scenario_description) AS mash
-        FROM responsibility
-        JOIN scenario
-          ON responsibility.scenario = scenario.id
-       WHERE scenario.touchstone IN %s", all_touchstone_to))
-
-    csv$mash <- paste(csv$resp, csv$scenario, sep = "\r")
-    csv$resp_to <- NA
-    csv$rset_to <- next_resps$id[match(csv$mash, next_resps$mash)]
-
-    csv$mash <- NULL
   }
+  csv$mash <- NULL
   unique(csv)
 }
 
@@ -300,7 +350,6 @@ test_extract_fast_forward <- function(e) {
     testthat::expect_true(!is.null(e$ff_info))
     testthat::expect_true(!is.null(e$resp_comments))
     testthat::expect_true(!is.null(e$rset_comments))
-
     testthat::expect_equal(sort(names(e$ff_info)),
                            sort(c("modelling_group", "scenario",
                                   "touchstone_from", "touchstone_to",
@@ -325,32 +374,7 @@ transform_fast_forward <- function(e) {
     return(NULL)
   }
 
-  # responsibility_sets table.
-  # Create new rows (with dummy ids for now) for each ff_info where
-  # rset_to = NA
-
-  # Do some work only on the ff_info that has rset_to = NA.
-
-  ff_non_na_rset_to <- ff[!is.na(ff$rset_to), ]
-  ff_na_rset_to <- ff[is.na(ff$rset_to), ]
-
-  rsets <- unique(ff_na_rset_to[, c("rset", "modelling_group", "touchstone_to")])
-  rsets$status <- "incomplete"
-  names(rsets)[names(rsets) == "touchstone_to"] <- "touchstone"
-  rsets$id <- seq(-1, by = -1, length.out = nrow(rsets))
-
-  # Replace NAs in e$ff_info with the dummy ones
-
-  rsets$mash <- paste(rsets$modelling_group, rsets$touchstone, sep = "\r")
-  ff_na_rset_to$mash <- paste(ff_na_rset_to$modelling_group,
-                              ff_na_rset_to$touchstone_to, sep = "\r")
-
-  ff_na_rset_to$rset_to <- rsets$id[match(ff_na_rset_to$mash, rsets$mash)]
-
-  rsets$mash <- NULL
-  ff_na_rset_to$mash <- NULL
-
-  # Update comments for responsibility_set
+  # Update comments for responsibility_set / responsiblity
 
   update_comments <- function(d, ff, ff_field, comm_field) {
     d$id <- seq(-1, by = -1, length.out = nrow(d))
@@ -363,17 +387,47 @@ transform_fast_forward <- function(e) {
     d
   }
 
-  # Set responsibility_set_comment.responsibility_set to the new
-  # (maybe negative) id for the responsibility_set.
 
-  t[['responsibility_set_comment']] <-
-    update_comments(e$rset_comments, ff, "rset", "responsibility_set")
+  # responsibility_sets table.
+  # Create new rows (with dummy ids for now) for each ff_info where
+  # rset_to = NA
 
-  t[['responsibility_set_comment']]$responsibility_set <-
-    rsets$id[match(t[['responsibility_set_comment']]$responsibility_set,
-                   rsets$rset)]
+  # Do some work only on the ff_info that has rset_to = NA.
 
-  rsets$rset <- NULL
+  ff_non_na_rset_to <- ff[!is.na(ff$rset_to), ]
+  ff_na_rset_to <- ff[is.na(ff$rset_to), ]
+
+  rsets <- unique(ff_na_rset_to[, c("rset", "modelling_group", "touchstone_to")])
+  if (nrow(rsets) > 0) {
+    rsets$status <- "incomplete"
+    names(rsets)[names(rsets) == "touchstone_to"] <- "touchstone"
+    rsets$id <- seq(-1, by = -1, length.out = nrow(rsets))
+
+
+    # Replace NAs in e$ff_info with the dummy ones
+
+    rsets$mash <- paste(rsets$modelling_group, rsets$touchstone, sep = "\r")
+    ff_na_rset_to$mash <- paste(ff_na_rset_to$modelling_group,
+                                ff_na_rset_to$touchstone_to, sep = "\r")
+
+    ff_na_rset_to$rset_to <- rsets$id[match(ff_na_rset_to$mash, rsets$mash)]
+
+    rsets$mash <- NULL
+    ff_na_rset_to$mash <- NULL
+
+
+    # Set responsibility_set_comment.responsibility_set to the new
+    # (maybe negative) id for the responsibility_set.
+
+    t[['responsibility_set_comment']] <-
+      update_comments(e$rset_comments, ff, "rset", "responsibility_set")
+
+    t[['responsibility_set_comment']]$responsibility_set <-
+      rsets$id[match(t[['responsibility_set_comment']]$responsibility_set,
+                     rsets$rset)]
+
+    rsets$rset <- NULL
+  }
 
   t[['responsibility_set']] <- rsets
 
@@ -399,15 +453,28 @@ transform_fast_forward <- function(e) {
   resps <- rename_resps(resps)
   resps$newid <- seq(-1, by = -1, length.out = nrow(resps))
 
-  # Update responsibility comments
+  # Update responsibility_comment for any matches
 
   t[['responsibility_comment']] <-
     update_comments(e$resp_comments, ff, "resp", "responsibility")
 
+  # Handle where destination responsibility already existed:
 
-  t[['responsibility_comment']]$responsibility  <-
-    resps$newid[match(t[['responsibility_comment']]$responsibility, resps$id)]
+  for (i in seq_len(nrow(t[['responsibility_comment']]))) {
+    ff_row <- ff[ff$resp == t[['responsibility_comment']]$responsibility, ]
+    if ((nrow(ff_row) == 1) && (!is.na(ff_row$resp_to))) {
+      t[['responsibility_comment']]$responsibility[i] <- ff_row$resp_to
+    }
+  }
 
+  # And if it didn't already exist:
+
+  for (i in seq_len(nrow(resps))) {
+    resps_row <- resps[resps$id == t[['responsibility_comment']]$responsibility, ]
+    if (nrow(resps_row) == 1) {
+      t[['responsibility_comment']]$responsibility[i] <- resps_row$newid
+    }
+  }
 
   resps$id <- resps$newid
   resps$newid <- NULL
@@ -429,7 +496,6 @@ transform_fast_forward <- function(e) {
   resps_remove_bes <- rename_resps(resps_remove_bes)
 
   t[['responsibility']] <- rbind(resps, resps_existing, resps_remove_bes)
-
 
   t
 }
@@ -459,24 +525,32 @@ load_fast_forward <- function(transformed_data, con) {
   rsc <- t[['responsibility_set_comment']]
   rc <- t[['responsibility_comment']]
 
-  # responsibility_set - add the new rows (which have negative ids)
+  # responsibility_set - if we have rows with negative ids,
+  # then we need to create new db rows.
 
-  DBI::dbAppendTable(con, "responsibility_set",
-                     rs[, c("modelling_group", "touchstone", "status")])
+  if (nrow(rs) > 0) {
+    DBI::dbAppendTable(con, "responsibility_set",
+                       rs[, c("modelling_group", "touchstone", "status")])
 
-  #  - fetch mapping from old to new ids
 
-  rs$mash <- paste(rs$modelling_group, rs$touchstone, sep = "\r")
+    # Now find the ids of the new rows that were added
 
-  new_ids <- DBI::dbGetQuery(con, sprintf("
-    SELECT id, CONCAT(modelling_group, '\r', touchstone) AS mash
-      FROM responsibility_set
-     WHERE CONCAT(modelling_group, '\r', touchstone) IN ('%s')",
-       paste(rs$mash, collapse = "','")))
+    rs$mash <- paste(rs$modelling_group, rs$touchstone, sep = "\r")
 
-  rs$newid <- new_ids$id[match(rs$mash, new_ids$mash)]
+    new_ids <- DBI::dbGetQuery(con, sprintf("
+      SELECT id, CONCAT(modelling_group, '\r', touchstone) AS mash
+        FROM responsibility_set
+       WHERE CONCAT(modelling_group, '\r', touchstone) IN ('%s')",
+         paste(rs$mash, collapse = "','")))
 
-  #  - Update negative responsibility_set in the responsibility table
+    # And bind to rs - which now has id (negative) and newid (positive)
+
+    rs$newid <- new_ids$id[match(rs$mash, new_ids$mash)]
+  }
+
+  # Now update any t.responsibility.responsibility_set
+  # identifiers that were negative, replacing them with the
+  # real keys.
 
   rneg <- r[r[['responsibility_set']] < 0, ]
   rpos <- r[r[['responsibility_set']] >= 0, ]
@@ -485,8 +559,10 @@ load_fast_forward <- function(transformed_data, con) {
 
   # responsibility_set_comment with the new serial ids
 
-  rsc[['responsibility_set']] <-
-    rs$newid[match(rsc[['responsibility_set']], rs$id)]
+  if (nrow(rs) > 0) {
+    rsc[['responsibility_set']] <-
+      rs$newid[match(rsc[['responsibility_set']], rs$id)]
+  }
 
   r <- rbind(rneg, rpos)
 
@@ -508,11 +584,14 @@ load_fast_forward <- function(transformed_data, con) {
       paste(rneg$mash, collapse = "','")))
 
   rneg$newid <- new_ids$id[match(rneg$mash, new_ids$mash)]
+  rpos$newid <- rpos$id
 
-  # And apply to responsibility_comment
+  # And apply to responsibility_comment, for those that needed it...
 
-  rc[['responsibility']] <-
-    rneg$newid[match(rc[['responsibility']], rneg$id)]
+  negs <- which(rc[['responsibility']] < 0)
+
+  rc[['responsibility']][negs] <-
+    rneg$newid[match(rc[['responsibility']][negs], rneg$id)]
 
   # - For responsibilities that already had ids,
   # - Update current_burden_estimate_set.
@@ -529,9 +608,10 @@ load_fast_forward <- function(transformed_data, con) {
   # are now ready to go. These are just additions, so id can
   # be left as serial.
 
-  rsc$id <- NULL
+  if (!is.null(rsc) > 0) {
+    rsc$id <- NULL
+    DBI::dbAppendTable(con, "responsibility_set_comment", rsc)
+  }
   rc$id <- NULL
-
-  DBI::dbAppendTable(con, "responsibility_set_comment", rsc)
   DBI::dbAppendTable(con, "responsibility_comment", rc)
 }
