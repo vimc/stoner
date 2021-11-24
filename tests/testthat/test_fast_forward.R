@@ -203,7 +203,7 @@ test_that("Main FF functionality", {
                  cohort_min_inclusive, cohort_max_inclusive,
                  description, version) VALUES
                  ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-   list(2000, 2001, 0, 1, 2000, 2000, 'Test', 'Test Version'))
+   list(2000, 2001, 0, 1, 2000, 2000, 'Test', 'Test Version'))$id
 
   pathetic_data <- data.frame(burden_estimate_set = rep(NA, 4),
                               country = rep(WLF, 4),
@@ -245,9 +245,9 @@ test_that("Main FF functionality", {
       list(scenario_description, touchstone))$id
 
     DBI::dbGetQuery(test$con, "
-      INSERT INTO responsibility (responsibility_set, scenario)
-           VALUES ($1, $2) RETURNING id",
-        list(responsibility_set, scenario_id))$id
+      INSERT INTO responsibility (responsibility_set, scenario, expectations)
+           VALUES ($1, $2, $3) RETURNING id",
+        list(responsibility_set, scenario_id, expec))$id
   }
 
   add_burden_estimate_set <- function(responsibility) {
@@ -267,23 +267,6 @@ test_that("Main FF functionality", {
                           WHERE id = $2", list(bes, resp))
   }
 
-  # And finally we are ready to do proper tests.
-  ###################################################################
-  # 1. Single group.
-  #    Responsibility_set (and hence responsibility) doesn't exist
-  #    Single scenario
-  #    Model group and scenario named explicitly in file
-  ###################################################################
-
-  clear()
-  resp_set <- add_responsibility_set("LAP-elf", "nevis-1")
-  resp <- add_responsibility("nevis-1", resp_set, "hot_chocolate")
-  bes <- add_burden_estimate_set(resp)
-  add_burden_estimates(pathetic_data, bes, resp)
-  write_ff_csv(test, "LAP-elf", "hot_chocolate", "nevis-1", "nevis-2")
-
-  # To be sure, the 2nd responsibility_set doesn't exist.
-
   get_responsibility_set <- function(modelling_group, touchstone) {
     DBI::dbGetQuery(test$con, "
     SELECT id FROM responsibility_set
@@ -291,10 +274,17 @@ test_that("Main FF functionality", {
        AND touchstone = $2", list(modelling_group, touchstone))$id
   }
 
-  expect_equal(0, length(get_responsibility_set("LAP-Elf", "nevis-2")))
-
-  ##########################################################
-  # Add some comments for the responsibility / set
+  get_responsibilities <- function(responsibility = NA, responsibility_set = NA) {
+    if (!is.na(responsibility_set)) {
+      DBI::dbGetQuery(test$con, "
+        SELECT * FROM responsibility WHERE responsibility_set IN ($1)",
+                      paste(responsibility_set, collapse = ","))
+    } else {
+      DBI::dbGetQuery(test$con, "
+        SELECT * FROM responsibility WHERE id IN ($1)",
+                      paste(responsibility, collapse = ","))
+    }
+  }
 
   add_comment <- function(id, comment, type, date) {
     DBI::dbGetQuery(test$con, sprintf("
@@ -330,7 +320,7 @@ test_that("Main FF functionality", {
   no_neg_ids <- function() {
     pos_or_na <- function(table) {
       count <- DBI::dbGetQuery(test$con,
-        sprintf("SELECT COUNT(*) FROM %s", table))$count
+                               sprintf("SELECT COUNT(*) FROM %s", table))$count
       if (count == 0) return(0)
       DBI::dbGetQuery(test$con, sprintf("SELECT MIN(id) FROM %s", table))$min
     }
@@ -341,81 +331,95 @@ test_that("Main FF functionality", {
     expect_gte(pos_or_na("responsibility_set_comment"), 0)
   }
 
-  rs_c1 <- add_comment_rs(resp_set, "A partridge in a pear-tree", as.Date("2021-01-01"))
-  rs_c2 <- add_comment_rs(resp_set, "Two turtle doves", as.Date("2021-01-02"))
-  r_c1 <- add_comment_r(resp, "Three French hens", as.Date("2021-01-03"))
-  r_c2 <- add_comment_r(resp, "Four colly birds", as.Date("2021-01-04"))
 
-  # Run the FF import.
+  # And finally we are ready to do proper tests.
 
-  do_test(test)
+  ###################################################################
+  # 1. Single group.
+  #    Responsibility_set (and hence responsibility) doesn't exist
+  #    Single scenario
+  #    Model group and scenario named explicitly in file
+  ###################################################################
+  test1 <- function() {
+    clear()
+    resp_set <- add_responsibility_set("LAP-elf", "nevis-1")
+    resp <- add_responsibility("nevis-1", resp_set, "hot_chocolate")
+    bes <- add_burden_estimate_set(resp)
+    add_burden_estimates(pathetic_data, bes, resp)
+    write_ff_csv(test, "LAP-elf", "hot_chocolate", "nevis-1", "nevis-2")
 
-  # We expect:
-  #   1. a new responsibility_set,
+    # To be sure, the 2nd responsibility_set doesn't exist.
 
-  new_rset <- get_responsibility_set("LAP-elf", "nevis-2")
-  expect_equal(1, length(new_rset))
+    expect_equal(0, length(get_responsibility_set("LAP-Elf", "nevis-2")))
 
-  #   2. a new responsibility for that set
+    ##########################################################
+    # Add some comments for the responsibility / set
 
-  get_responsibilities <- function(responsibility = NA, responsibility_set = NA) {
-    if (!is.na(responsibility_set)) {
-      DBI::dbGetQuery(test$con, "
-        SELECT * FROM responsibility WHERE responsibility_set IN ($1)",
-          paste(responsibility_set, collapse = ","))
-    } else {
-      DBI::dbGetQuery(test$con, "
-        SELECT * FROM responsibility WHERE id IN ($1)",
-          paste(responsibility, collapse = ","))
-    }
-  }
 
-  new_resps <- get_responsibilities(responsibility_set = new_rset)
-  expect_equal(1, nrow(new_resps))
+    rs_c1 <- add_comment_rs(resp_set, "A partridge in a pear-tree", as.Date("2021-01-01"))
+    rs_c2 <- add_comment_rs(resp_set, "Two turtle doves", as.Date("2021-01-02"))
+    r_c1 <- add_comment_r(resp, "Three French hens", as.Date("2021-01-03"))
+    r_c2 <- add_comment_r(resp, "Four colly birds", as.Date("2021-01-04"))
 
-  #   3. That resp.  has a current_burden_estimate_set matching earlier bes
-  expect_equal(new_resps$current_burden_estimate_set, bes)
+    # Run the FF import.
 
-  #   4. Old responsibility is still there, with NA for
-  #      current_burden_estimate_set
+    do_test(test)
 
-  old_resp <- get_responsibilities(responsibility = resp)
-  expect_true(is.na(old_resp$current_burden_estimate_set))
+    # We expect:
+    #   1. a new responsibility_set,
 
-  #   5. Comments... expect original comments to remain.
+    new_rset <- get_responsibility_set("LAP-elf", "nevis-2")
+    expect_equal(1, length(new_rset))
 
-  expect_equal(get_comment_rs(rs_c1),
+    #   2. a new responsibility for that set
+
+    new_resps <- get_responsibilities(responsibility_set = new_rset)
+    expect_equal(1, nrow(new_resps))
+
+    #   3. That resp.  has a current_burden_estimate_set matching earlier bes
+    expect_equal(new_resps$current_burden_estimate_set, bes)
+
+    #   4. Old responsibility is still there, with NA for
+    #      current_burden_estimate_set
+
+    old_resp <- get_responsibilities(responsibility = resp)
+    expect_true(is.na(old_resp$current_burden_estimate_set))
+
+    #   5. Comments... expect original comments to remain.
+
+    expect_equal(get_comment_rs(rs_c1),
                 paste("A partridge in a pear-tree", resp_set, sep = '\r'))
-  expect_equal(get_comment_rs(rs_c2),
+    expect_equal(get_comment_rs(rs_c2),
                 paste("Two turtle doves", resp_set, sep = '\r'))
-  expect_equal(get_comment_r(r_c1),
+    expect_equal(get_comment_r(r_c1),
                 paste("Three French hens", resp, sep = '\r'))
-  expect_equal(get_comment_r(r_c2),
+    expect_equal(get_comment_r(r_c2),
                 paste("Four colly birds", resp, sep = '\r'))
 
-  # Except one modified comment in the new resp_set and new responsibility
+    # Except one modified comment in the new resp_set and new responsibility
 
-  expect_equal(DBI::dbGetQuery(test$con,
-    "SELECT COUNT(*) FROM responsibility_set_comment
-                    WHERE responsibility_set = $1", new_rset)$count, 1)
+    expect_equal(DBI::dbGetQuery(test$con,
+      "SELECT COUNT(*) FROM responsibility_set_comment
+                      WHERE responsibility_set = $1", new_rset)$count, 1)
 
-  expect_equal(DBI::dbGetQuery(test$con,
-    "SELECT COUNT(*) FROM responsibility_comment
-                    WHERE responsibility = $1", new_resps$id)$count, 1)
+    expect_equal(DBI::dbGetQuery(test$con,
+      "SELECT COUNT(*) FROM responsibility_comment
+                      WHERE responsibility = $1", new_resps$id)$count, 1)
 
-  expect_equal(DBI::dbGetQuery(test$con,
-    "SELECT comment FROM responsibility_set_comment
-                   WHERE responsibility_set = $1", new_rset)$comment,
+    expect_equal(DBI::dbGetQuery(test$con,
+      "SELECT comment FROM responsibility_set_comment
+                     WHERE responsibility_set = $1", new_rset)$comment,
                "Two turtle doves - Fast-forwarded from nevis-1")
 
-  expect_equal(DBI::dbGetQuery(test$con,
-    "SELECT comment FROM responsibility_comment
-                   WHERE responsibility = $1", new_resps$id)$comment,
+    expect_equal(DBI::dbGetQuery(test$con,
+      "SELECT comment FROM responsibility_comment
+                     WHERE responsibility = $1", new_resps$id)$comment,
                "Four colly birds - Fast-forwarded from nevis-1")
 
-  no_neg_ids()
+    no_neg_ids()
+  }
 
-
+  test1()
 
   ###################################################################
   # 2. Two out of three groups, same scenario
@@ -448,6 +452,7 @@ test_that("Main FF functionality", {
     no_neg_ids()
 
   }
+
   test2(1)
   test2(2)
 
@@ -455,6 +460,7 @@ test_that("Main FF functionality", {
   # Multiple groups, multiple scenarios
   # Test *, semi-colon, and multi-line.
   ###################################################################
+
   test3 <- function(pass) {
     clear()
     resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
@@ -547,6 +553,7 @@ test_that("Main FF functionality", {
         WHERE responsibility = $1", new_resp2$id)$comment)
     no_neg_ids()
   }
+
   test4()
 
   #########################################################
@@ -614,5 +621,39 @@ test_that("Main FF functionality", {
     no_neg_ids()
   }
   test5()
+
+  #########################################################
+  # Now where responsibility_set exists, so does responsibility,
+  # and current_burden_estimate_set already uploaded.
+  # Nothing should happen, and we should get a message.
+
+  test6 <- function() {
+    clear()
+    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
+    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
+    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
+    resp_a2 <- add_responsibility("nevis-2", resp_set_a2, "hot_chocolate")
+    bes_a1 <- add_burden_estimate_set(resp_a1)
+    bes_a2 <- add_burden_estimate_set(resp_a1)
+    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+    add_burden_estimates(pathetic_data, bes_a2, resp_a2)
+    rsc1 <- add_comment_rs(resp_set_a1, "Nine numpties numping", as.Date("2021-01-01"))
+    rc1 <- add_comment_r(resp_a1, "Ten shrubbers shrubbing", as.Date("2021-01-02"))
+    write_ff_csv(test, "*", "*", "nevis-1", "nevis-2")
+
+    old_resp1 <- get_responsibilities(responsibility_set = resp_set_a1)
+    old_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
+
+    expect_message(do_test(test),
+      "Estimates found in target touchstone for: nevis-2 - LAP-elf - hot_chocolate")
+
+    new_resp1 <- get_responsibilities(responsibility_set = resp_set_a1)
+    new_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
+
+    expect_true(identical(new_resp1, old_resp1))
+    expect_true(identical(new_resp2, old_resp2))
+  }
+  test6()
+
 
 })

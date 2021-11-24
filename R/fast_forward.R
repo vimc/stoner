@@ -214,11 +214,18 @@ expand_ff_csv <- function(csv, con) {
   csv <- csv[!csv$mash %in% db_mash2$mash[!is.na(db_mash2$bes)], ]
 
   if (nrow(already_bes) > 0) {
-    message("Estimates found in target touchstone for: ")
+    s <- ("Estimates found in target touchstone for: ")
     for (i in seq_len(nrow(already_bes))) {
-      message(paste(already_bes$touchstone_to, already_bes$modelling_group,
+      s <- paste0(s, paste(already_bes$touchstone_to, already_bes$modelling_group,
                     already_bes$scenario, sep = " - "))
     }
+    message(s)
+  }
+
+  # Possibly we already have no work to do.
+
+  if (nrow(csv) == 0) {
+    return(csv)
   }
 
   # Additionally, there may be NA for the burden_estimate_set, but
@@ -238,11 +245,7 @@ expand_ff_csv <- function(csv, con) {
     }
   }
 
-  # Possibly we already have no work to do.
 
-  if (nrow(csv) == 0) {
-    return(csv)
-  }
 
   # We also might need to create new responsibility_sets...
 
