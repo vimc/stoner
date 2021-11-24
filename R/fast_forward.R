@@ -28,6 +28,15 @@ expand_ff_csv <- function(csv, con) {
     stop("Incorrect columns in fast_forward.csv")
   }
 
+  # Also, risky to have transitive changes - eg,
+  # migrate from t1 -> t2, and something else from t2 -> t3 in the
+  # same import. This also covers errors where touchstone_from = touchstone_to
+
+  if (any(csv$touchstone_from %in% csv$touchstone_to)) {
+    stop("Same touchstone appears in both touchstone_to and touchstone_from.")
+  }
+
+
   # Generic function to check that all "values" exist in
   # the "table" in the database, in column "id_field".
   # Values missing from the db table are returned

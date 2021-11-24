@@ -530,6 +530,11 @@ knitr::kable(data_frame(
   only .csv file in use. Combining fast-forwarding with other touchstone
   creation or management functions is too stressful to contemplate. Do 
   them separate, and test them separately.
+
+* Also, while you can do fastforwarding for different touchstones in the
+  same CSV, be careful with it as it gets confusing. Stoner will not
+  let you fastforward into, and out of, the same touchstone (ie, from 
+  version 1 to 2, and 2 to 3) in the same CSV file.
   
 * The `modelling_group` and `scenario` columns can either be single items,
   with multiple rows in the csv file. Or, they can be semi-colon separated,
