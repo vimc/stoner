@@ -499,7 +499,6 @@ transform_fast_forward <- function(e) {
   resps_remove_bes <- rename_resps(resps_remove_bes)
 
   t[['responsibility']] <- rbind(resps, resps_existing, resps_remove_bes)
-
   t
 }
 
@@ -512,18 +511,13 @@ test_transform_fast_forward <- function(transformed_data) {
 ###############################################################################
 
 load_fast_forward <- function(transformed_data, con) {
+  browser()
   t <- transformed_data
 
   # So... 4 tables to work on. Shorten names to make this code easier.
 
   rs <- t[['responsibility_set']]
   r <- t[['responsibility']]
-
-  # No work to do?
-
-  if (is.null(r)) {
-    return(NULL)
-  }
 
   rsc <- t[['responsibility_set_comment']]
   rc <- t[['responsibility_comment']]
