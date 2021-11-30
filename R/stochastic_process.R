@@ -312,7 +312,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
           })
           withr::with_envvar(
             c(VROOM_TEMP_PATH = tmp),
-            readr::read_csv(...))
+            readr::read_csv(..., lazy = FALSE))
         }
 
         calc_outcomes <- function(csv, outcomes, single_outcome) {
