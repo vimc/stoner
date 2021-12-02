@@ -185,7 +185,7 @@ expand_ff_csv <- function(csv, con) {
   db_mash1 <- db_mash(all_touchstone_from)
 
   # Bind some columns onto our expanded CSV file, by matching on
-  # (modelling_group \r touchstone_from \t scenario)
+  # (modelling_group \r touchstone_from \r scenario)
 
   csv$mash <- paste(csv$modelling_group, csv$touchstone_from, csv$scenario,
                     sep = "\r")
