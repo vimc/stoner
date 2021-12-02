@@ -25,18 +25,17 @@ stone_extract <- function(path, con) {
     fast_forward_csv = read_meta(path, "fast_forward.csv")
   )
 
-  # If fast-forwarding, then that must be the only CSV
-
-  if (!is.null(e$fast_forward_csv)) {
-    other_csvs <- sum(!(unlist(lapply(e, is.null))))
-    if (other_csvs > 1) {
-      stop("fast_forward.csv, if specified, must be the only csv")
-    }
-  }
-
   # Remove any NULLs
 
   e <- e[!vlapply(e, is.null)]
+
+  # If fast-forwarding, then that must be the only CSV
+
+  if (!is.null(e$fast_forward_csv)) {
+    if (length(e) > 1) {
+      stop("fast_forward.csv, if specified, must be the only csv")
+    }
+  }
 
   # Now we know what we need, extract from db
 

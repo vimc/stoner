@@ -22,12 +22,10 @@ expand_ff_csv <- function(csv, con) {
 
   # Check columns in CSV are sensible
 
-  if (!identical(sort(names(csv)),
-                       sort(c("modelling_group", "scenario",
-                              "touchstone_from", "touchstone_to")))) {
-    stop("Incorrect columns in fast_forward.csv")
-  }
-
+  assert_set_equal(names(csv), 
+    c("modelling_group", "scenario", "touchstone_from", "touchstone_to"), 
+    "Incorrect columns in fast_forward.csv")
+  
   # Also, risky to have transitive changes - eg,
   # migrate from t1 -> t2, and something else from t2 -> t3 in the
   # same import. This also covers errors where touchstone_from = touchstone_to

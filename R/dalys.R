@@ -96,20 +96,19 @@ test_args <- function(con, dalys_params, life_table) {
   if (class(dalys_params) != "data.frame") {
     stop("dalys_params must be a data.frame")
   }
-  if (!identical(sort(names(dalys_params)),
-                 c("average_duration", "disability_weight","outcome",
-                   "proportion"))) {
-    stop(paste("dalys_params needs columns outcome, proportion,",
-               "average_duration and disablility_weight"))
-  }
+
+  assert_set_equal(names(dalys_params),
+    c("average_duration", "disability_weight","outcome", "proportion"),
+      paste("dalys_params needs columns outcome, proportion,",
+            "average_duration and disablility_weight"))
+  
 
   if (!is.null(life_table)) {
     if (class(life_table) != "data.frame") {
       stop("life_table (if specified) must be data.frame")
     }
-    if (!identical(sort(names(life_table)), c(".code", "value"))) {
-      stop("life_table (if specified) must have columns .code and value")
-    }
+    assert_set_equal(names(life_table), c("code", "value"),
+      "life_table (if specified) must have columns .code and value")
   }
 }
 
