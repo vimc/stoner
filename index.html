@@ -22,6 +22,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -34,18 +36,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="articles/stoner.html">Get started</a>
 </li>
@@ -58,7 +54,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/vimc/stoner/">
+  <a href="https://github.com/vimc/stoner/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -76,9 +72,9 @@
       </header><div class="row">
   <div class="contents col-md-9">
 
-<div id="stoner" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#stoner" class="anchor"></a>stoner</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="stoner">stoner<a class="anchor" aria-label="anchor" href="#stoner"></a>
+</h1></div>
 <!-- badges: start -->
 
 <pre>
@@ -94,22 +90,22 @@
 </pre>
 <p>Stoner is a helper package for writing montagu-imports concerning touchstones and associated responsibilities and expectations. It allows creation of or changes to a touchstone to be specified by CSV files.</p>
 </div>
-<div id="using-stoner" class="section level1">
-<h1 class="hasAnchor">
-<a href="#using-stoner" class="anchor"></a>Using stoner</h1>
+<div class="section level1">
+<h1 id="using-stoner">Using stoner<a class="anchor" aria-label="anchor" href="#using-stoner"></a>
+</h1>
 <ul>
-<li><code><a href="https://rdrr.io/r/utils/install.packages.html">install.packages("stoner")</a></code></li>
-<li>Create a <a href="https://github.com/vimc/montagu-imports">montagu-import</a>.</li>
-<li>Write CSV files in a folder called <code>meta</code> inside that import folder, or use <code><a href="reference/stone_dump.html">stoner::stone_dump(con, touchstone, path)</a></code> to dump a set of CSVs for an existing touchstone, which you could (carefully) modify.</li>
-<li>For your <em>extract</em> call <code><a href="reference/stone_extract.html">stoner::stone_extract(path, con)</a></code>
+<li><code>install.packages("stoner")</code></li>
+<li>Create a <a href="https://github.com/vimc/montagu-imports" class="external-link">montagu-import</a>.</li>
+<li>Write CSV files in a folder called <code>meta</code> inside that import folder, or use <code>stoner::stone_dump(con, touchstone, path)</code> to dump a set of CSVs for an existing touchstone, which you could (carefully) modify.</li>
+<li>For your <em>extract</em> call <code>stoner::stone_extract(path, con)</code>
 </li>
-<li>For your <em>test-extract</em> call <code><a href="reference/stone_test_extract.html">stoner::stone_test_extract(extracted_data)</a></code>
+<li>For your <em>test-extract</em> call <code>stoner::stone_test_extract(extracted_data)</code>
 </li>
-<li>For your <em>transform</em> call <code><a href="reference/stone_transform.html">stoner::stone_transform(extracted_data)</a></code>
+<li>For your <em>transform</em> call <code>stoner::stone_transform(extracted_data)</code>
 </li>
-<li>For your <em>test-transform</em> call <code><a href="reference/stone_test_transform.html">stoner::stone_test_transform(transform_data)</a></code>
+<li>For your <em>test-transform</em> call <code>stoner::stone_test_transform(transform_data)</code>
 </li>
-<li>For your <em>load</em> call <code><a href="reference/stone_load.html">stoner::stone_load(transformed_data, con)</a></code>
+<li>For your <em>load</em> call <code>stoner::stone_load(transformed_data, con)</code>
 </li>
 </ul>
 <p>The above is the simplest case. You should also write some load tests as usual, but these can now concentrate entirely on what rows the particular import is expected to add. See the vignette for more detail.</p>
@@ -119,46 +115,57 @@
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
-<h2>Links</h2>
+<h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li>Browse source code at <br><a href="https://github.com/vimc/stoner/">https://​github.com/​vimc/​stoner/​</a>
-</li>
-<li>Report a bug at <br><a href="https://github.com/vimc/stoner/issues">https://​github.com/​vimc/​stoner/​issues</a>
-</li>
+<li><a href="https://github.com/vimc/stoner/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/vimc/stoner/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
+
 <div class="license">
-<h2>License</h2>
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li>
-<a href="https://opensource.org/licenses/mit-license.php">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a>
+<a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a>
 </li>
 </ul>
 </div>
+
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html#citation">Citing stoner</a></li>
+</ul>
+</div>
+
 <div class="developers">
-<h2>Developers</h2>
+<h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Wes Hinsley <br><small class="roles"> Author, maintainer, costume designer, dancer, electrician, instrumentalist, singer </small>  </li>
 <li>Rich Fitzjohn <br><small class="roles"> Author, consultant, singer </small>  </li>
 </ul>
 </div>
 
-  <div class="dev-status">
-<h2>Dev status</h2>
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/vimc/stoner/actions"><img src="https://github.com/vimc/stoner/workflows/R-CMD-check/badge.svg" alt="R build status"></a></li>
+<li><a href="https://github.com/vimc/stoner/actions" class="external-link"><img src="https://github.com/vimc/stoner/workflows/R-CMD-check/badge.svg" alt="R build status"></a></li>
 </ul>
 </div>
-</div>
+
+  </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Wes Hinsley, Rich Fitzjohn.</p>
+  <p></p>
+<p>Developed by Wes Hinsley, Rich Fitzjohn.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
 </div>
 
       </footer>
@@ -166,6 +173,8 @@
 
   
 
+
+  
 
   </body>
 </html>

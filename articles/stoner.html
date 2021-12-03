@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,18 +33,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="../index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="../articles/stoner.html">Get started</a>
 </li>
@@ -55,7 +51,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/vimc/stoner/">
+  <a href="https://github.com/vimc/stoner/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -74,55 +70,31 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>stoner</h1>
-                        <h4 class="author">Wes Hinsley</h4>
+                        <h4 data-toc-skip class="author">Wes Hinsley</h4>
             
-            <h4 class="date">2021-10-06</h4>
+            <h4 data-toc-skip class="date">2021-12-03</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/vimc/stoner/blob/master/vignettes/stoner.Rmd"><code>vignettes/stoner.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/vimc/stoner/blob/HEAD/vignettes/stoner.Rmd" class="external-link"><code>vignettes/stoner.Rmd</code></a></small>
       <div class="hidden name"><code>stoner.Rmd</code></div>
 
     </div>
 
     
     
-<style>
-body .main-container {
-  max-width: 800px !important;
-  width: 800px !important;
-  margin-left: auto;
-  margin-right: auto;
-}
-body {
-  max-width: 800px !important;
-  text-align: justify;
-  font-family: "Calibri", Arial, sans-serif;
-  font-size: 1em;
-  line-height: 125%;
-}
-
-li {
-  margin-bottom: 5px;
-}
-
-ul {
-  margin-top: 5px;
-}
-
-</style>
-<div id="introduction" class="section level2">
-<h2 class="hasAnchor">
-<a href="#introduction" class="anchor"></a>Introduction</h2>
+<div class="section level2">
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h2>
 <p><code>stoner</code> is a package to help with various tasks involving VIMC touchstones. Its purpose is evolving somewhat with the needs of the VIMC project; stoner is becoming an umbrella to keep these needs expressed in a tested package. As such, it can be used in a number of modes.</p>
 </div>
-<div id="touchstone-creation-as-a-dettl-helper" class="section level2">
-<h2 class="hasAnchor">
-<a href="#touchstone-creation-as-a-dettl-helper" class="anchor"></a>Touchstone creation as a dettl helper</h2>
+<div class="section level2">
+<h2 id="touchstone-creation-as-a-dettl-helper">Touchstone creation as a dettl helper<a class="anchor" aria-label="anchor" href="#touchstone-creation-as-a-dettl-helper"></a>
+</h2>
 <p>Creation of touchstones is quite a common process, although new touchstones will often be based on a previous one. However, creating the touchstone involves additions to various related tables, so the code to create touchstones is not always trivial to review.</p>
-<p><a href="https://github.com/vimc/dettl">Dettl</a> has somewhat helped here, encouraging separation of extract, transform and load stages of an import, with testing of each stage, forcing the code for touchstone creation to be written in a way that separates those concerns and makes reviewing easier. Furthermore, it has often been possible to review a new import as a diff to a previously reviewed import.</p>
+<p><a href="https://github.com/vimc/dettl" class="external-link">Dettl</a> has somewhat helped here, encouraging separation of extract, transform and load stages of an import, with testing of each stage, forcing the code for touchstone creation to be written in a way that separates those concerns and makes reviewing easier. Furthermore, it has often been possible to review a new import as a diff to a previously reviewed import.</p>
 <p>Stoner takes this a step further by allowing the touchstone creation to be expressed in csv meta-data, providing function calls for the extract, transform and load stages.</p>
-<div id="the-r-code" class="section level3">
-<h3 class="hasAnchor">
-<a href="#the-r-code" class="anchor"></a>The R code</h3>
+<div class="section level3">
+<h3 id="the-r-code">The R code<a class="anchor" aria-label="anchor" href="#the-r-code"></a>
+</h3>
 <p>The code for a stoner touchstone import is very simple. Dettl requires that we write extract, transform, and load functions, and tests for the extract and load. So we create a dettl import as usual (see <code>dettl::dettl_new</code>), which begins a new import in our imports repo.</p>
 <p>Dettl requires us to write various functions, which we can satisfy with single line functions for a start.</p>
 <table class="table">
@@ -159,16 +131,16 @@ ul {
 </table>
 <p>So for the minimal example, when writing the dettl import, delegate each of dettl’s functions to the stoner handlers, passing the same arguments.</p>
 </div>
-<div id="the-csv-files-for-the-import" class="section level3">
-<h3 class="hasAnchor">
-<a href="#the-csv-files-for-the-import" class="anchor"></a>The CSV files for the Import</h3>
+<div class="section level3">
+<h3 id="the-csv-files-for-the-import">The CSV files for the Import<a class="anchor" aria-label="anchor" href="#the-csv-files-for-the-import"></a>
+</h3>
 <p>The minimal example on its own will do nothing and exit cleanly. To make stoner do some useful work, we write csv files in a folder called <code>meta</code> within the import folder. These csv files should be thought of a specification of “how you would like things to be” - rather than “what you want stoner to do”. If rows in your csv file identically exist in the database, stoner will use the existing ones and not add duplicates. If the rows in your csv are provably absent from the database, stoner will add new ones.</p>
 <p>If stoner detects in some way that the items already exist, but not all csv data matches with those items, then some other factors come into play that affect whether stoner can update the database content or not. Imports are <em>incremental</em> to the database, yet on some occasions, it is useful to be able to do in-place edits of touchstones that are still in preparation, for example.</p>
 <p>Following are the csv files that stoner will recognise, and their columns and formats, and notes on the requirements. Any failure to meet the requirements will cause an abort with an error message.</p>
 <p>You do not have to provide all of the csvs, only ones where you expect something to change, but you may find it good practice to “over-specify”, since the result is that Stoner will check the database tables are all as you expect. It also may be helpful to be able to compare complete touchstone definitions (ie, sets of stoner csv files) as a diff between two imports.</p>
-<div id="touchstone_name-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#touchstone_name-csv" class="anchor"></a>touchstone_name.csv</h4>
+<div class="section level4">
+<h4 id="touchstone_name-csv">touchstone_name.csv<a class="anchor" aria-label="anchor" href="#touchstone_name-csv"></a>
+</h4>
 <p>A <code>touchstone_name</code> refers to a broad ensemble of closely related runs; there will be at least one version for each touchstone_name, and it is the specific version that we colloquially refer to as ‘a touchstone’.</p>
 <table class="table">
 <thead><tr class="header">
@@ -205,9 +177,9 @@ ul {
 <code>Description</code> and <code>Comment</code> must be non-empty. Conventionally, <code>description</code> has been used to describe the date and basic purpose, and <code>comment</code> for any further detail required.</li>
 </ul>
 </div>
-<div id="touchstone-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#touchstone-csv" class="anchor"></a>touchstone.csv</h4>
+<div class="section level4">
+<h4 id="touchstone-csv">touchstone.csv<a class="anchor" aria-label="anchor" href="#touchstone-csv"></a>
+</h4>
 <p>A <code>touchstone</code> is a particular version of a <code>touchstone_name</code>, and is the basic unit of currency for touchstones in Montagu. Coverage, expectations and burden estimates are all attached to one of these versioned touchstones.</p>
 <table class="table">
 <thead><tr class="header">
@@ -256,9 +228,9 @@ ul {
 <code>description</code> and <code>comment</code> must be non-empty. Typically, <code>description</code> has been very minimal about the existence of the touchstone, and <code>comments</code> to record more details about why the touchstone version exists.</li>
 </ul>
 </div>
-<div id="touchstone_countries-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#touchstone_countries-csv" class="anchor"></a>touchstone_countries.csv</h4>
+<div class="section level4">
+<h4 id="touchstone_countries-csv">touchstone_countries.csv<a class="anchor" aria-label="anchor" href="#touchstone_countries-csv"></a>
+</h4>
 <p>The <code>touchstone_country</code> table in the database should really be called <code>touchstone_country_disease</code>. For a given touchstone, it records which countries should be returned when groups download their demographic data. This might differ from the countries a group is expected to model for a certain touchstone; see the responsibilities.csv section for that.</p>
 <table class="table">
 <thead><tr class="header">
@@ -284,15 +256,15 @@ ul {
 <li>This is an incremental update; if any row in the csv does not exactly match one in the database table, a new row will be added. Exact duplicates will be ignored.</li>
 <li>It is not currently possible to remove rows in the database, or to edit existing ones.</li>
 <li>The touchstone <code>id</code> must exist in the database already, or in the <code>touchstone.csv</code> file included in your import.</li>
-<li>Semi-colon separates lists are acceptable for the disease and country, since several diseaes share the same list of relevant countries.</li>
+<li>Semi-colon separated lists are acceptable for the disease and country, since several diseases share the same list of relevant countries.</li>
 <li>All diseases must be found in the <code>id</code> field of the <code>disease</code> table. Stoner cannot currently add new diseases.</li>
 <li>All countries must be found in the <code>id</code> column of the <code>country</code> table. Stoner cannot currently add new countries, but the <code>country</code> table should be complete.</li>
 <li>TO-DO: It looks like we can do this to touchstones that are not in-prep.</li>
 </ul>
 </div>
-<div id="touchstone_demographic_dataset-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#touchstone_demographic_dataset-csv" class="anchor"></a>touchstone_demographic_dataset.csv</h4>
+<div class="section level4">
+<h4 id="touchstone_demographic_dataset-csv">touchstone_demographic_dataset.csv<a class="anchor" aria-label="anchor" href="#touchstone_demographic_dataset-csv"></a>
+</h4>
 <p>The touchstone_demographic_dataset table determines which demographic_statistic_types from which demographic_source will be used when providing demographic data for a particular touchstone. Generally, there will be a new demographic source each year, when either the IGME child mortality data, or the UNWPP population data, or both get updated. Because these updates happen at different times (UNWPP bi-yearly, and IGME yearly), sometimes a touchstone_demographic_dataset might incorporate fields from different sources, hence this table.</p>
 <table class="table">
 <thead><tr class="header">
@@ -322,9 +294,9 @@ ul {
 <li>TO-DO: It looks like we can do this to touchstones that are not in-prep.</li>
 </ul>
 </div>
-<div id="scenario_type-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#scenario_type-csv" class="anchor"></a>scenario_type.csv</h4>
+<div class="section level4">
+<h4 id="scenario_type-csv">scenario_type.csv<a class="anchor" aria-label="anchor" href="#scenario_type-csv"></a>
+</h4>
 <table class="table">
 <thead><tr class="header">
 <th align="left">Column</th>
@@ -349,17 +321,17 @@ ul {
 <li>If there are no scenario_descriptions referring to this <code>id</code>, the <code>name</code> in the database table for this id will be updated.</li>
 <li>If there are scenario_descriptions referring to this <code>id</code>, then stoner looks up the status of any touchstones that refer to that scenario_description, and will only perform the update if all are in the <code>in-preparation</code> state.</li>
 <li>
-<strong>However</strong>, you can overide this requirement by using this in your load phase:- <br><p style="font-size:0.8em">
-   <code><a href="../reference/stone_load.html">stoner::stone_load(transformed_data, con, allow_overwrite_scenario_type = TRUE)</a></code>
+<strong>However</strong>, you can override this requirement by using this in your load phase:- <br><p style="font-size:0.8em">
+   <code>stoner::stone_load(transformed_data, con, allow_overwrite_scenario_type = TRUE)</code>
 </p>
 </li>
 </ul>
 </li>
 </ul>
 </div>
-<div id="scenario_description-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#scenario_description-csv" class="anchor"></a>scenario_description.csv</h4>
+<div class="section level4">
+<h4 id="scenario_description-csv">scenario_description.csv<a class="anchor" aria-label="anchor" href="#scenario_description-csv"></a>
+</h4>
 <table class="table">
 <thead><tr class="header">
 <th align="left">Column</th>
@@ -386,14 +358,14 @@ ul {
 </table>
 <ul>
 <li>
-<code>id</code> has conventially been in lower-case, and in the form <code>disease-coverage_type</code>.</li>
+<code>id</code> has conventionally been in lower-case, and in the form <code>disease-coverage_type</code>.</li>
 <li>If the scenario_description <code>id</code> does not exist in the database, stoner will add the new scenario_description.</li>
 <li>If the scenario_description <code>id</code> exists, and all other columns match the existing values too, then the row is ignored. If the <code>id</code> exists, but other columns differ, then:
 <ul>
 <li>If any <code>scenario</code> exists that refers to this <code>scenario_description</code>, and the touchstone associated with that scenario is not in the <code>in-preparation</code> state, then the import fails with an error.</li>
 <li>
-<strong>However</strong>, on occasion it has been desirable to change the description of a scenario while a touchstone referring to it is open. To overide the <code>in-preparation</code> requirement, in the load phase of the import, use: <br><p style="font-size:0.8em">
-   <code><a href="../reference/stone_load.html">stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)</a></code>
+<strong>However</strong>, on occasion it has been desirable to change the description of a scenario while a touchstone referring to it is open. To override the <code>in-preparation</code> requirement, in the load phase of the import, use: <br><p style="font-size:0.8em">
+   <code>stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)</code>
 </p>
 </li>
 </ul>
@@ -404,9 +376,9 @@ ul {
 <code>scenario_type</code> must be the <code>id</code> of a <code>scenario_type</code>, either in the database table, or in a <code>scenario_type.csv</code> as part of your import.</li>
 </ul>
 </div>
-<div id="responsibilities-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#responsibilities-csv" class="anchor"></a>responsibilities.csv</h4>
+<div class="section level4">
+<h4 id="responsibilities-csv">responsibilities.csv<a class="anchor" aria-label="anchor" href="#responsibilities-csv"></a>
+</h4>
 <p>Most of the work for implementing a touchstone is done here, in which we add the scenario, responsibility and expectations (including countries and outcomes) that form the tasks different groups must perform.</p>
 <table class="table">
 <thead><tr class="header">
@@ -477,7 +449,7 @@ ul {
 <li><p>All countries must be found in the <code>id</code> column of the <code>country</code> table. Stoner cannot currently add new countries, but the <code>country</code> table should be complete.</p></li>
 <li>
 <p>All outcomes must be found in the <code>code</code> column of the burden_outcome` table. Stoner cannot currently add new burden outcomes.</p>
-<p>The <code>responsibilities.csv</code> file may cause changes to the <code>scenario</code>, <code>responsibility_set</code>, <code>responsibility</code>, <code>burden_estimate_expectation</code>, <code>burden_estimate_country_expectation</code> and <code>burden_estimate_outcome_expectation</code> tables. Where possible, existing rows are re-used, rather then creating duplicates.</p>
+<p>The <code>responsibilities.csv</code> file may cause changes to the <code>scenario</code>, <code>responsibility_set</code>, <code>responsibility</code>, <code>burden_estimate_expectation</code>, <code>burden_estimate_country_expectation</code> and <code>burden_estimate_outcome_expectation</code> tables. Where possible, existing rows are re-used, rather than creating duplicates.</p>
 </li>
 <li>
 <p><strong>scenario table</strong></p>
@@ -537,67 +509,142 @@ ul {
 </ul>
 </div>
 </div>
-<div id="the-test-functions" class="section level3">
-<h3 class="hasAnchor">
-<a href="#the-test-functions" class="anchor"></a>The test functions</h3>
-<p>Firstly, have your <code>test-extract</code> call <code><a href="../reference/stone_test_extract.html">stoner::stone_test_extract(extracted_data)</a></code>, and <code>test-transform</code> call <code><a href="../reference/stone_test_transform.html">stoner::stone_test_transform(transformed_data)</a></code> for the built-in tests to be called. Most likely, there is nothing else useful you can write for these tests, if your extract and transform functions are simply calling Stoner’s.</p>
+<div class="section level3">
+<h3 id="the-test-functions">The test functions<a class="anchor" aria-label="anchor" href="#the-test-functions"></a>
+</h3>
+<p>Firstly, have your <code>test-extract</code> call <code>stoner::stone_test_extract(extracted_data)</code>, and <code>test-transform</code> call <code>stoner::stone_test_transform(transformed_data)</code> for the built-in tests to be called. Most likely, there is nothing else useful you can write for these tests, if your extract and transform functions are simply calling Stoner’s.</p>
 <p>Possibly the best approach to tests is to write the <code>test-queries</code> function for dettl in the following form:-</p>
 <p style="font-size:0.6em">
 </p>
-<pre><code>test_queries &lt;- function(con) { list(
-  tn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone")[1,1],
-  tddn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_demographic_dataset")[1,1],
-  tcn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_country")[1,1],
-  sdn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario_description")[1,1],
-  sn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario")[1,1],
-  been = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_expectation")[1,1],
-  beoen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_outcome_expectation")[1,1],
-  becen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_country_expectation")[1,1],
-  rsn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility_set")[1,1],
-  rn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility")[1,1]
-)}</code></pre>
+<pre><code><span class="va">test_queries</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">con</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>
+  tn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  tddn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone_demographic_dataset"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  tcn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone_country"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  sdn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM scenario_description"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  sn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM scenario"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  been <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  beoen <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_outcome_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  becen <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_country_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  rsn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM responsibility_set"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
+  rn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM responsibility"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>
+<span class="op">)</span><span class="op">}</span></code></pre>
 
 <p>and a <code>test_load.R</code> that tests how many rows have been added, for example…</p>
 <p style="font-size:0.6em">
 </p>
-<pre><code>context("load")
+<pre><code><span class="fu">context</span><span class="op">(</span><span class="st">"load"</span><span class="op">)</span>
 
-testthat::test_that("Expected rows added", {
-  expect_equal(after$tn, before$tn + 1)
-  expect_equal(after$tddn, before$tddn + 23)
-  expect_equal(after$tcn, before$tcn + 946)
-  expect_equal(after$sdn, before$sdn)
-  expect_equal(after$sn, before$sn + 67)
-  expect_equal(after$been, before$been + 26)
-  expect_equal(after$beoen, before$beoen + 128)
-  expect_equal(after$becen, before$becen + 2137)
-  expect_equal(after$rsn, before$rsn + 17)
-  expect_equal(after$rn, before$rn + 127)
-})</code></pre>
+<span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_that.html" class="external-link">test_that</a></span><span class="op">(</span><span class="st">"Expected rows added"</span>, <span class="op">{</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tn</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tddn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tddn</span> <span class="op">+</span> <span class="fl">23</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tcn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tcn</span> <span class="op">+</span> <span class="fl">946</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">sdn</span>, <span class="va">before</span><span class="op">$</span><span class="va">sdn</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">sn</span>, <span class="va">before</span><span class="op">$</span><span class="va">sn</span> <span class="op">+</span> <span class="fl">67</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">been</span>, <span class="va">before</span><span class="op">$</span><span class="va">been</span> <span class="op">+</span> <span class="fl">26</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">beoen</span>, <span class="va">before</span><span class="op">$</span><span class="va">beoen</span> <span class="op">+</span> <span class="fl">128</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">becen</span>, <span class="va">before</span><span class="op">$</span><span class="va">becen</span> <span class="op">+</span> <span class="fl">2137</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">rsn</span>, <span class="va">before</span><span class="op">$</span><span class="va">rsn</span> <span class="op">+</span> <span class="fl">17</span><span class="op">)</span>
+  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">rn</span>, <span class="va">before</span><span class="op">$</span><span class="va">rn</span> <span class="op">+</span> <span class="fl">127</span><span class="op">)</span>
+<span class="op">}</span><span class="op">)</span></code></pre>
 
 <p>For this though, you will have to have prior knowledge about how many of the rows in your various CSV files exist already in the database, and how many you are expecting will need to be created.</p>
 </div>
 </div>
-<div id="using-stoner-as-a-standalone-package-without-dettl" class="section level2">
-<h2 class="hasAnchor">
-<a href="#using-stoner-as-a-standalone-package-without-dettl" class="anchor"></a>Using stoner as a standalone package (without Dettl)</h2>
-<div id="dumping-touchstones" class="section level3">
-<h3 class="hasAnchor">
-<a href="#dumping-touchstones" class="anchor"></a>Dumping touchstones</h3>
-<p><code><a href="../reference/stone_dump.html">stoner::stone_dump(con, touchstone, path)</a></code>, called with a database connection, a touchstone, and an output path, will produce csv files of everything connected with that touchstone, in the form stoner would use to import, as described above. This might be useful if you want to download an existing touchstone, edit some details (including the touchstone id), and upload a modified version.</p>
+<div class="section level2">
+<h2 id="advanced-usage">Advanced usage<a class="anchor" aria-label="anchor" href="#advanced-usage"></a>
+</h2>
+<div class="section level3">
+<h3 id="fast-forwarding">Fast-forwarding<a class="anchor" aria-label="anchor" href="#fast-forwarding"></a>
+</h3>
+<p>The need for fast-forwarding arises when the following events happen.</p>
+<ul>
+<li>Modelling groups upload burden estimates to a certain touchstone version.</li>
+<li>A coverage issue is discovered that affects some groups.</li>
+<li>A new touchstone version is created which fixes the coverage issue.</li>
+<li>For unaffected groups (ie, coverage did not change for them), we may want their burden estimates to appear in the same touchstone version as the newer groups.</li>
+</ul>
+<p>Therefore, fast-forwarding is a process where burden estimates are moved from one touchstone to another - or more specifically, one responsibility_set to another (since responsibility_set is defined by modelling_group and touchstone).</p>
+<div class="section level4">
+<h4 id="what-fast-forwarding-does">What fast-forwarding does…<a class="anchor" aria-label="anchor" href="#what-fast-forwarding-does"></a>
+</h4>
+<p>Suppose then, that we the new touchstone ready, and we have, potentially, some burden estimate sets to migrate. Fast-forwarding would do the following. Let’s consider it first for a single scenario, and a single modelling_group.</p>
+<ul>
+<li><p>We specify that we want to fast-forward an existing burden estimate set for a certain modelling_group and scenario, from one touchstone to another. We’ll see how to specify that in a simple CSV file shortly. A stoner import running on that CSV file then does essentially the following:-</p></li>
+<li>
+<p>If necessary, create a new <code>responsibility_set</code> for the modelling_group, in the destination touchstone.</p>
+<ul>
+<li>If, on the other hand, a <code>responsibility_set</code> already exists, that’s fine, we’ll use the existing one.</li>
+</ul>
+</li>
+<li>
+<p>If necessary, create a new <code>responsibility</code> within the new <code>responsibility_set</code>, for the specified scenario.</p>
+<ul>
+<li>If a suitable <code>responsibility</code> already exists, but there is no burden estimate set associated with it, then we can continue using the existing <code>responsibility</code>.</li>
+<li>If, though, a burden estimate does exist in that target <code>responsibility</code>, we abort and don’t fast forward.</li>
+</ul>
+</li>
+<li><p>Fast-forwarding a burden_estimate_set then means copying the <code>current_burden_estimate_set</code> value from one responsibility to another; from the older into the newer, and setting the older to <code>NA</code>.</p></li>
+<li><p>Additionally, when a new <code>responsibility_set</code> is created by stoner, it will copy the most recent <code>responsibility_set_comment</code> from the old, to the new <code>responsibility_set</code>, noting that the new one was created by fast-forwding.</p></li>
+<li><p>For <code>responsibility_comment</code>s - if any work is done (either creating a new responsibility, or setting <code>current_burden_estimate_set</code> on the new responsibility for the first time, then the most recent <code>responsibility_comment</code> (if there is one) will be copied to the new responsibility, with a note about fast-forwarding.</p></li>
+</ul>
 </div>
-<div id="stochastic-processing" class="section level3">
-<h3 class="hasAnchor">
-<a href="#stochastic-processing" class="anchor"></a>Stochastic processing</h3>
+<div class="section level4">
+<h4 id="how-to-write-a-fast-forwarding-import">How to write a fast-forwarding import<a class="anchor" aria-label="anchor" href="#how-to-write-a-fast-forwarding-import"></a>
+</h4>
+<p>Write a <code>fast_forward.csv</code> file in the following form.</p>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Column</th>
+<th align="left">Example</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">modelling_group</td>
+<td align="left">IC-Hallett;Li</td>
+</tr>
+<tr class="even">
+<td align="left">scenario</td>
+<td align="left">hepb-no-vaccination</td>
+</tr>
+<tr class="odd">
+<td align="left">touchstone_from</td>
+<td align="left">202110gavi-2</td>
+</tr>
+<tr class="even">
+<td align="left">touchstone_to</td>
+<td align="left">202110gavi-3</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p>Note that fast-forwarding must be the only thing in the import, and the only .csv file in use. Combining fast-forwarding with other touchstone creation or management functions is too stressful to contemplate. Do them separate, and test them separately.</p></li>
+<li><p>Also, while you can do fastforwarding for different touchstones in the same CSV, be careful with it as it gets confusing. Stoner will not let you fastforward into, and out of, the same touchstone (ie, from version 1 to 2, and 2 to 3) in the same CSV file.</p></li>
+<li><p>The <code>modelling_group</code> and <code>scenario</code> columns can either be single items, with multiple rows in the csv file. Or, they can be semi-colon separated, to give multiple combinations of groups and scenarios. Finally, they can be wildcard <code>*</code> to match anything.</p></li>
+<li><p>Include all the standard stoner one-lines, for the extract, test-extract, transform, test-transform, and load stages, as above, and ensure that in <code>dettl.yml</code> for the report, automatic loading is not enabled.</p></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="using-stoner-as-a-standalone-package-without-dettl">Using stoner as a standalone package (without Dettl)<a class="anchor" aria-label="anchor" href="#using-stoner-as-a-standalone-package-without-dettl"></a>
+</h2>
+<div class="section level3">
+<h3 id="dumping-touchstones">Dumping touchstones<a class="anchor" aria-label="anchor" href="#dumping-touchstones"></a>
+</h3>
+<p><code>stoner::stone_dump(con, touchstone, path)</code>, called with a database connection, a touchstone, and an output path, will produce csv files of everything connected with that touchstone, in the form stoner would use to import, as described above. This might be useful if you want to download an existing touchstone, edit some details (including the touchstone id), and upload a modified version.</p>
+</div>
+<div class="section level3">
+<h3 id="stochastic-processing">Stochastic processing<a class="anchor" aria-label="anchor" href="#stochastic-processing"></a>
+</h3>
 <p>Modelling groups submit stochastic data to VIMC by responding to a Dropbox File Request. A stochastic set consists of 200 runs for each scenario for that group, using a range of different parameters that are intended to capture the uncertainty in the model.</p>
 <p>After some initial sanity checks (which are manual at present), the incoming csvs are compressed with <code>xz</code> with maximum settings, which provides the best compression for csvs, but fast decompression, and seamless decompression in R. (Windows command-line <code>xz -z -k -9 -e *.csv</code>)</p>
 <p>The incoming stochastics are separated certainly by scenario, and may be further separated for convenience; some groups have provided a file per country, others a file per stochastic run. From these, we create four intermediate files for each group, which eliminate age by summing over a calendar year, summing over a birth cohort (year - age), and for each option, either including all ages, or filtering just ages 0 to 4. They include just the <code>cases</code>, <code>deaths</code> and <code>dalys</code> outcomes (which might be calculated by summing more detailed outcomes a group provides) for each scenario in columns. The idea is so that calculating impact between scenarios can then be calculated simply by doing maths on values from the same row of the file.</p>
 <p>These four files are later uploaded to four separate tables on the annex database.</p>
 <p>Note that the production of the intermediate files can take a few hours per group, whereas the upload to annex takes only a few minutes. Storing the intermediate files can be useful should we need to redeploy annex at any point.</p>
 <p>Also note the examples below assume you have a connection to the production database (<code>con</code>), and later, a connection to the annex database (<code>annex</code>). See the end for notes on getting those connections in different ways.</p>
-<div id="simple-use" class="section level4">
-<h4 class="hasAnchor">
-<a href="#simple-use" class="anchor"></a>Simple Use</h4>
+<div class="section level4">
+<h4 id="simple-use">Simple Use<a class="anchor" aria-label="anchor" href="#simple-use"></a>
+</h4>
 <p>In the simplest case, a group uploads a single csv file per scenario as follows:-</p>
 <table class="table">
 <thead><tr class="header">
@@ -676,26 +723,26 @@ testthat::test_that("Expected rows added", {
 </tbody>
 </table>
 <p>which would continue for all the countries, years and ages, for 200 runs of a particular scenario. A separate file would exist for each scenario. To transform this into the four intermediate files, we might write below - where the argument names are included just for clarity, and are not needed.</p>
-<pre><code><a href="../reference/stone_stochastic_process.html">  stone_stochastic_process(
-    con = con,
-    modelling_group = "IC-Garske",
-    disease = "YF",
-    touchstone = "201910gavi-4",
-    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
-                  "yf-preventive-default", "yf-routine-bestcase",
-                  "yf-routine-default", "yf-stop"),
-    in_path = "E:/Dropbox/File Requests/IC-Garske",
-    file = ":scenario.csv.xz",
-    cert = "certfile",
-    index_start = NA, index_end = NA,
-    out_path = "E:/Stochastic_Outputs")</a></code></pre>
+<pre><code><span class="fu"><a href="../reference/stone_stochastic_process.html">stone_stochastic_process</a></span><span class="op">(</span>
+    con <span class="op">=</span> <span class="va">con</span>,
+    modelling_group <span class="op">=</span> <span class="st">"IC-Garske"</span>,
+    disease <span class="op">=</span> <span class="st">"YF"</span>,
+    touchstone <span class="op">=</span> <span class="st">"201910gavi-4"</span>,
+    scenarios <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-preventive-bestcase"</span>,
+                  <span class="st">"yf-preventive-default"</span>, <span class="st">"yf-routine-bestcase"</span>,
+                  <span class="st">"yf-routine-default"</span>, <span class="st">"yf-stop"</span><span class="op">)</span>,
+    in_path <span class="op">=</span> <span class="st">"E:/Dropbox/File Requests/IC-Garske"</span>,
+    file <span class="op">=</span> <span class="st">":scenario.csv.xz"</span>,
+    cert <span class="op">=</span> <span class="st">"certfile"</span>,
+    index_start <span class="op">=</span> <span class="cn">NA</span>, index_end <span class="op">=</span> <span class="cn">NA</span>,
+    out_path <span class="op">=</span> <span class="st">"E:/Stochastic_Outputs"</span><span class="op">)</span></code></pre>
 <p>This assumes that in the <code>in_path</code> folder, 6 .csv files are present. The <code>file</code> argument indicates the template for those files. In this case we are assuming all the files follow the same template, where <code>:scenario</code> will be replaced by each of the 6 specified scenarios in turn. If the files do not obey such a simple templating, then you can supply a vector of strings for <code>file</code>, to indicate which files; just note there should be either a one-to-one mapping, or a many-to-one mapping between the different scenarios, and the different files indicated.</p>
 <p>In this example, there is only one file per scenario; the <code>index_start</code> and <code>index_end</code> arguments are set to <code>NA</code>, and there is no reference to <code>:index</code> in the <code>file</code> template. We will see later multi-file examples where these three fields are changed to describe the sequence of files we are expecting.</p>
 <p>The result is that four files are written - below is an abbreviated section of each.</p>
-<div id="ic-garske_yf_calendar-csv" class="section level5">
-<h5 class="hasAnchor">
-<a href="#ic-garske_yf_calendar-csv" class="anchor"></a>IC-Garske_YF_calendar.csv</h5>
-<table class="table">
+<div class="section level5">
+<h5 id="ic-garske_yf_calendar-csv">IC-Garske_YF_calendar.csv<a class="anchor" aria-label="anchor" href="#ic-garske_yf_calendar-csv"></a>
+</h5>
+<table style="width:100%;" class="table">
 <colgroup>
 <col width="6%">
 <col width="4%">
@@ -756,10 +803,10 @@ testthat::test_that("Expected rows added", {
 </table>
 <p>So here, we have in each row, the cases, deaths and dalys summed over age for a country and calendar year, for each scenario.</p>
 </div>
-<div id="ic-garske_yf_calendar_u5-csv" class="section level5">
-<h5 class="hasAnchor">
-<a href="#ic-garske_yf_calendar_u5-csv" class="anchor"></a>IC-Garske_YF_calendar_u5.csv</h5>
-<table class="table">
+<div class="section level5">
+<h5 id="ic-garske_yf_calendar_u5-csv">IC-Garske_YF_calendar_u5.csv<a class="anchor" aria-label="anchor" href="#ic-garske_yf_calendar_u5-csv"></a>
+</h5>
+<table style="width:100%;" class="table">
 <colgroup>
 <col width="6%">
 <col width="4%">
@@ -820,10 +867,10 @@ testthat::test_that("Expected rows added", {
 </table>
 <p>This is similar to the calendar year, but ages five and above are ignored, when summing over age, so the numbers are all smaller.</p>
 </div>
-<div id="ic-garske_yf_cohort-csv" class="section level5">
-<h5 class="hasAnchor">
-<a href="#ic-garske_yf_cohort-csv" class="anchor"></a>IC-Garske_YF_cohort.csv</h5>
-<table class="table">
+<div class="section level5">
+<h5 id="ic-garske_yf_cohort-csv">IC-Garske_YF_cohort.csv<a class="anchor" aria-label="anchor" href="#ic-garske_yf_cohort-csv"></a>
+</h5>
+<table style="width:100%;" class="table">
 <colgroup>
 <col width="6%">
 <col width="6%">
@@ -915,12 +962,12 @@ testthat::test_that("Expected rows added", {
 </tr>
 </tbody>
 </table>
-<p>The <code>cohort</code> is calculated by subtracting <code>age</code> from <code>year</code>; it asks the question when were people of a certin age in a certain calendar year born. Notice the <code>cohort</code> column instead of <code>year</code>. This model includes 100-year-olds alive in calendar year 2000, so these were born in the year 1900, but no yellow fever cases or deaths for these scenarios are recorded for that birth cohort.</p>
+<p>The <code>cohort</code> is calculated by subtracting <code>age</code> from <code>year</code>; it asks the question when were people of a certain age in a certain calendar year born. Notice the <code>cohort</code> column instead of <code>year</code>. This model includes 100-year-olds alive in calendar year 2000, so these were born in the year 1900, but no yellow fever cases or deaths for these scenarios are recorded for that birth cohort.</p>
 </div>
-<div id="ic-garske_yf_cohort_u5-csv" class="section level5">
-<h5 class="hasAnchor">
-<a href="#ic-garske_yf_cohort_u5-csv" class="anchor"></a>IC-Garske_YF_cohort_u5.csv</h5>
-<table class="table">
+<div class="section level5">
+<h5 id="ic-garske_yf_cohort_u5-csv">IC-Garske_YF_cohort_u5.csv<a class="anchor" aria-label="anchor" href="#ic-garske_yf_cohort_u5-csv"></a>
+</h5>
+<table style="width:100%;" class="table">
 <colgroup>
 <col width="6%">
 <col width="6%">
@@ -1026,31 +1073,31 @@ testthat::test_that("Expected rows added", {
 <p>This is similar to birth cohort, but only considering those age 4 or less. Hence, the oldest age group in the year 2000 (where calendar years begin for this model) will be 4, and they were born in 1996, which is the first birth cohort.</p>
 </div>
 </div>
-<div id="multiple-files-per-scenario" class="section level4">
-<h4 class="hasAnchor">
-<a href="#multiple-files-per-scenario" class="anchor"></a>Multiple files per scenario</h4>
+<div class="section level4">
+<h4 id="multiple-files-per-scenario">Multiple files per scenario<a class="anchor" aria-label="anchor" href="#multiple-files-per-scenario"></a>
+</h4>
 <p>Some groups submit a file per stochastic run, or a file per country. Some have even arbitrarily started a new file when one file has become, say, 10Mb in size. Stoner doesn’t mind at what point the files are split, except that data for two scenarios cannot exist in the same file, and the files that make up a set must be numbered with contiguous integers.</p>
 <p>The example below will expect runs numbered from 1 to 200, as indicated with <code>index_start</code> and <code>index_end</code>. Also notice the presence of the <code>:index</code> placeholder in the <code>file</code> stub, which will be replaced with the sequence number when the files are parsed.</p>
-<pre><code><a href="../reference/stone_stochastic_process.html">  stone_stochastic_process(
-    con = con,
-    modelling_group = "IC-Garske",
-    disease = "YF",
-    touchstone = "201910gavi-4",
-    scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
-                  "yf-preventive-default", "yf-routine-bestcase",
-                  "yf-routine-default", "yf-stop"),
-    in_path = "E:/Dropbox/File Requests/IC-Garske",
-    file = ":scenario_:index.csv.xz",
-    cert = "certfile",
-    index_start = 1, index_end = 200,
-    out_path = "E:/Stochastic_Outputs")</a></code></pre>
+<pre><code><span class="fu"><a href="../reference/stone_stochastic_process.html">stone_stochastic_process</a></span><span class="op">(</span>
+    con <span class="op">=</span> <span class="va">con</span>,
+    modelling_group <span class="op">=</span> <span class="st">"IC-Garske"</span>,
+    disease <span class="op">=</span> <span class="st">"YF"</span>,
+    touchstone <span class="op">=</span> <span class="st">"201910gavi-4"</span>,
+    scenarios <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-preventive-bestcase"</span>,
+                  <span class="st">"yf-preventive-default"</span>, <span class="st">"yf-routine-bestcase"</span>,
+                  <span class="st">"yf-routine-default"</span>, <span class="st">"yf-stop"</span><span class="op">)</span>,
+    in_path <span class="op">=</span> <span class="st">"E:/Dropbox/File Requests/IC-Garske"</span>,
+    file <span class="op">=</span> <span class="st">":scenario_:index.csv.xz"</span>,
+    cert <span class="op">=</span> <span class="st">"certfile"</span>,
+    index_start <span class="op">=</span> <span class="fl">1</span>, index_end <span class="op">=</span> <span class="fl">200</span>,
+    out_path <span class="op">=</span> <span class="st">"E:/Stochastic_Outputs"</span><span class="op">)</span></code></pre>
 <p>Some groups might also submit different numbers of files for each scenario. For example, HepB for some groups requires different numbers of countries to be modelled for different scenarios, dependingn on what campaigns were made in those countries. If a group wishes to split their results by country, they will then have different numbers of files per scenario. In this case, <code>index_start</code> and <code>index_end</code> can be vectors, of the same length as the <code>scenarios</code> vector, giving the start and end ids for each scenario.</p>
 <p>Stoner can also support a mixture of single and multi-files for different scenarios. For that case, you’ll need vectors for both the <code>file</code> stub, and the <code>index_start</code> and <code>index_end</code> - Stoner will test that whenever the file stub contains <code>:index</code>, the <code>index_start</code> and <code>index_end</code> are specified, otherwise not.</p>
 </div>
-<div id="summing-different-outcomes" class="section level4">
-<h4 class="hasAnchor">
-<a href="#summing-different-outcomes" class="anchor"></a>Summing different outcomes</h4>
-<p>Some groups provide multiple deaths or cases categories which need to be summed to give the total deaths or cases. The example below uses the optional <code>deaths</code>, <code>cases</code> and <code>dalys</code> arguments, where a vector of outcomes are provided (which must exist in the incoming data, and in the responsibilities for that group and disease too), to be summed to give the final outcome.</p>
+<div class="section level4">
+<h4 id="summing-different-outcomes">Summing different outcomes<a class="anchor" aria-label="anchor" href="#summing-different-outcomes"></a>
+</h4>
+<p>Some groups provide multiple deaths or cases categories which need to be summed to give the total deaths or cases. The example below uses the optional <code>deaths</code>, <code>cases</code> and <code>dalys</code> arguments, where a vector of outcomes is provided (which must exist in the incoming data, and in the responsibilities for that group and disease too), to be summed to give the final outcome.</p>
 <pre><code>  stone_stochastic_process(
     con = con,
     modelling_group = "IC-Garske",
@@ -1068,9 +1115,9 @@ testthat::test_that("Expected rows added", {
     cases = c("cases_cat1", "cases_cat2"),
     dalys = "dalys")</code></pre>
 </div>
-<div id="where-run_id-is-not-specified-in-the-csv" class="section level4">
-<h4 class="hasAnchor">
-<a href="#where-run_id-is-not-specified-in-the-csv" class="anchor"></a>Where run_id is not specified in the CSV</h4>
+<div class="section level4">
+<h4 id="where-run_id-is-not-specified-in-the-csv">Where run_id is not specified in the CSV<a class="anchor" aria-label="anchor" href="#where-run_id-is-not-specified-in-the-csv"></a>
+</h4>
 <p>Occasionally, a group omit the <code>run_id</code> column in their input data. In practice this only happens when the <code>run_id</code> is specified as part of the filename. To handle this, set the optional <code>runid_from_file</code> argument to <code>TRUE</code> - and in that case, <code>index_start</code> and <code>index_end</code> must be <code>1</code> and <code>200</code> respectively, and <code>:index</code> must be included in the file template for all scenarios (either specified as a vector, or a singleton).</p>
 <pre><code>  stone_stochastic_process(
     con = con,
@@ -1087,9 +1134,9 @@ testthat::test_that("Expected rows added", {
     out_path = "E:/Stochastic_Outputs"),
     runid_from_file = TRUE)</code></pre>
 </div>
-<div id="where-disease-is-not-specified" class="section level4">
-<h4 class="hasAnchor">
-<a href="#where-disease-is-not-specified" class="anchor"></a>Where disease is not specified</h4>
+<div class="section level4">
+<h4 id="where-disease-is-not-specified">Where disease is not specified<a class="anchor" aria-label="anchor" href="#where-disease-is-not-specified"></a>
+</h4>
 <p>Some groups have also omitted the constant <code>disease</code> from their stochastic results. This would normally generate a warning but work correctly in any case; to silence the warning, set the optional <code>allow_missing_disease</code> to be <code>TRUE</code>.</p>
 <pre><code>  stone_stochastic_process(
     con = con,
@@ -1106,16 +1153,16 @@ testthat::test_that("Expected rows added", {
     out_path = "E:/Stochastic_Outputs"),
     allow_missing_disease = TRUE)</code></pre>
 </div>
-<div id="different-countries-in-different-scenarios" class="section level4">
-<h4 class="hasAnchor">
-<a href="#different-countries-in-different-scenarios" class="anchor"></a>Different countries in different scenarios</h4>
+<div class="section level4">
+<h4 id="different-countries-in-different-scenarios">Different countries in different scenarios<a class="anchor" aria-label="anchor" href="#different-countries-in-different-scenarios"></a>
+</h4>
 <p>As we said, this can occur, with HepB being an example. If this is the case, besides dealing with a different number of files per scenario (if the group split their files by country), there is nothing you need to do for Stoner to process this properly. In the output CSV files, any country for which there is no data for a particular scenario will have <code>NA</code> for those scenarios. Care might be needed in analysis later on in ensuring comparisons or impact calculations only occur where all the values are not <code>NA</code>.</p>
 </div>
-<div id="certificate-validation" class="section level4">
-<h4 class="hasAnchor">
-<a href="#certificate-validation" class="anchor"></a>Certificate validation</h4>
+<div class="section level4">
+<h4 id="certificate-validation">Certificate validation<a class="anchor" aria-label="anchor" href="#certificate-validation"></a>
+</h4>
 <p>When groups upload the parameters for their stochastic runs into Montagu, they are provided with a certificate - a small JSON file providing metadata, and confirmation of the upload information. The certificate should be provided by the group along with the stochastic data files that were produced using the parameters they uploaded.</p>
-<p>By default, stoner will verify that the certificate file exists, and checks that the metadata (modelling group, touchstone, disaease) on production that match the certificate also match with the arguments you provide when you call stoner_stochastic_process.</p>
+<p>By default, stoner will verify that the certificate file exists, and checks that the metadata (modelling group, touchstone, disease) on production that match the certificate also match with the arguments you provide when you call stoner_stochastic_process.</p>
 <p>Should you be lacking a group’s certificate, but still want to attempt to process the stochastic data, then set the option <code>bypass_cert_check</code> to be TRUE:-</p>
 <pre><code>  stone_stochastic_process(
     con = con,
@@ -1132,16 +1179,16 @@ testthat::test_that("Expected rows added", {
     out_path = "E:/Stochastic_Outputs"),
     bypass_cert_check = TRUE)</code></pre>
 <p>You can also manually perform validation of a certificate file without processing stochastic data, with the call:-</p>
-<pre><code><a href="../reference/stone_stochastic_cert_verify.html">  stone_stochastic_cert_verify(con, "certfile", "IC-Garske", "201910gavi-5", "YF")</a></code></pre>
+<pre><code><span class="fu"><a href="../reference/stone_stochastic_cert_verify.html">stone_stochastic_cert_verify</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"certfile"</span>, <span class="st">"IC-Garske"</span>, <span class="st">"201910gavi-5"</span>, <span class="st">"YF"</span><span class="op">)</span></code></pre>
 <p>This call will stop with an error if either the modelling group, or the touchstone do not match with the details used to submit the parameter set, and retrieve the <code>certfile</code> provided here.</p>
 </div>
 </div>
-<div id="uploading-to-the-annex-database" class="section level3">
-<h3 class="hasAnchor">
-<a href="#uploading-to-the-annex-database" class="anchor"></a>Uploading to the annex database</h3>
-<div id="uploading-after-processing" class="section level4">
-<h4 class="hasAnchor">
-<a href="#uploading-after-processing" class="anchor"></a>Uploading after processing</h4>
+<div class="section level3">
+<h3 id="uploading-to-the-annex-database">Uploading to the annex database<a class="anchor" aria-label="anchor" href="#uploading-to-the-annex-database"></a>
+</h3>
+<div class="section level4">
+<h4 id="uploading-after-processing">Uploading after processing<a class="anchor" aria-label="anchor" href="#uploading-after-processing"></a>
+</h4>
 <p>The processed CSV files can be uploaded to annex automatically, if an additional database connection <code>annex</code> is provided, and the <code>upload_to_annex</code> is set to TRUE. The files will be uploaded after processing.</p>
 <pre><code>  stone_stochastic_process(
     con = con,
@@ -1217,9 +1264,9 @@ testthat::test_that("Expected rows added", {
 </table>
 <p>Four new tables named in the form <code>stochastic_</code> followed by the <code>id</code> field listed in the table above will also have been made, which are uploaded copies of the final CSV files. If further uploads are made that match the <code>touchstone</code>, <code>modelling_group</code>, <code>disease</code>, <code>is_cohort</code> and <code>is_under5</code>, then the new data will overwrite the existing data, and the <code>version</code> and <code>creation_date</code> in the table above will be updated.</p>
 </div>
-<div id="uploading-seprately-from-processing" class="section level4">
-<h4 class="hasAnchor">
-<a href="#uploading-seprately-from-processing" class="anchor"></a>Uploading seprately from processing</h4>
+<div class="section level4">
+<h4 id="uploading-separately-from-processing">Uploading separately from processing<a class="anchor" aria-label="anchor" href="#uploading-separately-from-processing"></a>
+</h4>
 <p>You can also call the <code>stone_stochastic_upload</code> directly, if you have CSV files ready to upload. Call the function as below, to upload a single CSV file. (Vectors for multiple scenarios in one go are not currently supported in the function).</p>
 <pre class="stone_stochastic_upload("><code>     file = 'IC-Garske_YF_calendar_u5.csv',
      con = con,
@@ -1232,20 +1279,20 @@ testthat::test_that("Expected rows added", {
   )</code></pre>
 <p>The filename is treated as arbitrary; <code>is_cohort</code> and <code>is_under5</code> need specifying to describe the data being uploaded. If this is the first ever upload to a new database, then the optional <code>allow_new_database</code> will enable creation of the <code>stochastic_file</code> table.</p>
 </div>
-<div id="the-testing-argument" class="section level4">
-<h4 class="hasAnchor">
-<a href="#the-testing-argument" class="anchor"></a>The testing argument</h4>
+<div class="section level4">
+<h4 id="the-testing-argument">The testing argument<a class="anchor" aria-label="anchor" href="#the-testing-argument"></a>
+</h4>
 <p><code>stone_stochastic_process</code> and <code>stone_stochastic_upload</code> both take a <code>testing</code> logical argument; ignore this, as it is only used to as part of the tests, in which a fake annex database is set up.</p>
 </div>
-<div id="database-connections-and-where-to-find-them-" class="section level4">
-<h4 class="hasAnchor">
-<a href="#database-connections-and-where-to-find-them-" class="anchor"></a>Database connections (and where to find them).</h4>
+<div class="section level4">
+<h4 id="database-connections-and-where-to-find-them-">Database connections (and where to find them).<a class="anchor" aria-label="anchor" href="#database-connections-and-where-to-find-them-"></a>
+</h4>
 <p>We use the <code>vaultr</code> package, and assume that the <code>VAULT_ADDR</code> and <code>VAULT_AUTH_GITHUB_TOKEN</code> environment variables are set up - we won’t go into doing that here.</p>
 <p>A read-only connection to the production database is used to validate the outcomes and countries against those in a group’s expectations. To get the connection to production:-</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R">  <span class="va">vault</span> <span class="op">&lt;-</span> <span class="fu">vaultr</span><span class="fu">::</span><span class="fu">vault_client</span><span class="op">(</span>login <span class="op">=</span> <span class="st">"github"</span><span class="op">)</span>
   <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/database/production/users/readonly"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span>
-  <span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html">Postgres</a></span><span class="op">(</span><span class="op">)</span>,
+  <span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,
                           dbname <span class="op">=</span> <span class="st">"montagu"</span>,
                           host <span class="op">=</span> <span class="st">"production.montagu.dide.ic.ac.uk"</span>,
                           port <span class="op">=</span> <span class="fl">5432</span>, password <span class="op">=</span> <span class="va">password</span>,
@@ -1253,16 +1300,16 @@ testthat::test_that("Expected rows added", {
 <p>To get a connection to annex:-</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R">  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/annex/users/vimc"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span>
-  <span class="va">annex</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html">Postgres</a></span><span class="op">(</span><span class="op">)</span>,
+  <span class="va">annex</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,
                           dbname <span class="op">=</span> <span class="st">"montagu"</span>,
                           host <span class="op">=</span> <span class="st">"annex.montagu.dide.ic.ac.uk"</span>,
                           port <span class="op">=</span> <span class="fl">15432</span>,
                           password <span class="op">=</span> <span class="va">password</span>,
                           user <span class="op">=</span> <span class="st">"vimc"</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="use-from-within-dettl-future-work" class="section level4">
-<h4 class="hasAnchor">
-<a href="#use-from-within-dettl-future-work" class="anchor"></a>Use from within dettl (future work)</h4>
+<div class="section level4">
+<h4 id="use-from-within-dettl-future-work">Use from within dettl (future work)<a class="anchor" aria-label="anchor" href="#use-from-within-dettl-future-work"></a>
+</h4>
 <p>However, rather than acquiring connections as above and manually running ad hoc database queries on annex, it will be better to express imports to annex using <code>dettl</code>. The imports are made a little more complex than usual by the length of time taken to do the data reduction, the RAM they require can be very large, and the possibility that data will be replaced on annex with subsequent versions. Never-the-less, it would be good to have a formal process for uploading data to annex, and <code>dettl</code> would be a good way.</p>
 <p>For example:</p>
 <ul>
@@ -1289,11 +1336,13 @@ testthat::test_that("Expected rows added", {
 
 
       <footer><div class="copyright">
-  <p>Developed by Wes Hinsley, Rich Fitzjohn.</p>
+  <p></p>
+<p>Developed by Wes Hinsley, Rich Fitzjohn.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
 </div>
 
       </footer>
@@ -1301,6 +1350,8 @@ testthat::test_that("Expected rows added", {
 
   
 
+
+  
 
   </body>
 </html>
