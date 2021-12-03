@@ -53,7 +53,7 @@ test_extract_touchstone <- function(e) {
                 c(e[['touchstone_name_csv']]$id,
                   e[['touchstone_name']]$id)),
       label = "All touchstone.touchstone_name are known")
-    
+
     testthat::expect_true(all(
       ts$id == sprintf("%s-%s", ts$touchstone_name, ts$version)),
         label = "All touchstone.id are touchstone_name-version")

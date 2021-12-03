@@ -303,6 +303,18 @@ stone_stochastic_process <- function(con, modelling_group, disease,
       read_xz_csv <- function(the_file, meta_cols, allow_missing_disease,
                               runid_from_file, run_id) {
 
+        read_large_file <- function(...) {
+          tmp <- tempfile()
+          dir.create(tmp)
+          on.exit({
+            gc()
+            unlink(tmp, recursive = TRUE)
+          })
+          withr::with_envvar(
+            c(VROOM_TEMP_PATH = tmp),
+            readr::read_csv(..., lazy = FALSE))
+        }
+
         calc_outcomes <- function(csv, outcomes, single_outcome) {
 
           # If the outcome we want is the sum of other outcomes...
@@ -345,7 +357,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
         columns <- do.call(readr::cols_only, col_list)
 
         csv <- suppressMessages(as.data.table(
-          readr::read_csv(the_file,
+          read_large_file(the_file,
                           col_types = columns,
                           progress = FALSE, na = "NA")
         ))

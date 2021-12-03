@@ -42,3 +42,9 @@ assert_connection <- function(x, name = deparse(substitute(x))) {
     stop(sprintf("'%s' must be a PqConnection object", name), call. = FALSE)
   }
 }
+
+assert_set_equal <- function(x, y, error_message) {
+  if (!isTRUE(all.equal(sort(x), sort(y)))) {
+    stop(sprintf(error_message))
+  }
+}

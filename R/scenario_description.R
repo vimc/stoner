@@ -31,10 +31,9 @@ test_extract_scenario_description <- function(e) {
                label = "Duplicate ids in scenario_description.csv")
 
   if (!is.null(e$scenario_description_csv)) {
-    testthat::expect_true(
-      identical(sort(names(e$scenario_description_csv)),
-                sort(c("id", "description", "disease", "scenario_type"))),
-      label = "Column names correct in scenario_description.csv")
+    assert_set_equal(names(e$scenario_description_csv),
+      c("id", "description", "disease", "scenario_type"),
+        "Column names incorrect in scenario_description.csv")
   }
 }
 

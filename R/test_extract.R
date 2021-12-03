@@ -19,4 +19,5 @@ stone_test_extract <- function(extracted_data) {
   test_extract_touchstone_demographic_dataset(extracted_data)
   test_extract_touchstone_country(extracted_data)
   test_extract_responsibilities(extracted_data)
+  test_extract_fast_forward(extracted_data)
 }

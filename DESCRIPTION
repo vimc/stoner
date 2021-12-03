@@ -1,6 +1,6 @@
 Package: stoner
 Title: Support for Building VIMC Montagu Touchstones, using Dettl
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     c(person("Wes", "Hinsley",role = c("aut", "cre", "cst", "dnc", "elg", "itr", "sng"),
            email = "w.hinsley@imperial.ac.uk"),
@@ -20,6 +20,7 @@ Imports:
     utils,
     data.table,
     readr,
+    withr,
     jsonlite
 Language: en-GB
 RoxygenNote: 7.1.1

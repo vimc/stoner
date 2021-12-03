@@ -72,6 +72,5 @@ test_that("Invalid columns", {
   create_scen_type_csv(test$path, "type1", "Original type")
   mess_with(test$path, "scenario_type.csv", "extra", 1, "extra")
   expect_error(do_test(test),
-               "Column names correct in scenario_type.csv",
-               class = "expectation_failure")
+               "Column names incorrect in scenario_type.csv")
 })

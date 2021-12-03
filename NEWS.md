@@ -1,3 +1,7 @@
+## 0.1.1
+
+Support for fast-forwarding burden estimate sets to a future touchstone
+
 ## 0.0.9
 
 Support for adding DALYs to a dataset, including inline with stochastic processing

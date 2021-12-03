@@ -21,12 +21,21 @@ stone_extract <- function(path, con) {
     scenario_description_csv = read_meta(path, "scenario_description.csv"),
     touchstone_demographic_dataset_csv = read_meta(path, "touchstone_demographic_dataset.csv"),
     touchstone_countries_csv = read_meta(path, "touchstone_country.csv"),
-    responsibilities_csv = extract_responsibilities_csv(path)
+    responsibilities_csv = extract_responsibilities_csv(path),
+    fast_forward_csv = read_meta(path, "fast_forward.csv")
   )
 
   # Remove any NULLs
 
   e <- e[!vlapply(e, is.null)]
+
+  # If fast-forwarding, then that must be the only CSV
+
+  if (!is.null(e$fast_forward_csv)) {
+    if (length(e) > 1) {
+      stop("fast_forward.csv, if specified, must be the only csv")
+    }
+  }
 
   # Now we know what we need, extract from db
 
@@ -36,6 +45,7 @@ stone_extract <- function(path, con) {
     extract_scenario_description(e, path, con),
     extract_touchstone_demographic_dataset(e, path, con),
     extract_touchstone_country(e, path, con),
-    extract_responsibilities(e, path, con)
+    extract_responsibilities(e, path, con),
+    extract_fast_forward(e, path, con)
   )
 }

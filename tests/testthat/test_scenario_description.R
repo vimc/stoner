@@ -103,6 +103,5 @@ test_that("Invalid columns", {
   create_scen_desc_csv(test$path, "hot_chocolate", "enhanced", "piles", "def")
   mess_with(test$path, "scenario_description.csv", "severity", 1, "severe")
   expect_error(do_test(test),
-               "Column names correct in scenario_description.csv",
-               class = "expectation_failure")
+               "Column names incorrect in scenario_description.csv")
 })
