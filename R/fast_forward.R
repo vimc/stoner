@@ -221,12 +221,19 @@ expand_ff_csv <- function(csv, con) {
   csv <- csv[!csv$mash %in% db_mash2$mash[!is.na(db_mash2$bes)], ]
 
   if (nrow(already_bes) > 0) {
-    s <- ("Estimates found in target touchstone for: ")
+    cat("Estimates already found in target touchstone for: \n")
     for (i in seq_len(nrow(already_bes))) {
-      s <- paste0(s, paste(already_bes$touchstone_to, already_bes$modelling_group,
-                    already_bes$scenario, sep = " - "))
+      cat("   ", paste(already_bes$touchstone_to[i], already_bes$modelling_group[i],
+                       already_bes$scenario[i], sep = " - "), "\n")
     }
-    message(s)
+  }
+
+  if (nrow(csv) > 0) {
+    cat("\nEstimates to be fast-forwarded: \n")
+    for (i in seq_len(nrow(csv))) {
+      cat("   ", paste(csv$touchstone_to[i], csv$modelling_group[i],
+                       csv$scenario[i], sep = " - "), "\n")
+    }
   }
 
   # Possibly we already have no work to do.
@@ -583,9 +590,7 @@ load_fast_forward <- function(transformed_data, con) {
   # We only have work to do if there are responsibilities...
 
   r <- t[['responsibility']]
-  if (is.null(r)) {
-    return()
-  }
+  assert_non_null(r)
 
   # Which responsibilities have responsibility_set
   # negative, or positive?
