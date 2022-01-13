@@ -56,12 +56,12 @@ line functions for a start.
 ```{r echo = FALSE, results = 'asis'}
 
 knitr::kable(data_frame(
-  `Dettl function` = c("extract(path, con)",
+  `Dettl function` = c("extract(con)",
                        "test-extract(extracted_data)",
                        "transform(extracted_data)",
                        "test-transform(transformed_data)",
                        "load(transformed_data, con)"),
-  `Stoner call` = c("stoner::stone_extract(path, con)",
+  `Stoner call` = c("stoner::stone_extract('.', con)",
                     "stoner::stone_test_extract(extracted_data)",
                     "stoner::stone_transform(extracted_data)",
                     "stoner::stone_test_transform(transformed_data)",

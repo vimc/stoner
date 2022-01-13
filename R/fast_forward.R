@@ -22,10 +22,10 @@ expand_ff_csv <- function(csv, con) {
 
   # Check columns in CSV are sensible
 
-  assert_set_equal(names(csv), 
-    c("modelling_group", "scenario", "touchstone_from", "touchstone_to"), 
+  assert_set_equal(names(csv),
+    c("modelling_group", "scenario", "touchstone_from", "touchstone_to"),
     "Incorrect columns in fast_forward.csv")
-  
+
   # Also, risky to have transitive changes - eg,
   # migrate from t1 -> t2, and something else from t2 -> t3 in the
   # same import. This also covers errors where touchstone_from = touchstone_to
@@ -373,21 +373,58 @@ test_extract_fast_forward <- function(e) {
 
 ###############################################################################
 # TRANSFORM FAST FORWARD
+#
+# So - this is what we expect to be coming in from the extract...
+#
+# ff_info:   modelling_group      eg   Group-Name
+#            scenario             eg   mena-booster-default
+#            touchstone_from      eg   202110gavi-2
+#            touchstone_to        eg   202110gavi-3
+#            rset                 eg   464 - id of resp_set in touchstone_from
+#            resp                 eg   3208 - id of resp in touchstone_from
+#            bes                  eg   NA (id of existing burden estimate set)
+#            scid                 eg   1993 id of scenario
+#            sbes                 eg   NA - stochastic burden estimate set id
+#            is_open              eg   FALSE
+#            expectations         eg   391
+#            resp_to              eg   3335 - responsibility in touchstone_to
+#            rset_to              eg   484  - responsibility_set in touchstone_to
+#
+#
+# resp_comments :    id, responsibility,     comment, added_by, added_on
+# rset_comments :    id, responsnbility_set, comment, added_by, added_on
+
 
 transform_fast_forward <- function(e) {
   t <- list()
   ff <- e$ff_info
 
-  # No work to do:
+  # If there's no work to do, exit early...
 
   if (is.null(ff)) {
     return(NULL)
   }
 
-  # Update comments for responsibility_set / responsiblity
+  # Helper for updating comments for responsibility_set / responsibility
+  # d is the incoming table (either responsibility/responsibility_set)
+  # ff is the fastforward info, containing "touchstone_from".
+  # ff_field is the field in ff ("rset" or "resp")
+  # comm_field is the field in the db table ("responsibility_set" or "responsibility")
+
+  # We'll return a new copy of d, where each line has a negative id
+  # (to be replaced later when adding the table), and each
+  # comment has a reference to the pre-ff touchstone
 
   update_comments <- function(d, ff, ff_field, comm_field) {
+
+    # Set ids to be negative - this will get updated later when
+    # the rows are added.
+
     d$id <- seq(-1, by = -1, length.out = nrow(d))
+
+    # Update each comment in the new table, appending with
+    # "- Fast-forwarded from (old touchstone)"
+
     d$comment <- unlist(lapply(seq_len(nrow(d)), function(x) {
       x <- d[x, ]
       touchstone <-
@@ -404,90 +441,110 @@ transform_fast_forward <- function(e) {
 
   # Do some work only on the ff_info that has rset_to = NA.
 
+  # Entries for which destination responsibility_set already exists:
+
   ff_non_na_rset_to <- ff[!is.na(ff$rset_to), ]
+
+  # Entries for which destination responsibility_set does not already exist
+
   ff_na_rset_to <- ff[is.na(ff$rset_to), ]
 
-  rsets <- unique(ff_na_rset_to[, c("rset", "modelling_group", "touchstone_to")])
-  if (nrow(rsets) > 0) {
-    rsets$status <- "incomplete"
-    names(rsets)[names(rsets) == "touchstone_to"] <- "touchstone"
-    rsets$id <- seq(-1, by = -1, length.out = nrow(rsets))
+  # Responsibility_sets that we'll need to create are:-
+
+  new_rsets <- unique(ff_na_rset_to[, c("rset", "modelling_group", "touchstone_to")])
+  if (nrow(new_rsets) > 0) {
+    new_rsets$status <- "incomplete"
+    names(new_rsets)[names(new_rsets) == "touchstone_to"] <- "touchstone"
+    new_rsets$id <- seq(-1, by = -1, length.out = nrow(new_rsets))
 
 
     # Replace NAs in e$ff_info with the dummy ones
 
-    rsets$mash <- paste(rsets$modelling_group, rsets$touchstone, sep = "\r")
+    new_rsets$mash <- paste(new_rsets$modelling_group, new_rsets$touchstone, sep = "\r")
     ff_na_rset_to$mash <- paste(ff_na_rset_to$modelling_group,
                                 ff_na_rset_to$touchstone_to, sep = "\r")
 
-    ff_na_rset_to$rset_to <- rsets$id[match(ff_na_rset_to$mash, rsets$mash)]
+    ff_na_rset_to$rset_to <- new_rsets$id[match(ff_na_rset_to$mash, new_rsets$mash)]
 
-    rsets$mash <- NULL
+    new_rsets$mash <- NULL
     ff_na_rset_to$mash <- NULL
 
 
     # Set responsibility_set_comment.responsibility_set to the new
     # (maybe negative) id for the responsibility_set.
 
-    t[['responsibility_set_comment']] <-
+    new_responsibility_set_comments <-
       update_comments(e$rset_comments, ff, "rset", "responsibility_set")
 
-    t[['responsibility_set_comment']]$responsibility_set <-
-      rsets$id[match(t[['responsibility_set_comment']]$responsibility_set,
-                     rsets$rset)]
+    new_responsibility_set_comments$responsibility_set <-
+      new_rsets$id[match(new_responsibility_set_comments$responsibility_set,
+                     new_rsets$rset)]
 
-    rsets$rset <- NULL
+    t[['responsibility_set_comment']] <- new_responsibility_set_comments
+
+    new_rsets$rset <- NULL
+    t[['responsibility_set']] <- new_rsets
   }
 
-  t[['responsibility_set']] <- rsets
 
+
+  # We've updated some details, so rebind ff...
   ff <- rbind(ff_non_na_rset_to, ff_na_rset_to)
 
-  # Create new responsibilites (will pick up the dummy ids created above)
+  # For all entries were ff$resp_to is NA, we need
+  # to create new responsibilities
 
-  resps <- unique(ff[is.na(ff$resp_to),
+  new_resps <- unique(ff[is.na(ff$resp_to),
                       c("resp", "rset_to", "scid", "bes", "sbes",
                         "is_open", "expectations")])
 
-  rename_resps <- function(resps) {
-    names(resps)[names(resps) == "rset_to"] <- "responsibility_set"
-    names(resps)[names(resps) == "rset"] <- "responsibility_set"
-    names(resps)[names(resps) == "resp_to"] <- "id"
-    names(resps)[names(resps) == "resp"] <- "id"
-    names(resps)[names(resps) == "scid"] <- "scenario"
-    names(resps)[names(resps) == "bes"] <- "current_burden_estimate_set"
-    names(resps)[names(resps) == "sbes"] <- "current_stochastic_burden_estimate_set"
-    resps
+  rename_resps <- function(r) {
+    names(r)[names(r) == "rset_to"] <- "responsibility_set"
+    names(r)[names(r) == "rset"] <- "responsibility_set"
+    names(r)[names(r) == "resp_to"] <- "id"
+    names(r)[names(r) == "resp"] <- "id"
+    names(r)[names(r) == "scid"] <- "scenario"
+    names(r)[names(r) == "bes"] <- "current_burden_estimate_set"
+    names(r)[names(r) == "sbes"] <- "current_stochastic_burden_estimate_set"
+    r
   }
 
-  resps <- rename_resps(resps)
-  resps$newid <- seq(-1, by = -1, length.out = nrow(resps))
+  new_resps <- rename_resps(new_resps)
+  new_resps$newid <- seq(-1, by = -1, length.out = nrow(new_resps))
 
-  # Update responsibility_comment for any matches
+  # Create new responsibility_comments entries
 
-  t[['responsibility_comment']] <-
+  new_responsibility_comments <-
     update_comments(e$resp_comments, ff, "resp", "responsibility")
 
-  # Handle where destination responsibility already existed:
+  # Handle where destination responsibility already existed.
+  # For each row in that table, move any references to the previous
+  # responsibility, to point to the new responsibility.
+  # We are only dealing with most recent comment, so
+  # nrow(ff_row) will be either 1 or 0.
 
-  for (i in seq_len(nrow(t[['responsibility_comment']]))) {
-    ff_row <- ff[ff$resp == t[['responsibility_comment']]$responsibility, ]
+  for (i in seq_len(nrow(new_responsibility_comments))) {
+    ff_row <- ff[ff$resp == new_responsibility_comments$responsibility[i], ]
     if ((nrow(ff_row) == 1) && (!is.na(ff_row$resp_to))) {
-      t[['responsibility_comment']]$responsibility[i] <- ff_row$resp_to
+      new_responsibility_comments$responsibility[i] <- ff_row$resp_to
     }
   }
 
-  # And if it didn't already exist:
+  # And for any new responsibilities (which never existed before)
+  # Again, we're only thinking of most recent comment, hence
+  # nrow(resps_row) is either 1 or 0
 
-  for (i in seq_len(nrow(resps))) {
-    resps_row <- resps[resps$id == t[['responsibility_comment']]$responsibility, ]
+  for (i in seq_len(nrow(new_resps))) {
+    resps_row <- new_resps[new_resps$id[i] %in% new_responsibility_comments$responsibility, ]
     if (nrow(resps_row) == 1) {
-      t[['responsibility_comment']]$responsibility[i] <- resps_row$newid
+      new_responsibility_comments$responsibility[i] <- resps_row$newid
     }
   }
 
-  resps$id <- resps$newid
-  resps$newid <- NULL
+  t[['responsibility_comment']] <- new_responsibility_comments
+
+  new_resps$id <- new_resps$newid
+  new_resps$newid <- NULL
 
   # Add the update for responsibilities that already exist.
 
@@ -505,7 +562,7 @@ transform_fast_forward <- function(e) {
   resps_remove_bes$bes <- NA
   resps_remove_bes <- rename_resps(resps_remove_bes)
 
-  t[['responsibility']] <- rbind(resps, resps_existing, resps_remove_bes)
+  t[['responsibility']] <- rbind(new_resps, resps_existing, resps_remove_bes)
   t
 }
 
@@ -518,13 +575,28 @@ test_transform_fast_forward <- function(transformed_data) {
 ###############################################################################
 
 load_fast_forward <- function(transformed_data, con) {
-  browser()
+
   t <- transformed_data
 
-  # So... 4 tables to work on. Shorten names to make this code easier.
+  # So... Up to 4 tables to work on. Shorten names to make this code easier.
+
+  # We only have work to do if there are responsibilities...
+
+  r <- t[['responsibility']]
+  if (is.null(r)) {
+    return()
+  }
+
+  # Which responsibilities have responsibility_set
+  # negative, or positive?
+
+  rneg <- r[r[['responsibility_set']] < 0, ]
+  rpos <- r[r[['responsibility_set']] >= 0, ]
+
+  # There may not be responsibility_sets to add
 
   rs <- t[['responsibility_set']]
-  r <- t[['responsibility']]
+  num_rs <- if (is.null(rs)) 0 else nrow(rs)
 
   rsc <- t[['responsibility_set_comment']]
   rc <- t[['responsibility_comment']]
@@ -532,7 +604,7 @@ load_fast_forward <- function(transformed_data, con) {
   # responsibility_set - if we have rows with negative ids,
   # then we need to create new db rows.
 
-  if (nrow(rs) > 0) {
+  if (num_rs > 0) {
     DBI::dbAppendTable(con, "responsibility_set",
                        rs[, c("modelling_group", "touchstone", "status")])
 
@@ -550,25 +622,22 @@ load_fast_forward <- function(transformed_data, con) {
     # And bind to rs - which now has id (negative) and newid (positive)
 
     rs$newid <- new_ids$id[match(rs$mash, new_ids$mash)]
-  }
 
-  # Now update any t.responsibility.responsibility_set
-  # identifiers that were negative, replacing them with the
-  # real keys.
+    # Now update any t.responsibility.responsibility_set
+    # identifiers that were negative, replacing them with the
+    # real keys.
 
-  rneg <- r[r[['responsibility_set']] < 0, ]
-  rpos <- r[r[['responsibility_set']] >= 0, ]
-  rneg[['responsibility_set']] <-
-    rs$newid[match(rneg[['responsibility_set']], rs$id)]
+    rneg[['responsibility_set']] <-
+      rs$newid[match(rneg[['responsibility_set']], rs$id)]
 
-  # responsibility_set_comment with the new serial ids
 
-  if (nrow(rs) > 0) {
+    # responsibility_set_comment with the new serial ids
+
     rsc[['responsibility_set']] <-
       rs$newid[match(rsc[['responsibility_set']], rs$id)]
-  }
 
-  r <- rbind(rneg, rpos)
+    r <- rbind(rneg, rpos)
+  }
 
   # responsibility     - For the ones with negative ids,
   #                    - add, remembering the mapping again...
@@ -576,29 +645,36 @@ load_fast_forward <- function(transformed_data, con) {
   rneg <- r[r$id < 0, ]
   rneg_no_id <- rneg
   rneg_no_id$id <- NULL
-  DBI::dbAppendTable(con, "responsibility", rneg_no_id)
-  rneg$mash <- paste(rneg[['responsibility_set']], rneg$scenario, sep = "\r")
 
-  # Fetch the new ids mapping...
+  # Assumption, following closing of old responsibilities:
+  # Created responsibilities will be open. Close them
+  # separately afterwards if necessary. (In part, this is
+  # so we can see them in the portal and verify FF was ok)
+  if (nrow(rneg_no_id) > 0) {    rneg_no_id$is_open <- TRUE
 
-  new_ids <- DBI::dbGetQuery(con, sprintf("
-    SELECT id, CONCAT(responsibility_set, '\r', scenario) AS mash
-      FROM responsibility
-     WHERE CONCAT(responsibility_set, '\r', scenario) IN ('%s')",
-      paste(rneg$mash, collapse = "','")))
+    DBI::dbAppendTable(con, "responsibility", rneg_no_id)
+    rneg$mash <- paste(rneg[['responsibility_set']], rneg$scenario, sep = "\r")
 
-  rneg$newid <- new_ids$id[match(rneg$mash, new_ids$mash)]
-  rpos$newid <- rpos$id
+    # Fetch the new ids mapping...
 
-  # And apply to responsibility_comment, for those that needed it...
+    new_ids <- DBI::dbGetQuery(con, sprintf("
+      SELECT id, CONCAT(responsibility_set, '\r', scenario) AS mash
+        FROM responsibility
+       WHERE CONCAT(responsibility_set, '\r', scenario) IN ('%s')",
+             paste(rneg$mash, collapse = "','")))
 
-  negs <- which(rc[['responsibility']] < 0)
+    rneg$newid <- new_ids$id[match(rneg$mash, new_ids$mash)]
+    rpos$newid <- rpos$id
 
-  rc[['responsibility']][negs] <-
-    rneg$newid[match(rc[['responsibility']][negs], rneg$id)]
+    # And apply to responsibility_comment, for those that needed it...
 
-  # - For responsibilities that already had ids,
-  # - Update current_burden_estimate_set.
+    negs <- which(rc[['responsibility']] < 0)
+
+    rc[['responsibility']][negs] <-
+      rneg$newid[match(rc[['responsibility']][negs], rneg$id)]
+  }
+    # - For responsibilities that already had ids,
+    # - Update current_burden_estimate_set.
 
   for (i in seq_len(nrow(rpos))) {
     row <- rpos[i, ]
