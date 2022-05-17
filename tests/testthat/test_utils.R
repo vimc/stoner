@@ -35,6 +35,9 @@ test_that("null_or_empty works", {
 })
 
 test_that("Asserts", {
+  expect_error(assert_non_null(NULL), "'NULL' must not be NULL")
+  expect_invisible(assert_non_null("Banana"))
+
   expect_error(assert_nonmissing(NA), "'NA' must not be NA")
   expect_invisible(assert_nonmissing(c(1, 2, 3)))
 

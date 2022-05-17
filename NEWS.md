@@ -1,3 +1,7 @@
+# 0.1.5
+
+Various fast-forwarding improvements, including default new responsibility being open.
+
 # 0.1.1
 
 Support for fast-forwarding burden estimate sets to a future touchstone

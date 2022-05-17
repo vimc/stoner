@@ -31,6 +31,12 @@ assert_scalar_character <- function(x, name = deparse(substitute(x))) {
   }
 }
 
+assert_non_null <- function(x, name = deparse(substitute(x))) {
+  if (is.null(x)) {
+    stop(sprintf("'%s' must not be NULL", name), call. = FALSE)
+  }
+}
+
 assert_scalar_logical <- function(x, name = deparse(substitute(x))) {
   assert_logical(x, name)
   assert_scalar(x, name)
