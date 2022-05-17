@@ -636,7 +636,9 @@ test_that("Main FF functionality", {
   #########################################################
   # Now where responsibility_set exists, so does responsibility,
   # and current_burden_estimate_set already uploaded.
-  # Nothing should happen, and we should get a message.
+  # Nothing should happen, and we should get a message saying
+  # we already have data in the destination, so we can't
+  # fast-forward.
 
   test6 <- function() {
     clear()
@@ -656,7 +658,7 @@ test_that("Main FF functionality", {
     old_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
 
     expect_message(do_test(test),
-      "Estimates found in target touchstone for: nevis-2 - LAP-elf - hot_chocolate")
+      "Estimates already found in target touchstone for:")
 
     new_resp1 <- get_responsibilities(responsibility_set = resp_set_a1)
     new_resp2 <- get_responsibilities(responsibility_set = resp_set_a2)
@@ -664,6 +666,7 @@ test_that("Main FF functionality", {
     expect_true(identical(new_resp1, old_resp1))
     expect_true(identical(new_resp2, old_resp2))
   }
+
   test6()
 
 

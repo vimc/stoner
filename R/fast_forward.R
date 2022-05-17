@@ -221,10 +221,10 @@ expand_ff_csv <- function(csv, con) {
   csv <- csv[!csv$mash %in% db_mash2$mash[!is.na(db_mash2$bes)], ]
 
   if (nrow(already_bes) > 0) {
-    cat("Estimates already found in target touchstone for: \n")
+    message("Estimates already found in target touchstone for:")
     for (i in seq_len(nrow(already_bes))) {
-      cat("   ", paste(already_bes$touchstone_to[i], already_bes$modelling_group[i],
-                       already_bes$scenario[i], sep = " - "), "\n")
+      message("   ", paste(already_bes$touchstone_to[i], already_bes$modelling_group[i],
+                       already_bes$scenario[i], sep = " - "))
     }
   }
 
