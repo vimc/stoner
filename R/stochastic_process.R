@@ -61,6 +61,8 @@
 ##' @param bypass_cert_check If TRUE, then no checks are carried out on the
 ##' parameter certificate (if provided).
 ##' @param testing For internal use only.
+##' @param test_run Run a test run, this will only read 10 lines from
+##' each input file.
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
@@ -72,7 +74,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      annex = NULL,
                                      allow_new_database = FALSE,
                                      bypass_cert_check = FALSE,
-                                     testing = FALSE) {
+                                     testing = FALSE,
+                                     test_run = FALSE) {
 
   ## Setup life table cache
   cache$life_table <- NULL
@@ -102,7 +105,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                         upload_to_annex = upload_to_annex,
                                         annex = annex,
                                         cert = cert,
-                                        bypass_cert_check = bypass_cert_check)
+                                        bypass_cert_check = bypass_cert_check,
+                                        test_run = test_run)
 
   read_params <- list(
     in_path = in_path,
@@ -110,7 +114,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     index_start = inputs$index_start,
     index_end = inputs$index_end,
     runid_from_file = runid_from_file,
-    allow_missing_disease = allow_missing_disease
+    allow_missing_disease = allow_missing_disease,
+    test_run = test_run
   )
   all_aggregated <- all_scenarios(con,
                                   touchpoint = touchpoint,
@@ -233,6 +238,11 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
     index_to <- 1
   }
 
+  lines <- Inf
+  if (read_params$test_run) {
+    lines <- 10
+  }
+
   ################################################################
 
   for (i in index_from:index_to) {
@@ -253,7 +263,8 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
       read_xz_csv(con, the_file, outcomes,
                   read_params$allow_missing_disease,
                   read_params$runid_from_file, i,
-                  touchpoint$touchstone, countries)
+                  touchpoint$touchstone, countries,
+                  lines = lines)
   }
 
   # We now have a full scenario. Eliminate age, splitting into
@@ -338,7 +349,8 @@ calc_outcomes <- function(csv, outcomes, single_outcome) {
 }
 
 read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
-                        runid_from_file, run_id, touchstone, countries) {
+                        runid_from_file, run_id, touchstone, countries,
+                        lines) {
 
   if (is.data.frame(outcomes$dalys)) {
     dalys_cols <- unique(outcomes$dalys$outcome)
@@ -374,7 +386,8 @@ read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
   csv <- suppressMessages(as.data.table(
     read_large_file(the_file,
                     col_types = columns,
-                    progress = FALSE, na = "NA")
+                    progress = FALSE, na = "NA",
+                    n_max = lines)
   ))
 
   for (n in names(csv)) {
@@ -480,7 +493,9 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                                         runid_from_file,
                                         upload_to_annex,
                                         annex,
-                                        cert, bypass_cert_check) {
+                                        cert,
+                                        bypass_cert_check,
+                                        test_run) {
   assert_connection(con)
   if (upload_to_annex) {
     assert_connection(annex)
@@ -576,6 +591,8 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
       stop("Must have index_start and index_end as 1..200 to imply run_id")
     }
   }
+
+  assert_scalar_logical(test_run)
 
   for (scenario in scenarios) {
     stochastic_validate_scenario(con, touchpoint$touchstone, scenario,
