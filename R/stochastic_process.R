@@ -74,13 +74,16 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      bypass_cert_check = FALSE,
                                      testing = FALSE) {
 
+  ## Setup life table cache
+  cache$life_table <- NULL
+
   #######################################################################
   # Do all the parameter and file testing upfront, as this can be a very
   # time-consuming process...
   touchpoint <- list(
     modelling_group = modelling_group,
     disease = disease,
-    touchstone = touchstone,
+    touchstone = touchstone
   )
   outcomes <- list(
     deaths = deaths,
@@ -89,7 +92,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   )
   inputs <- stochastic_process_validate(con,
                                         touchpoint = touchpoint,
-                                        scenarios = scenario,
+                                        scenarios = scenarios,
                                         in_path = in_path,
                                         files = files,
                                         index_start = index_start,
@@ -106,34 +109,17 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     files = inputs$files,
     index_start = inputs$index_start,
     index_end = inputs$index_end,
-    run_id_from_file = run_id_from_file,
+    runid_from_file = runid_from_file,
     allow_missing_disease = allow_missing_disease
   )
   all_aggregated <- all_scenarios(con,
                                   touchpoint = touchpoint,
                                   scenarios = scenarios,
                                   read_params = read_params,
-                                  out_path = out_path,
-                                  outcomes = outcomes,
-                                  dry_run = TRUE)
+                                  outcomes = outcomes)
 
-  # We are now as tested as we can get at this point.
-  ####################################################
-
-  all_aggregated <- all_scenarios(con,
-                                  touchpoint = touchpoint,
-                                  scenarios = scenarios,
-                                  read_params = read_params,
-                                  outcomes = outcomes,
-                                  dry_run = FALSE)
-
-  if (dry_run) {
-    # If it's a dry_run. then nothing left to do now; all params
-    # for all scenarios / files have been tested.
-    return()
-  }
-
-  write_output_to_disk(all_aggregated, out_path, modelling_group, disease)
+  paths <- write_output_to_disk(all_aggregated, out_path,
+                                modelling_group, disease)
 
   # Upload to Annex. Only allow possibility of creating new stochastic_file
   # table on the first one; it will either fail there, or exist for the later
@@ -152,17 +138,15 @@ all_scenarios <- function(con,
                           touchpoint,
                           scenarios,
                           read_params,
-                          outcomes,
-                          dry_run) {
+                          outcomes) {
   all_aggregated <- NULL
 
   all_countries <- DBI::dbGetQuery(con, "SELECT id, nid FROM country")
   for (scenario_no in seq_along(scenarios)) {
     scenario_name <- scenarios[scenario_no]
-    aggregated_scenario <- process_scenario(scenario_name, touchpoint,
-                                            read_params, outcomes,
-                                            all_countries, dry_run)
-
+    aggregated_scenario <- process_scenario(con, scenario_name, scenario_no,
+                                            touchpoint, read_params, outcomes,
+                                            all_countries)
 
     ##############################################################
     # If this is the first scenario, then it's easy...
@@ -206,15 +190,16 @@ all_scenarios <- function(con,
 }
 
 rename_cols <- function(aggregated_data, scenario_name) {
-  for (df in aggregated_data) {
+  rename_one <- function(df) {
     names(df)[names(df) == 'deaths'] <- paste0("deaths_", scenario_name)
     names(df)[names(df) == 'cases'] <- paste0("cases_", scenario_name)
     names(df)[names(df) == 'dalys'] <- paste0("dalys_", scenario_name)
+    df
   }
-  aggregated_data
+  lapply(aggregated_data, rename_one)
 }
 
-bind_scenarios <- function(all_aggregated, scen_aggregated, scenario_name) {
+bind_scenarios <- function(all_aggregated, scen_aggregated) {
   # Now all... and scen... should have same number of rows,
   # and be sorted by run_id, country, year (or cohort)
   bind_one <- function(aggregated_name) {
@@ -225,11 +210,14 @@ bind_scenarios <- function(all_aggregated, scen_aggregated, scenario_name) {
     scen$run_id <- NULL
     cbind(all, scen)
   }
-  lapply(names(all_aggregated), bind_one)
+  out <- lapply(names(all_aggregated), bind_one)
+  names(out) <- names(all_aggregated)
+  out
 }
 
-process_scenario <- function(scenario, touchpoint, read_params, outcomes,
-                             countries, dry_run) {
+process_scenario <- function(con, scenario, scenario_no, touchpoint,
+                             read_params, outcomes,
+                             countries) {
   scenario_data <- list()
 
   if (length(read_params$index_start) != 1) {
@@ -259,24 +247,13 @@ process_scenario <- function(scenario, touchpoint, read_params, outcomes,
     if (!file.exists(the_file)) {
       stop(sprintf("File not found: %s", the_file))
     }
-    if (!dry_run) {
-      message(the_file)
-      if (is.data.frame(outcomes$dalys)) {
-        dalys_cols <- unique(outcomes$dalys$outcome)
-      } else {
-        dalys_cols <- outcomes$dalys
-      }
+    message(the_file)
 
-      scenario_data[[i]] <-
-        read_xz_csv(the_file,
-                    unique(c(outcomes$deaths, outcomes$cases, dalys_cols)),
-                    read_params$allow_missing_disease,
-                    read_params$runid_from_file, i, countries)
-    }
-  }
-
-  if (dry_run) {
-    return(invisible(TRUE))
+    scenario_data[[i]] <-
+      read_xz_csv(con, the_file, outcomes,
+                  read_params$allow_missing_disease,
+                  read_params$runid_from_file, i,
+                  touchpoint$touchstone, countries)
   }
 
   # We now have a full scenario. Eliminate age, splitting into
@@ -360,8 +337,16 @@ calc_outcomes <- function(csv, outcomes, single_outcome) {
   csv
 }
 
-read_xz_csv <- function(the_file, meta_cols, allow_missing_disease,
-                        runid_from_file, run_id, countries) {
+read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
+                        runid_from_file, run_id, touchstone, countries) {
+
+  if (is.data.frame(outcomes$dalys)) {
+    dalys_cols <- unique(outcomes$dalys$outcome)
+  } else {
+    dalys_cols <- outcomes$dalys
+  }
+  meta_cols <- unique(c(outcomes$deaths, outcomes$cases, dalys_cols))
+
   col_list <- list(
     year = readr::col_integer(),
     age = readr::col_integer(),
@@ -402,19 +387,20 @@ read_xz_csv <- function(the_file, meta_cols, allow_missing_disease,
 
   csv$country <- countries$nid[match(csv$country, countries$id)]
 
-  if (is.data.frame(dalys)) {
-    res <- stoner_calculate_dalys(con, touchstone, csv, dalys, cache_life_table)
+  if (is.data.frame(outcomes$dalys)) {
+    res <- stoner_calculate_dalys(con, touchstone, csv,
+                                  outcomes$dalys, cache$life_table)
     csv <- res$data
-    if (is.null(cache_life_table)) {
-      cache_life_table <- res$life_table
+    if (is.null(cache$life_table)) {
+      cache$life_table <- res$life_table
     }
 
   } else {
-    csv <- calc_outcomes(csv, dalys, "dalys")
+    csv <- calc_outcomes(csv, outcomes$dalys, "dalys")
   }
 
-  csv <- calc_outcomes(csv, deaths, "deaths")
-  csv <- calc_outcomes(csv, cases, "cases")
+  csv <- calc_outcomes(csv, outcomes$deaths, "deaths")
+  csv <- calc_outcomes(csv, outcomes$cases, "cases")
 
   csv[, c("run_id", "year", "age", "country", "deaths", "cases" ,"dalys")]
 }
@@ -453,12 +439,12 @@ write_output_to_disk <- function(output, out_path, modelling_group, disease) {
 
   all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.csv",
                                                  modelling_group, disease))
-  write.csv(x = output$u5_calendar_year, file = all_u5_coh_file,
+  write.csv(x = output$u5_cohort, file = all_u5_coh_file,
             row.names = FALSE)
 
   all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.csv",
                                               modelling_group, disease))
-  write.csv(x = output$u5_cohort, file = all_coh_file, row.names = FALSE)
+  write.csv(x = output$all_cohort, file = all_coh_file, row.names = FALSE)
   list(
     all_u5_cal_file = all_u5_cal_file,
     all_u5_coh_file = all_u5_coh_file,
@@ -486,4 +472,193 @@ write_output_to_annex <- function(paths, con, annex, modelling_group,
   stone_stochastic_upload(
     paths$all_coh_file, con, annex, modelling_group, disease,
     touchstone, is_cohort = TRUE, is_under5 = FALSE, testing = testing)
+}
+
+stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
+                                        files, index_start, index_end,
+                                        outcomes,
+                                        runid_from_file,
+                                        upload_to_annex,
+                                        annex,
+                                        cert, bypass_cert_check) {
+  assert_connection(con)
+  if (upload_to_annex) {
+    assert_connection(annex)
+  }
+  assert_scalar_character(touchpoint$modelling_group)
+  assert_db_value_exists(con, "modelling_group", "id", touchpoint$modelling_group)
+  assert_scalar_character(touchpoint$disease)
+  assert_db_value_exists(con, "disease", "id", touchpoint$disease)
+  assert_scalar_character(touchpoint$touchstone)
+  assert_db_value_exists(con, "touchstone", "id", touchpoint$touchstone)
+
+  if (is.data.frame(outcomes$dalys)) {
+    stopifnot(all.equal(sort(names(outcomes$dalys)),
+                        c("average_duration", "disability_weight", "outcome", "proportion")))
+  }
+
+  assert_scalar_character(in_path)
+  if (!file.exists(in_path)) {
+    stop(sprintf("Input path not found: %s", in_path))
+  }
+  stopifnot(file.exists(in_path))
+
+  # Certificate check (if enabled).
+  if (!is.na(cert)) {
+    cert <- file.path(in_path, cert)
+  }
+
+  if (!bypass_cert_check) {
+    if (!file.exists(cert)) {
+      stop(sprintf("Certificate not found: %s", cert))
+    }
+    stone_stochastic_cert_verify(con, cert, touchpoint$modelling_group,
+                                 touchpoint$touchstone, touchpoint$disease)
+  }
+
+  # Check number of file patterns is 1 for all, or 1 per scenario
+  if (!(length(files) %in% c(1, length(scenarios)))) {
+    stop(sprintf("Incorrect files param - length should be 1 or %s",
+                 length(scenarios)))
+  }
+
+  # index_start and index_end are either NA, or a single integer,
+  # or a vector of integer for each scenario
+  if (!(length(index_start) %in% c(1, length(scenarios)))) {
+    stop(sprintf("Incorrect index_start - can be NA, or length 1 or %s",
+                 length(scenarios)))
+  }
+
+  if (!(length(index_end) %in% c(1, length(scenarios)))) {
+    stop(sprintf("Incorrect index_end - can be NA, or length 1 or %s",
+                 length(scenarios)))
+  }
+
+  # Check index_start and index_end are all integer or NA
+  all_na_or_int <- function(x) {
+    is.numeric(x) || all(is.na(x))
+  }
+
+  if (!all_na_or_int(index_start)) {
+    stop("index_start must be all NA or integers")
+  }
+
+  if (!all_na_or_int(index_end)) {
+    stop("index_end must be all NA or integers")
+  }
+
+  # Where index_start is NA, index_end must also be NA
+  if (!identical(which(is.na(index_start)),
+                 which(is.na(index_end)))) {
+    stop("Mismatches of NA between index_start and index_end")
+  }
+
+  # Check whenever index_start is !NA, files contains :index
+  # (and the converse also holds)
+  if (length(files) == 1) {
+    files <- rep(files, length(scenarios))
+  }
+
+  if (length(index_start) == 1) {
+    index_start <- rep(index_start, length(files))
+  }
+
+  if (length(index_end) == 1) {
+    index_end <- rep(index_end, length(files))
+  }
+
+  if (!identical(grepl(":index", files), !is.na(index_start))) {
+    stop("Mismatch between NA in index_start, and :index placeholder in files")
+  }
+
+  if (runid_from_file) {
+    if (any(index_start != 1) || any(index_end != 200)) {
+      stop("Must have index_start and index_end as 1..200 to imply run_id")
+    }
+  }
+
+  for (scenario in scenarios) {
+    stochastic_validate_scenario(con, touchpoint$touchstone, scenario,
+                                 touchpoint$disease,
+                                 touchpoint$modelling_group)
+  }
+
+  check_outcomes(con, "cases", outcomes$cases)
+  check_outcomes(con, "deaths", outcomes$deaths)
+  if (is.data.frame(outcomes$dalys)) {
+    check_outcomes(con, "dalys", unique(outcomes$dalys$outcome))
+  } else {
+    check_outcomes(con, "dalys", outcomes$dalys)
+  }
+
+  list(
+    files = file.path(in_path, files),
+    index_start = index_start,
+    index_end = index_end
+  )
+}
+
+
+check_outcomes <- function(con, type, options) {
+  assert_character(options)
+  if (any(duplicated(options))) {
+    stop(sprintf("Duplicated outcome in %s", type))
+  }
+  res <- DBI::dbGetQuery(con, sprintf("
+      SELECT * FROM burden_outcome
+        WHERE code IN %s", sql_in(options)))
+
+  missing <- options[!options %in% res$code]
+
+  if (length(missing) > 0) {
+    stop(sprintf("Outcomes not found, %s %s",
+                 type, sql_in(missing)))
+  }
+  invisible(TRUE)
+}
+
+stochastic_validate_scenario <- function(con, touchstone, scenario, disease,
+                                         modelling_group) {
+  # Scenario-specific tests:
+  # 1. (touchstone, scenario_description) exists in scenario table
+  # 2. (scenario_description, disease) exists in scenario_description table
+  # 3. (touchstone, modelling_group) exists in responsibility_set table
+  # 4. (responsibility_set, scenario) exist in responsibility, where
+  #    scenario id comes from #1, and responsibility_set id from #3
+  scenario_id <- DBI::dbGetQuery(con, "
+      SELECT id FROM scenario WHERE touchstone = $1
+         AND scenario_description = $2", list(touchstone, scenario))$id
+  if (length(scenario_id) != 1) {
+    stop(sprintf("scenario %s not found in touchstone %s",
+                 scenario, touchstone))
+  }
+
+  scenario_descs <- DBI::dbGetQuery(con, "
+      SELECT count(*) FROM scenario_description WHERE id = $1
+         AND disease = $2", list(scenario, disease))$count
+  if (scenario_descs != 1) {
+    stop(sprintf("scenario_description %s not valid for disease %s",
+                 scenario, disease))
+  }
+
+  respset_id <- DBI::dbGetQuery(con, "
+      SELECT id FROM responsibility_set WHERE touchstone = $1
+         AND modelling_group = $2", list(touchstone, modelling_group))$id
+  if (length(respset_id) != 1) {
+    stop(sprintf("No responsibility_set for group %s in touchstone %s",
+                 modelling_group, touchstone))
+  }
+
+  resp_id <- DBI::dbGetQuery(con, "
+      SELECT id FROM responsibility WHERE responsibility_set = $1
+         AND scenario = $2", list(respset_id, scenario_id))$id
+  if (length(resp_id) != 1) {
+    stop(sprintf("No responsibility for group %s, scenario %s, touchstone %s",
+                 modelling_group, scenario, touchstone))
+  }
+  # Possibly, we could check that all scenarios are included, but
+  # the exceptions are the groups that have to do a VIS report, as they
+  # have several additional scenarios for which they provide central but
+  # not stochastic estimates. So not sure if this is so easy to insist on.
+  invisible(TRUE)
 }

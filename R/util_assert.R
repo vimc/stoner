@@ -57,6 +57,6 @@ assert_set_equal <- function(x, y, error_message) {
 
 assert_db_value_exists <- function(con, table, field, value) {
   if (!db_exists(con, table, field, value)) {
-    stop(sprintf("Unknown %s: %s", table, disease))
+    stop(sprintf("Unknown %s: %s", gsub("_", " ", table), value))
   }
 }

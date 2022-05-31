@@ -34,3 +34,10 @@ to dump a set of CSVs for an existing touchstone, which you could (carefully) mo
 The above is the simplest case. You should also write some load tests as usual,
 but these can now concentrate entirely on what rows the particular import is
 expected to add. See the vignette for more detail.
+
+# Testing
+
+Some unit tests require a database connection to be able to run. Use helper commands to start a docker container with a testing database
+* `./inst/db/db_start` - to start the test database
+* `./inst/db/db_stop` - stop the test database
+* `./inst/db/db_clear` - remove all data from the test database

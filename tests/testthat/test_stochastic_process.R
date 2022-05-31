@@ -55,107 +55,107 @@ test_that("Bad arguments", {
   create_responsibilities(test, resps)
   do_test(test)
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "Rudolph", "", "", "", "", "", "", NA, NA, bypass_cert_check = TRUE),
     "Unknown modelling group:")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "Plague", "", "", "", "", "", NA, NA, bypass_cert_check = TRUE),
     "Unknown disease:")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "snowdon", "", "", "", "", NA, NA,
     bypass_cert_check = TRUE),
     "Unknown touchstone:")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
-    "LAP-elf", "flu", "nevis-1", "potato", "", "", "", NA, NA,
+  expect_error(stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "potato", ".", "", "", NA, NA,
     bypass_cert_check = TRUE),
     "scenario potato not found in touchstone nevis-1")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
-    "LAP-elf", "piles", "nevis-1", "hot_chocolate", "", "", "", NA, NA,
+  expect_error(stone_stochastic_process(test$con,
+    "LAP-elf", "piles", "nevis-1", "hot_chocolate", ".", "", "", NA, NA,
     bypass_cert_check = TRUE),
     "scenario_description hot_chocolate not valid for disease piles")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
-    "R-deer", "flu", "nevis-1", "hot_chocolate", "", "", "", NA, NA,
+  expect_error(stone_stochastic_process(test$con,
+    "R-deer", "flu", "nevis-1", "hot_chocolate", ".", "", "", NA, NA,
     bypass_cert_check = TRUE),
     "No responsibility_set for group R-deer in touchstone nevis-1")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
-    "EBHQ-bunny", "flu", "nevis-1", "hot_chocolate", "", "", "", NA, NA,
+  expect_error(stone_stochastic_process(test$con,
+    "EBHQ-bunny", "flu", "nevis-1", "hot_chocolate", ".", "", "", NA, NA,
     bypass_cert_check = TRUE),
     paste("No responsibility for group EBHQ-bunny,",
           "scenario hot_chocolate, touchstone nevis-1"))
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", file.path(test$path, "potato"),
     "", "", NA, NA, bypass_cert_check = TRUE),
     "Input path not found:")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     c("file1", "file2"), "", NA, NA, bypass_cert_check = TRUE),
     "Incorrect files param - length should be 1 or 3")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     "file_template", "", c(NA, NA), NA, bypass_cert_check = TRUE),
     "Incorrect index_start - can be NA, or length 1 or 3")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     "file_template", "", NA, c(NA, NA), bypass_cert_check = TRUE),
     "Incorrect index_end - can be NA, or length 1 or 3")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     "file_template", "", c(NA, NA, NA), c(NA, NA, "bob"),
     bypass_cert_check = TRUE),
     "index_end must be all NA or integers")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     "file_template", "", c(NA, NA, "gladys"), c(NA, NA, NA),
     bypass_cert_check = TRUE),
     "index_start must be all NA or integers")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     "file_template", "", c(NA, NA, 1), 2,
     bypass_cert_check = TRUE),
     "Mismatches of NA between index_start and index_end")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     c("f", "f:index", "f"), "", c(1, NA, 1), c(2, NA, 2),
     bypass_cert_check = TRUE),
     "Mismatch between NA in index_start, and :index placeholder in files")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
     "", 1, 1, bypass_cert_check = TRUE),
     "File not found: (.*)non_exist1.xz")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
     "", 1, 1, "", c("deaths", "deaths"), bypass_cert_check = TRUE),
     "Duplicated outcome in deaths")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
     "", 1, 1, "", "deaths", "cases", "piles_dalys", bypass_cert_check = TRUE),
     "Outcomes not found, dalys \\('piles_dalys'\\)")
 
-  expect_error(stoner::stone_stochastic_process(test$con,
+  expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
     "", 1, 1, "", "deaths", "cases", "dalys", TRUE, bypass_cert_check = TRUE),
     "Must have index_start and index_end as 1..200 to imply run_id")
@@ -400,7 +400,7 @@ stochastic_runner <- function(same_countries = TRUE,
   )
 }
 
-compare <- function(test, data, reduced, cohort = FALSE, u5 = FALSE) {
+compare <- function(data, reduced, cohort = FALSE, u5 = FALSE) {
   if (u5) {
     data <- data[data$age < 5, ]
   }
@@ -434,10 +434,10 @@ compare <- function(test, data, reduced, cohort = FALSE, u5 = FALSE) {
 }
 
 compare_all <- function(results) {
-  expect_true(compare(results$test, results$data, results$cal))
-  expect_true(compare(results$test, results$data, results$cal_u5, FALSE, TRUE))
-  expect_true(compare(results$test, results$data, results$coh, TRUE, FALSE))
-  expect_true(compare(results$test, results$data, results$coh_u5, TRUE, TRUE))
+  expect_true(compare(results$data, results$cal))
+  expect_true(compare(results$data, results$cal_u5, FALSE, TRUE))
+  expect_true(compare(results$data, results$coh, TRUE, FALSE))
+  expect_true(compare(results$data, results$coh_u5, TRUE, TRUE))
 }
 
 test_that("Stochastic - same countries, simple test", {
@@ -480,7 +480,7 @@ test_that("Stochastic - check database table exists", {
   test <- do_test(test)
   new_file <- tempfile(fileext = ".csv")
   write.csv(mtcars, new_file)
-  expect_error(stoner::stone_stochastic_upload(new_file, test$con, test$con,
+  expect_error(stone_stochastic_upload(new_file, test$con, test$con,
     "LAP-elf", "flu", "nevis-1", FALSE, FALSE, FALSE),
     "stochastic_file database table not found")
 })
@@ -760,10 +760,10 @@ test_that("Stochastic - with DALYs", {
   # Hurrah. We can *finally* test DALYs.
 
   out <- tempfile(fileext = ".csv")
-  dat <- stoner::stoner_dalys_for_db(con, dalys_df,
+  dat <- stoner_dalys_for_db(con, dalys_df,
                               burden_estimate_set_id = new_bes,
                               output_file = out)
-  dat2 <- stoner::stoner_dalys_for_db(con, dalys_df,
+  dat2 <- stoner_dalys_for_db(con, dalys_df,
                                      "LAP-elf", "flu", "nevis-1", "pies",
                                      output_file = out)
 

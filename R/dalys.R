@@ -101,13 +101,13 @@ test_args <- function(con, dalys_params, life_table) {
     c("average_duration", "disability_weight","outcome", "proportion"),
       paste("dalys_params needs columns outcome, proportion,",
             "average_duration and disablility_weight"))
-  
+
 
   if (!is.null(life_table)) {
-    if (class(life_table) != "data.frame") {
+    if (!is.data.frame(life_table)) {
       stop("life_table (if specified) must be data.frame")
     }
-    assert_set_equal(names(life_table), c("code", "value"),
+    assert_set_equal(names(life_table), c(".code", "value"),
       "life_table (if specified) must have columns .code and value")
   }
 }
