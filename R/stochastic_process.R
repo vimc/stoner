@@ -377,25 +377,6 @@ read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
 }
 
 
-add_na_countries <- function(stochastic_data, missing) {
-  lapply(stochastic_data, function(stochastic) {
-    na_data <- stochastic[stochastic$country == stochastic$country[1], ]
-    na_cols <- names(stochastic)
-    na_cols <- na_cols[!na_cols %in% c("run_id", "country", "year", "age")]
-    na_data[, na_cols] <- NA
-    new_data <- list()
-    for (m in seq_along(missing)) {
-      na_data$country <- missing[m]
-      new_data[[m]] <- na_data
-    }
-
-    stochastic <- rbind(stochastic, rbindlist(new_data))
-    stochastic[order(
-      stochastic$run_id, stochastic$country, stochastic$year, stochastic$age), ]
-  })
-}
-
-
 write_pre_aggregated_to_disk <- function(data, touchpoint,
                                          pre_aggregation_path) {
   countries <- unique(data$country)
