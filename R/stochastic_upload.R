@@ -72,29 +72,17 @@ stone_stochastic_upload <- function(file, con, annex, modelling_group,
   # any database work)
 
   if (!is_cohort) {
-    col_types <- readr::cols(year = readr::col_integer(),
-                          country = readr::col_integer(),
-                           run_id = readr::col_integer(),
-                          .default = readr::col_guess())
     expected_cols <- c("year", "country", "run_id")
   } else {
-    col_types <- readr::cols(cohort = readr::col_integer(),
-                            country = readr::col_integer(),
-                             run_id = readr::col_integer(),
-                          .default = readr::col_guess())
     expected_cols <- c("cohort", "country", "run_id")
   }
 
-  # Test columns before reading...
-
-  first_line <- read.csv(file, nrows = 1)
-  if (anyNA(match(expected_cols, names(first_line)))) {
+  ## Read data
+  message(sprintf("Reading %s", file))
+  data <- qs::qread(file)
+  if (anyNA(match(expected_cols, colnames(data)))) {
     stop("Columns not as expected")
   }
-
-  message(sprintf("Reading %s", file))
-  data <- readr::read_csv(file, col_types = col_types, progress = FALSE)
-
 
 
   # See if we've got previous history for this combo...

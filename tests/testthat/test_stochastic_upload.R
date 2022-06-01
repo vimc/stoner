@@ -10,11 +10,11 @@ test_that("Bad arguments", {
   do_test(test)
 
   expect_error(stoner::stone_stochastic_upload(
-    file.path(tempfile(), "non_existent_file.csv")),
+    file.path(tempfile(), "non_existent_file.qs")),
       "file(.*)exists(.*)")
 
-  new_file <- tempfile(fileext = ".csv")
-  write.csv(x = mtcars, file = new_file)
+  new_file <- tempfile(fileext = ".qs")
+  qs::qsave(x = mtcars, file = new_file)
 
   expect_error(stoner::stone_stochastic_upload(new_file, test$con, test$con,
     "Rudolph"), "Unknown modelling group: Rudolph")
