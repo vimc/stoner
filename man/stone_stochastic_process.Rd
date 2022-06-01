@@ -25,7 +25,8 @@ stone_stochastic_process(
   annex = NULL,
   allow_new_database = FALSE,
   bypass_cert_check = FALSE,
-  testing = FALSE
+  testing = FALSE,
+  test_run = FALSE
 )
 }
 \arguments{
@@ -102,6 +103,9 @@ creating the stochastic_file table if it is not found.}
 parameter certificate (if provided).}
 
 \item{testing}{For internal use only.}
+
+\item{test_run}{Run a test run, this will only read 10 lines from
+each input file.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,
