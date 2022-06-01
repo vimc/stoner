@@ -282,3 +282,21 @@ check_faulty_serials <- function(con) {
     message("Tested faulty serials - OK!")
   }
 }
+
+get_logger <- function() {
+  lgr::get_logger("stoner")
+}
+
+timed <- function(code, msg, ...) {
+  start <- Sys.time()
+  lg <- get_logger()
+  out <- force(code)
+  elapsed <- Sys.time() - start
+  lg$info(paste0("[Elapsed: %s] ", msg), human_readable_time(elapsed), ...)
+  out
+}
+
+human_readable_time <- function(difftime) {
+  paste0(format(unclass(difftime), digits = getOption("digits")),
+         " ", attr(difftime, "units"))
+}

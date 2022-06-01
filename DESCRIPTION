@@ -17,12 +17,14 @@ LazyData: true
 Imports:
     DBI,
     RPostgres,
-    utils,
     data.table,
+    gdata,
+    jsonlite,
+    lgr,
     qs,
     readr,
-    withr,
-    jsonlite
+    utils,
+    withr
 Language: en-GB
 RoxygenNote: 7.1.2
 Roxygen: list(markdown = TRUE)
