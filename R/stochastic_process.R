@@ -31,6 +31,8 @@
 ##' a vector with an entry for each scenario, with an integer value or NA
 ##' in each case.
 ##' @param out_path Path to writing output files into
+##' @param pre_aggregation_path Path to dir to write out pre age-disaggregated
+##' data into. If NULL then this is skipped.
 ##' @param deaths If deaths must be calculated as a sum of other burden
 ##' outcomes, then provide a vector of the outcome names here. The default
 ##' is the existing deaths burden_outcome.
@@ -64,6 +66,7 @@
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
+                                     pre_aggregation_path = NULL,
                                      deaths = "deaths", cases = "cases",
                                      dalys = "dalys",
                                      runid_from_file = FALSE,
@@ -90,19 +93,22 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     cases = cases,
     dalys = dalys
   )
-  inputs <- stochastic_process_validate(con,
-                                        touchpoint = touchpoint,
-                                        scenarios = scenarios,
-                                        in_path = in_path,
-                                        files = files,
-                                        index_start = index_start,
-                                        index_end = index_end,
-                                        outcomes = outcomes,
-                                        runid_from_file = runid_from_file,
-                                        upload_to_annex = upload_to_annex,
-                                        annex = annex,
-                                        cert = cert,
-                                        bypass_cert_check = bypass_cert_check)
+  inputs <- stochastic_process_validate(
+    con,
+    touchpoint = touchpoint,
+    scenarios = scenarios,
+    in_path = in_path,
+    files = files,
+    index_start = index_start,
+    index_end = index_end,
+    out_path = out_path,
+    pre_aggregation_path = pre_aggregation_path,
+    outcomes = outcomes,
+    runid_from_file = runid_from_file,
+    upload_to_annex = upload_to_annex,
+    annex = annex,
+    cert = cert,
+    bypass_cert_check = bypass_cert_check)
 
   read_params <- list(
     in_path = in_path,
@@ -112,11 +118,18 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     runid_from_file = runid_from_file,
     allow_missing_disease = allow_missing_disease
   )
-  all_aggregated <- all_scenarios(con,
+  scenario_data <- all_scenarios(con,
                                   touchpoint = touchpoint,
                                   scenarios = scenarios,
                                   read_params = read_params,
                                   outcomes = outcomes)
+
+  if (!is.null(pre_aggregation_path)) {
+    write_pre_aggregated_to_disk(scenario_data, touchpoint,
+                                 pre_aggregation_path)
+  }
+
+  all_aggregated <- aggregate_data(scenario_data)
 
   paths <- write_output_to_disk(all_aggregated, out_path,
                                 modelling_group, disease)
@@ -139,19 +152,19 @@ all_scenarios <- function(con,
                           scenarios,
                           read_params,
                           outcomes) {
-  all_aggregated <- NULL
 
+  all_scenarios <- NULL
   all_countries <- DBI::dbGetQuery(con, "SELECT id, nid FROM country")
   for (scenario_no in seq_along(scenarios)) {
     scenario_name <- scenarios[scenario_no]
-    aggregated_scenario <- process_scenario(con, scenario_name, scenario_no,
-                                            touchpoint, read_params, outcomes,
-                                            all_countries)
+    scenario_data <- process_scenario(con, scenario_name, scenario_no,
+                                      touchpoint, read_params, outcomes,
+                                      all_countries)
 
     ##############################################################
     # If this is the first scenario, then it's easy...
-    if (is.null(all_aggregated)) {
-      all_aggregated <- aggregated_scenario
+    if (is.null(all_scenarios)) {
+      all_scenarios <- scenario_data
 
       # Otherwise, we need to add new columns with the new scenario
       # HOWEVER: there could be different countries in different
@@ -159,60 +172,19 @@ all_scenarios <- function(con,
       # make the rows line up.
 
     } else {
-
-      # And are there any countries in the new scenario that we
-      # didn't encounter in previous scenarios (or vice versa)? If so, we need to
-      # add NA rows to the accumulated data.
-      known_countries <- unique(all_aggregated$u5_calendar_year$country)
-      next_countries <- unique(aggregated_scenario$u5_calendar_year$country)
-
-      missing_countries_left <- next_countries[
-        !next_countries %in% known_countries]
-      if (length(missing_countries_left) > 0) {
-        all_aggregated <- add_na_countries(all_aggregated, missing_countries_left)
-      }
-
-      missing_countries_right <- known_countries[
-        !known_countries %in% next_countries]
-      if (length(missing_countries_right) > 0) {
-        aggregated_scenario <- add_na_countries(aggregated_scenario,
-                                                missing_countries_right)
-      }
-
-      all_aggregated <- bind_scenarios(all_aggregated, aggregated_scenario)
+      all_scenarios <- merge(all_scenarios, scenario_data,
+                             by = c("country", "year", "run_id", "age"),
+                             all = TRUE)
     }
   }
-
-  names(all_aggregated$u5_cohort)[names(all_aggregated$u5_cohort) == "year"] <- "cohort"
-  names(all_aggregated$all_cohort)[names(all_aggregated$all_cohort) == "year"] <- "cohort"
-
-  all_aggregated
+  all_scenarios
 }
 
-rename_cols <- function(aggregated_data, scenario_name) {
-  rename_one <- function(df) {
-    names(df)[names(df) == 'deaths'] <- paste0("deaths_", scenario_name)
-    names(df)[names(df) == 'cases'] <- paste0("cases_", scenario_name)
-    names(df)[names(df) == 'dalys'] <- paste0("dalys_", scenario_name)
-    df
-  }
-  lapply(aggregated_data, rename_one)
-}
-
-bind_scenarios <- function(all_aggregated, scen_aggregated) {
-  # Now all... and scen... should have same number of rows,
-  # and be sorted by run_id, country, year (or cohort)
-  bind_one <- function(aggregated_name) {
-    all <- all_aggregated[[aggregated_name]]
-    scen <- scen_aggregated[[aggregated_name]]
-    scen$year <- NULL
-    scen$country <- NULL
-    scen$run_id <- NULL
-    cbind(all, scen)
-  }
-  out <- lapply(names(all_aggregated), bind_one)
-  names(out) <- names(all_aggregated)
-  out
+rename_cols <- function(df, scenario_name) {
+  names(df)[names(df) == 'deaths'] <- paste0("deaths_", scenario_name)
+  names(df)[names(df) == 'cases'] <- paste0("cases_", scenario_name)
+  names(df)[names(df) == 'dalys'] <- paste0("dalys_", scenario_name)
+  df
 }
 
 process_scenario <- function(con, scenario, scenario_no, touchpoint,
@@ -267,8 +239,10 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
     scenario_data <- rbindlist(scenario_data)
   }
 
-  #######################################################
+  rename_cols(scenario_data, scenario)
+}
 
+aggregate_data <- function(scenario_data) {
   agg_and_sort <- function(data) {
     # Next lines are just to avoid travis NOTEs on
     # the by = list line.
@@ -276,10 +250,9 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
     year <- NULL
     country <- NULL
     data <- data[ , lapply(.SD, sum),
-                  by = list(run_id, year, country),
-                  .SDcols = c("cases", "dalys", "deaths")]
+                  by = list(run_id, year, country)]
+    data$age <- NULL ## We've aggregated over age so remove column
     data[order(data$run_id, data$country, data$year), ]
-
   }
 
   scen_u5 <- scenario_data[scenario_data$age <= 4 , ]
@@ -293,17 +266,15 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
   scenario_data$year <- scenario_data$year - scenario_data$age
   scen_coh <- agg_and_sort(scenario_data)
 
-  aggregated_data <- list(
+  names(scen_u5_coh)[names(scen_u5_coh) == "year"] <- "cohort"
+  names(scen_coh)[names(scen_coh) == "year"] <- "cohort"
+
+  list(
     u5_calendar_year = scen_u5_cal,
     u5_cohort = scen_u5_coh,
     all_calendar_year = scen_cal,
     all_cohort = scen_coh
   )
-
-  scenario_data <- NULL
-  gc()
-
-  rename_cols(aggregated_data, scenario)
 }
 
 
@@ -406,11 +377,11 @@ read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
 }
 
 
-add_na_countries <- function(aggregated_stochastic, missing) {
-  lapply(aggregated_stochastic, function(aggregation) {
-    na_data <- aggregation[aggregation$country == aggregation$country[1], ]
-    na_cols <- names(aggregation)
-    na_cols <- na_cols[!na_cols %in% c("run_id", "country", "year")]
+add_na_countries <- function(stochastic_data, missing) {
+  lapply(stochastic_data, function(stochastic) {
+    na_data <- stochastic[stochastic$country == stochastic$country[1], ]
+    na_cols <- names(stochastic)
+    na_cols <- na_cols[!na_cols %in% c("run_id", "country", "year", "age")]
     na_data[, na_cols] <- NA
     new_data <- list()
     for (m in seq_along(missing)) {
@@ -418,10 +389,25 @@ add_na_countries <- function(aggregated_stochastic, missing) {
       new_data[[m]] <- na_data
     }
 
-    aggregation <- rbind(aggregation, rbindlist(new_data))
-    aggregation[order(
-      aggregation$run_id, aggregation$country, aggregation$year), ]
+    stochastic <- rbind(stochastic, rbindlist(new_data))
+    stochastic[order(
+      stochastic$run_id, stochastic$country, stochastic$year, stochastic$age), ]
   })
+}
+
+
+write_pre_aggregated_to_disk <- function(data, touchpoint,
+                                         pre_aggregation_path) {
+  countries <- unique(data$country)
+  for (country in countries) {
+    path <- file.path(pre_aggregation_path,
+                      sprintf("%s_%s_%s_pre_aggregation.qs",
+                              touchpoint$modelling_group,
+                              touchpoint$disease,
+                              country))
+    data <- as.data.frame(data)
+    qs::qsave(data[data$country == country, ], path)
+  }
 }
 
 
@@ -477,6 +463,8 @@ write_output_to_annex <- function(paths, con, annex, modelling_group,
 
 stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                                         files, index_start, index_end,
+                                        out_path,
+                                        pre_aggregation_path,
                                         outcomes,
                                         runid_from_file,
                                         upload_to_annex,
@@ -502,7 +490,20 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
   if (!file.exists(in_path)) {
     stop(sprintf("Input path not found: %s", in_path))
   }
-  stopifnot(file.exists(in_path))
+
+  assert_scalar_character(out_path)
+  if (!file.exists(out_path)) {
+    stop(sprintf("Output path not found: %s", out_path))
+  }
+
+  if (!is.null(pre_aggregation_path)) {
+    assert_scalar_character(pre_aggregation_path)
+    if (!file.exists(pre_aggregation_path)) {
+      stop(sprintf("Pre aggregation output path not found: %s",
+                   pre_aggregation_path))
+    }
+  }
+
 
   # Certificate check (if enabled).
   if (!is.na(cert)) {

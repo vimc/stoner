@@ -56,108 +56,122 @@ test_that("Bad arguments", {
   do_test(test)
 
   expect_error(stone_stochastic_process(test$con,
-    "Rudolph", "", "", "", "", "", "", NA, NA, bypass_cert_check = TRUE),
+    "Rudolph", "", "", "", "", "", "", NA, NA, ".", bypass_cert_check = TRUE),
     "Unknown modelling group:")
 
   expect_error(stone_stochastic_process(test$con,
-    "LAP-elf", "Plague", "", "", "", "", "", NA, NA, bypass_cert_check = TRUE),
+    "LAP-elf", "Plague", "", "", "", "", "", NA, NA, ".",
+    bypass_cert_check = TRUE),
     "Unknown disease:")
 
   expect_error(stone_stochastic_process(test$con,
-    "LAP-elf", "flu", "snowdon", "", "", "", "", NA, NA,
+    "LAP-elf", "flu", "snowdon", "", "", "", "", NA, NA, ".",
     bypass_cert_check = TRUE),
     "Unknown touchstone:")
 
   expect_error(stone_stochastic_process(test$con,
-    "LAP-elf", "flu", "nevis-1", "potato", ".", "", "", NA, NA,
+    "LAP-elf", "flu", "nevis-1", "potato", ".", "", "", NA, NA, ".",
     bypass_cert_check = TRUE),
     "scenario potato not found in touchstone nevis-1")
 
   expect_error(stone_stochastic_process(test$con,
-    "LAP-elf", "piles", "nevis-1", "hot_chocolate", ".", "", "", NA, NA,
+    "LAP-elf", "piles", "nevis-1", "hot_chocolate", ".", "", "", NA, NA, ".",
     bypass_cert_check = TRUE),
     "scenario_description hot_chocolate not valid for disease piles")
 
   expect_error(stone_stochastic_process(test$con,
-    "R-deer", "flu", "nevis-1", "hot_chocolate", ".", "", "", NA, NA,
+    "R-deer", "flu", "nevis-1", "hot_chocolate", ".", "", "", NA, NA, ".",
     bypass_cert_check = TRUE),
     "No responsibility_set for group R-deer in touchstone nevis-1")
 
   expect_error(stone_stochastic_process(test$con,
-    "EBHQ-bunny", "flu", "nevis-1", "hot_chocolate", ".", "", "", NA, NA,
+    "EBHQ-bunny", "flu", "nevis-1", "hot_chocolate", ".", "", "", NA, NA, ".",
     bypass_cert_check = TRUE),
     paste("No responsibility for group EBHQ-bunny,",
           "scenario hot_chocolate, touchstone nevis-1"))
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", file.path(test$path, "potato"),
-    "", "", NA, NA, bypass_cert_check = TRUE),
+    "", "", NA, NA, ".", bypass_cert_check = TRUE),
     "Input path not found:")
+
+  expect_error(stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "pies", ".",
+    "", "", NA, NA, file.path(test$path, "potato"), bypass_cert_check = TRUE),
+    "Output path not found:")
+
+  expect_error(stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "pies", ".",
+    "", "", NA, NA, ".", pre_aggregation_path = file.path(test$path, "potato"),
+    bypass_cert_check = TRUE),
+    "Pre aggregation output path not found:")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    c("file1", "file2"), "", NA, NA, bypass_cert_check = TRUE),
+    c("file1", "file2"), "", NA, NA, ".", bypass_cert_check = TRUE),
     "Incorrect files param - length should be 1 or 3")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", c(NA, NA), NA, bypass_cert_check = TRUE),
+    "file_template", "", c(NA, NA), NA, ".", bypass_cert_check = TRUE),
     "Incorrect index_start - can be NA, or length 1 or 3")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", NA, c(NA, NA), bypass_cert_check = TRUE),
+    "file_template", "", NA, c(NA, NA), ".", bypass_cert_check = TRUE),
     "Incorrect index_end - can be NA, or length 1 or 3")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
     "file_template", "", c(NA, NA, NA), c(NA, NA, "bob"),
-    bypass_cert_check = TRUE),
+    ".", bypass_cert_check = TRUE),
     "index_end must be all NA or integers")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", c(NA, NA, "gladys"), c(NA, NA, NA),
+    "file_template", "", c(NA, NA, "gladys"), c(NA, NA, NA), ".",
     bypass_cert_check = TRUE),
     "index_start must be all NA or integers")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    "file_template", "", c(NA, NA, 1), 2,
+    "file_template", "", c(NA, NA, 1), 2, ".",
     bypass_cert_check = TRUE),
     "Mismatches of NA between index_start and index_end")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1",
     c("pies", "hot_chocolate", "holly"), test$path,
-    c("f", "f:index", "f"), "", c(1, NA, 1), c(2, NA, 2),
+    c("f", "f:index", "f"), "", c(1, NA, 1), c(2, NA, 2), ".",
     bypass_cert_check = TRUE),
     "Mismatch between NA in index_start, and :index placeholder in files")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, bypass_cert_check = TRUE),
+    "", 1, 1, ".", bypass_cert_check = TRUE),
     "File not found: (.*)non_exist1.xz")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, "", c("deaths", "deaths"), bypass_cert_check = TRUE),
+    "", 1, 1, ".", deaths = c("deaths", "deaths"), bypass_cert_check = TRUE),
     "Duplicated outcome in deaths")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, "", "deaths", "cases", "piles_dalys", bypass_cert_check = TRUE),
+    "", 1, 1, ".", deaths = "deaths", cases = "cases", dalys = "piles_dalys",
+    bypass_cert_check = TRUE),
     "Outcomes not found, dalys \\('piles_dalys'\\)")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, "", "deaths", "cases", "dalys", TRUE, bypass_cert_check = TRUE),
+    "", 1, 1, ".", deaths = "deaths", cases = "cases", dalys = "dalys",
+    runid_from_file = TRUE, bypass_cert_check = TRUE),
     "Must have index_start and index_end as 1..200 to imply run_id")
 })
 
@@ -341,7 +355,8 @@ stochastic_runner <- function(same_countries = TRUE,
                               allow_new_database = TRUE,
                               bypass_cert_check = TRUE,
                               dalys_df = NULL,
-                              cert = "") {
+                              cert = "",
+                              pre_aggregation_path = NULL) {
 
   test <- new_test()
 
@@ -382,6 +397,7 @@ stochastic_runner <- function(same_countries = TRUE,
                            res$resps$scenario, test$path, res$files,
                            cert = cert,
                            index_start, index_end, test$path,
+                           pre_aggregation_path,
                            deaths, cases, dalys,
                            runid_from_file = !include_run_id,
                            allow_missing_disease = !include_disease,
@@ -779,4 +795,31 @@ test_that("Stochastic - with DALYs", {
 
   expect_equal(dat$data$dalys, dalys_pies$dalys_pies)
 
+})
+
+test_that("preaggregated data can be saved to disk", {
+  t <- tempfile()
+  dir.create(t, FALSE, TRUE)
+  output <- stochastic_runner(pre_aggregation_path = t)
+
+  files <- list.files(t)
+  expect_length(files, 2) ## 2 countries, 1 modelling group, 1 disease = 2 files
+  expect_setequal(files, c("LAP-elf_flu_4_pre_aggregation.qs",
+                           "LAP-elf_flu_716_pre_aggregation.qs"))
+
+  country_4 <- qs::qread(file.path(t, "LAP-elf_flu_4_pre_aggregation.qs"))
+  expect_setequal(colnames(country_4),
+                  c("country", "year", "run_id", "age", "deaths_pies",
+                    "cases_pies", "dalys_pies", "deaths_hot_chocolate",
+                    "cases_hot_chocolate", "dalys_hot_chocolate",
+                    "deaths_holly", "cases_holly", "dalys_holly"))
+  expect_true(all(country_4$country == 4))
+
+  country_716 <- qs::qread(file.path(t, "LAP-elf_flu_716_pre_aggregation.qs"))
+  expect_setequal(colnames(country_716),
+                  c("country", "year", "run_id", "age", "deaths_pies",
+                    "cases_pies", "dalys_pies", "deaths_hot_chocolate",
+                    "cases_hot_chocolate", "dalys_hot_chocolate",
+                    "deaths_holly", "cases_holly", "dalys_holly"))
+  expect_true(all(country_716$country == 716))
 })
