@@ -111,6 +111,8 @@ parameter certificate (if provided).}
 
 \item{log_file}{Path to file to save logs to, NULL to not log to file.
 If file exists it will be appended to, otherwise file will be created.}
+
+\item{silent}{TRUE to silence console logs.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,

@@ -65,6 +65,7 @@
 ##' @param testing For internal use only.
 ##' @param log_file Path to file to save logs to, NULL to not log to file.
 ##' If file exists it will be appended to, otherwise file will be created.
+##' @param silent TRUE to silence console logs.
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
