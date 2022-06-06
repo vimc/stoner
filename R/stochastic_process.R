@@ -260,7 +260,8 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
     if (!file.exists(the_file)) {
       stop(sprintf("File not found: %s", the_file))
     }
-    message(the_file)
+    lg <- get_logger()
+    lg$info("Reading %s", the_file)
 
     scenario_data[[i]] <-
       read_xz_csv(con, the_file, outcomes,
