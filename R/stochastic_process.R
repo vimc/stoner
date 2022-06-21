@@ -595,9 +595,7 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
   assert_scalar_logical(test_run)
 
   for (scenario in scenarios) {
-    stochastic_validate_scenario(con, touchpoint$touchstone, scenario,
-                                 touchpoint$disease,
-                                 touchpoint$modelling_group)
+    stochastic_validate_scenario(con, touchpoint, scenario)
   }
 
   check_outcomes(con, "cases", outcomes$cases)
@@ -634,8 +632,7 @@ check_outcomes <- function(con, type, options) {
   invisible(TRUE)
 }
 
-stochastic_validate_scenario <- function(con, touchstone, scenario, disease,
-                                         modelling_group) {
+stochastic_validate_scenario <- function(con, touchpoint, scenario) {
   # Scenario-specific tests:
   # 1. (touchstone, scenario_description) exists in scenario table
   # 2. (scenario_description, disease) exists in scenario_description table
@@ -644,26 +641,28 @@ stochastic_validate_scenario <- function(con, touchstone, scenario, disease,
   #    scenario id comes from #1, and responsibility_set id from #3
   scenario_id <- DBI::dbGetQuery(con, "
       SELECT id FROM scenario WHERE touchstone = $1
-         AND scenario_description = $2", list(touchstone, scenario))$id
+         AND scenario_description = $2",
+                                 list(touchpoint$touchstone, scenario))$id
   if (length(scenario_id) != 1) {
     stop(sprintf("scenario %s not found in touchstone %s",
-                 scenario, touchstone))
+                 scenario, touchpoint$touchstone))
   }
 
   scenario_descs <- DBI::dbGetQuery(con, "
       SELECT count(*) FROM scenario_description WHERE id = $1
-         AND disease = $2", list(scenario, disease))$count
+         AND disease = $2", list(scenario, touchpoint$disease))$count
   if (scenario_descs != 1) {
     stop(sprintf("scenario_description %s not valid for disease %s",
-                 scenario, disease))
+                 scenario, touchpoint$disease))
   }
 
   respset_id <- DBI::dbGetQuery(con, "
       SELECT id FROM responsibility_set WHERE touchstone = $1
-         AND modelling_group = $2", list(touchstone, modelling_group))$id
+         AND modelling_group = $2",
+                                list(touchstone, touchpoint$modelling_group))$id
   if (length(respset_id) != 1) {
     stop(sprintf("No responsibility_set for group %s in touchstone %s",
-                 modelling_group, touchstone))
+                 modelling_group, touchpoint$touchstone))
   }
 
   resp_id <- DBI::dbGetQuery(con, "
@@ -671,7 +670,7 @@ stochastic_validate_scenario <- function(con, touchstone, scenario, disease,
          AND scenario = $2", list(respset_id, scenario_id))$id
   if (length(resp_id) != 1) {
     stop(sprintf("No responsibility for group %s, scenario %s, touchstone %s",
-                 modelling_group, scenario, touchstone))
+                 touchpoint$modelling_group, scenario, touchpoint$touchstone))
   }
   # Possibly, we could check that all scenarios are included, but
   # the exceptions are the groups that have to do a VIS report, as they
