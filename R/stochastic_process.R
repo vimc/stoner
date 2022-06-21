@@ -270,6 +270,7 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
   #######################################################
 
   agg_and_sort <- function(data) {
+    run_id <- year <- country <- NULL
     data %>%
       dplyr::group_by(run_id, year, country) %>%
       dplyr::summarise(cases = sum(cases),
