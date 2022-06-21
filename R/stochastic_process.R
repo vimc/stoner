@@ -281,16 +281,12 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
   #######################################################
 
   agg_and_sort <- function(data) {
-    # Next lines are just to avoid travis NOTEs on
-    # the by = list line.
-    run_id <- NULL
-    year <- NULL
-    country <- NULL
-    data <- data[ , lapply(.SD, sum),
-                  by = list(run_id, year, country),
-                  .SDcols = c("cases", "dalys", "deaths")]
-    data[order(data$run_id, data$country, data$year), ]
-
+    data %>%
+      dplyr::group_by(run_id, year, country) %>%
+      dplyr::summarise(cases = sum(cases),
+                       dalys = sum(dalys),
+                       deaths = sum(deaths)) %>%
+      dplyr::arrange(run_id, country, year)
   }
 
   scen_u5 <- scenario_data[scenario_data$age <= 4 , ]
@@ -658,11 +654,11 @@ stochastic_validate_scenario <- function(con, touchpoint, scenario) {
 
   respset_id <- DBI::dbGetQuery(con, "
       SELECT id FROM responsibility_set WHERE touchstone = $1
-         AND modelling_group = $2",
-                                list(touchstone, touchpoint$modelling_group))$id
+         AND modelling_group = $2", list(touchpoint$touchstone,
+                                         touchpoint$modelling_group))$id
   if (length(respset_id) != 1) {
     stop(sprintf("No responsibility_set for group %s in touchstone %s",
-                 modelling_group, touchpoint$touchstone))
+                 touchpoint$modelling_group, touchpoint$touchstone))
   }
 
   resp_id <- DBI::dbGetQuery(con, "
