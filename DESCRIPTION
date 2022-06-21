@@ -19,6 +19,7 @@ Imports:
     RPostgres,
     utils,
     data.table,
+    dplyr,
     readr,
     withr,
     jsonlite
