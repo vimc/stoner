@@ -26,7 +26,7 @@ stone_stochastic_process(
   allow_new_database = FALSE,
   bypass_cert_check = FALSE,
   testing = FALSE,
-  test_run = FALSE
+  lines = Inf
 )
 }
 \arguments{
@@ -104,8 +104,9 @@ parameter certificate (if provided).}
 
 \item{testing}{For internal use only.}
 
-\item{test_run}{Run a test run, this will only read 10 lines from
-each input file.}
+\item{lines}{Number of lines to read from each file, Inf by default to
+read all lines. Set a lower number for testing subset of process before
+doing the full run.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,

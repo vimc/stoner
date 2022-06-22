@@ -61,8 +61,9 @@
 ##' @param bypass_cert_check If TRUE, then no checks are carried out on the
 ##' parameter certificate (if provided).
 ##' @param testing For internal use only.
-##' @param test_run Run a test run, this will only read 10 lines from
-##' each input file.
+##' @param lines Number of lines to read from each file, Inf by default to
+##' read all lines. Set a lower number for testing subset of process before
+##' doing the full run.
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
@@ -75,7 +76,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      allow_new_database = FALSE,
                                      bypass_cert_check = FALSE,
                                      testing = FALSE,
-                                     test_run = FALSE) {
+                                     lines = Inf) {
 
   ## Setup life table cache
   cache$life_table <- NULL
@@ -113,7 +114,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     files = files,
     runid_from_file = runid_from_file,
     allow_missing_disease = allow_missing_disease,
-    test_run = test_run
+    lines = lines
   )
   all_aggregated <- all_scenarios(con,
                                   touchpoint = touchpoint,
@@ -223,6 +224,7 @@ process_scenario <- function(con, scenario, files, touchpoint,
   scenario_data <- list()
 
   lines <- read_params$lines
+
   ################################################################
 
   for (i in seq_along(files)) {

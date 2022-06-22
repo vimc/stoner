@@ -342,7 +342,7 @@ stochastic_runner <- function(same_countries = TRUE,
                               bypass_cert_check = TRUE,
                               dalys_df = NULL,
                               cert = "",
-                              test_run = FALSE) {
+                              lines = Inf) {
 
   test <- new_test()
 
@@ -390,7 +390,7 @@ stochastic_runner <- function(same_countries = TRUE,
                            allow_new_database = allow_new_database,
                            bypass_cert_check = bypass_cert_check,
                            testing = TRUE,
-                           test_run = test_run)
+                           lines = lines)
   list(
     test = test,
     raw = res$raw,
@@ -786,7 +786,7 @@ test_that("Stochastic - with DALYs", {
 
 
 test_that("Stochastic - can run with subset of data", {
-  out <- stochastic_runner(test_run = TRUE)
+  out <- stochastic_runner(lines = 10)
   expect_equal(nrow(out$cal), 10)
   expect_equal(nrow(out$cal_u5), 10)
   expect_equal(nrow(out$coh), 10)
