@@ -107,7 +107,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                         annex = annex,
                                         cert = cert,
                                         bypass_cert_check = bypass_cert_check,
-                                        test_run = test_run)
+                                        lines = lines)
 
   read_params <- list(
     in_path = in_path,
@@ -222,7 +222,6 @@ bind_scenarios <- function(all_aggregated, scen_aggregated) {
 process_scenario <- function(con, scenario, files, touchpoint,
                              read_params, outcomes, countries) {
   scenario_data <- list()
-
   lines <- read_params$lines
 
   ################################################################
@@ -465,7 +464,7 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                                         annex,
                                         cert,
                                         bypass_cert_check,
-                                        test_run) {
+                                        lines) {
   assert_connection(con)
   if (upload_to_annex) {
     assert_connection(annex)
@@ -562,7 +561,7 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
     }
   }
 
-  assert_scalar_logical(test_run)
+  assert_scalar_numeric(lines)
 
   for (scenario in scenarios) {
     stochastic_validate_scenario(con, touchpoint, scenario)
