@@ -511,10 +511,10 @@ test_that("Stochastic - with upload", {
 
   result$cal$deaths_pies <- round(result$cal$deaths_pies / 2)
 
-  new_csv_file <- tempfile(fileext = ".qs")
-  qs::qsave(x = result$cal, file = new_csv_file)
+  new_qs_file <- tempfile(fileext = ".qs")
+  qs::qsave(x = result$cal, file = new_qs_file)
 
-  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+  stone_stochastic_upload(new_qs_file, result$test$con, result$test$con,
                           "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
                           is_under5 = FALSE, allow_new_database = FALSE,
                           testing = TRUE)
