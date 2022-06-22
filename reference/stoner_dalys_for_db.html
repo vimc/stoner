@@ -19,7 +19,7 @@ and write a new CSV file ready for uploading through the Montagu portal."><!-- m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.6</span>
       </span>
     </div>
 
@@ -80,6 +80,8 @@ and write a new CSV file ready for uploading through the Montagu portal.</p>
     <dl><dt>con</dt>
 <dd><p>DBI connection to a Montagu database, for retrieving
 the burden_estimate set.</p></dd>
+
+
 <dt>dalys_params</dt>
 <dd><p>A data.frame containing how to calculate dalys; each
 row represents a condition, and the four columns describe how to calculate
@@ -93,41 +95,62 @@ how severe the implications are of this particular condition. See
 http://ghdx.healthdata.org/record/ihme-data/gbd-2017-disability-weights
 for where these figures come from; the final figures are decided in
 discussion with the groups.</p></dd>
+
+
 <dt>modelling_group</dt>
 <dd><p>If the modelling group, disease, touchstone and
 scenario are all provided, then we lookup the current (most recently
 uploaded) burden estimate set matching those details.</p></dd>
+
+
 <dt>disease</dt>
 <dd><p>If specified, the name of the disease in question</p></dd>
+
+
 <dt>touchstone</dt>
 <dd><p>If specified, the touchstone (including version) for
 the set.</p></dd>
+
+
 <dt>scenario</dt>
 <dd><p>If specified, the name of the scenario for the set.</p></dd>
+
+
 <dt>burden_estimate_set_id</dt>
 <dd><p>Alternatively, if modelling_group, disease,
 touchstone and scenario are NULL, the numerical id of a particular burden
 estimate set can be specified here, to extend that estimate set with
 DALYs. Otherwise, leave as NULL to look up by the other four
 fields.</p></dd>
+
+
 <dt>output_file</dt>
 <dd><p>If provided, then write the output CSV with the
 additional DALYs field to this filename. The file will be ready to be
 uploaded to Montagu.</p></dd>
+
+
 <dt>life_table</dt>
 <dd><p>If provided, then re-use the life table provided by a
 previous call to this function. Otherwise, it can be left at NULL to
 generate the life-table.</p></dd>
+
+
 <dt>year_min</dt>
 <dd><p>The first year of the range in which to calculate DALYs.
 (Default 2000)</p></dd>
+
+
 <dt>year_max</dt>
 <dd><p>The final year of the range in which to calculate DALYs.
 (Default 2100)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with two components, <code>data</code> is a data.frame of the complete
+    
+
+<p>A list with two components, <code>data</code> is a data.frame of the complete
 DALYs extended data, and <code>life_table</code> is the life table used for
 calculating the DALYs, should that be required again.</p>
     </div>
@@ -144,7 +167,7 @@ calculating the DALYs, should that be required again.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

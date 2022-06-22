@@ -18,7 +18,7 @@ stoner_calculate_dalys, but for testing purposes is also exposed."><!-- mathjax 
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.6</span>
       </span>
     </div>
 
@@ -66,23 +66,34 @@ stoner_calculate_dalys, but for testing purposes is also exposed."><!-- mathjax 
     <dl><dt>con</dt>
 <dd><p>DBI connection to a Montagu database. Used for retrieving
 demographic data for life expectancy.</p></dd>
+
+
 <dt>touchstone</dt>
 <dd><p>The touchstone (including version); the demographic
 data retrieved will be specific to this touchstone.</p></dd>
+
+
 <dt>year_min</dt>
 <dd><p>The first year of the range in which to calculate DALYs.
 (Default 2000)</p></dd>
+
+
 <dt>year_max</dt>
 <dd><p>The final year of the range in which to calculate DALYs.
 (Default 2100)</p></dd>
+
+
 <dt>char_countries</dt>
 <dd><p>A logical that if TRUE specifies that the countries
 in the resulting life table should be expressed in 3-character form, or
 otherwise numerical.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A data.frame with columns <code>value</code> and <code>.code</code>. The value is the
+    
+
+<p>A data.frame with columns <code>value</code> and <code>.code</code>. The value is the
 expected years of life left for a person in a particular country, a
 particular year, and of a particular age. The <code>.code</code> is in the form
 <code>country-year-age</code>, and both year and age are interpolated to
@@ -101,7 +112,7 @@ single years (whereas the UNWPP life table data is mostly in 5-year bands).</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

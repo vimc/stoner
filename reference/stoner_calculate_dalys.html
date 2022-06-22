@@ -23,7 +23,7 @@ outcomes."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.6</span>
       </span>
     </div>
 
@@ -84,14 +84,20 @@ outcomes.</p>
     <dl><dt>con</dt>
 <dd><p>DBI connection to a Montagu database. Used for retrieving
 demographic data for life expectancy.</p></dd>
+
+
 <dt>touchstone</dt>
 <dd><p>The touchstone (including version); the demographic
 data retrieved will be specific to this touchstone.</p></dd>
+
+
 <dt>data</dt>
 <dd><p>A data.frame containing burden estimates - either central or
 stochastic. The columns for both kinds will include <code>country</code> (which may be
 a Montagu numerical id, or the 3-letter code), <code>year</code>, <code>age</code>, and a number
 of burden outcomes.Stochastic data will also have a <code>run_id</code>.</p></dd>
+
+
 <dt>dalys_params</dt>
 <dd><p>A data.frame containing how to calculate dalys; each
 row represents a condition, and the four columns describe how to calculate
@@ -105,6 +111,8 @@ how severe the implications are of this particular condition. See
 http://ghdx.healthdata.org/record/ihme-data/gbd-2017-disability-weights
 for where these figures come from; the final figures are decided in
 discussion with the groups.</p></dd>
+
+
 <dt>life_table</dt>
 <dd><p>If <code>NULL</code>, then the life table will be looked up and
 interpolated to yearly for age and time. This takes a bit of time, so the
@@ -114,16 +122,23 @@ data.frame with the columns <code>value</code> and <code>.code</code>; the latte
 format country-year-age. The type of country in <code>.code</code> should match with
 the type of the country in <code>data</code>. The years and ages will be interpolated
 down to single-years.</p></dd>
+
+
 <dt>year_min</dt>
 <dd><p>The first year of the range in which to calculate DALYs.
 (Default 2000)</p></dd>
+
+
 <dt>year_max</dt>
 <dd><p>The final year of the range in which to calculate DALYs.
 (Default 2100)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with two named components; <code>life_table</code> is the result of
+    
+
+<p>A list with two named components; <code>life_table</code> is the result of
 calling the life-table function, which can then be specified in subsequent
 calls to <code>stoner_calculate_dalys</code>, and <code>data</code> is a version of the original
 dataset, now with a <code>dalys</code> column. Note that if <code>data</code> already contained
@@ -143,7 +158,7 @@ be overwritten with the new results.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

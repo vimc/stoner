@@ -20,7 +20,7 @@ calendar year, or birth-cohort year."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.6</span>
       </span>
     </div>
 
@@ -92,45 +92,71 @@ calendar year, or birth-cohort year.</p>
     <dl><dt>con</dt>
 <dd><p>DBI connection to production. Used for verifying certificate
 against expected properties</p></dd>
+
+
 <dt>modelling_group</dt>
 <dd><p>The modelling group id</p></dd>
+
+
 <dt>disease</dt>
 <dd><p>The disease</p></dd>
+
+
 <dt>touchstone</dt>
 <dd><p>The touchstone (including version) for these estimates</p></dd>
+
+
 <dt>scenarios</dt>
 <dd><p>A vector of scenario_descriptions. If the files
 parameter is of length more than 1, then it must be the same length as
 the number of scenarios, and a one-to-one mapping between the two is
 assumed.</p></dd>
+
+
 <dt>in_path</dt>
 <dd><p>The folder containing the stochastic files</p></dd>
+
+
 <dt>files</dt>
 <dd><p>Either a single string containing placeholders to indicate
 filenames, or a vector of files, one for each scenario. Placeholders can
 include :group :touchstone :scenario :disease and :index</p></dd>
+
+
 <dt>cert</dt>
 <dd><p>Name of the certificate file accompanying the estimates</p></dd>
+
+
 <dt>index_start</dt>
 <dd><p>A scalar or vector matching the length of scenarios.
 Each entry is either an integer or NA, indicating the first number in a
 sequence of files. NA implies there is a single file with no sequence.
 The placeholder :index in the filenames will be replaced with this.</p></dd>
+
+
 <dt>index_end</dt>
 <dd><p>Similar to index_start, indicating the last number
 in a sequence of a files. Can be scalar, applying to all scenarios, or
 a vector with an entry for each scenario, with an integer value or NA
 in each case.</p></dd>
+
+
 <dt>out_path</dt>
 <dd><p>Path to writing output files into</p></dd>
+
+
 <dt>deaths</dt>
 <dd><p>If deaths must be calculated as a sum of other burden
 outcomes, then provide a vector of the outcome names here. The default
 is the existing deaths burden_outcome.</p></dd>
+
+
 <dt>cases</dt>
 <dd><p>If cases must be calculated as a sum of other burden
 outcomes, then provide a vector of the outcome names here. The default
 is the existing cases burden_outcome.</p></dd>
+
+
 <dt>dalys</dt>
 <dd><p>If DALYs must be calculated as a sum of other burden
 outcomes, then provide a vector of the outcome names here. The default
@@ -139,30 +165,45 @@ remaining group that does not provide DALYs, you can supply a data
 frame here, and stoner will calculate DALYs using that recipe. The
 data frame must have names <code>outcome</code>, <code>proportion</code>, <code>average_duration</code>
 and <code>disability_weight</code>. See <a href="stoner_calculate_dalys.html">stoner_calculate_dalys</a>.</p></dd>
+
+
 <dt>runid_from_file</dt>
 <dd><p>Occasionally groups have omitted the run_id
 from the stochastic file, and provided 200 files, one per run_id. Set
 runid_from_file to TRUE if this is the case, to deduce the run_id from
 the filenames. The index_start and index_end must be 1 and 200 in
 this case.</p></dd>
+
+
 <dt>allow_missing_disease</dt>
 <dd><p>Occasionally groups have omitted the
 disease column from their stochastic data. Set this to TRUE to expect
 that circumstance, and avoid generating warnings.</p></dd>
+
+
 <dt>upload_to_annex</dt>
 <dd><p>Set to TRUE if you want to upload the results
 straight into annex. (Files will still be created, as the upload is
 relative fast; creating the csvs is slower and worth caching)</p></dd>
+
+
 <dt>annex</dt>
 <dd><p>DBI connection to annex, used if upload_to_annex is TRUE.</p></dd>
+
+
 <dt>allow_new_database</dt>
 <dd><p>If uploading, then set this to TRUE to enable
 creating the stochastic_file table if it is not found.</p></dd>
+
+
 <dt>bypass_cert_check</dt>
 <dd><p>If TRUE, then no checks are carried out on the
 parameter certificate (if provided).</p></dd>
+
+
 <dt>testing</dt>
 <dd><p>For internal use only.</p></dd>
+
 </dl></div>
 
   </div>
@@ -177,7 +218,7 @@ parameter certificate (if provided).</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

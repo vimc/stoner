@@ -36,7 +36,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.6</span>
       </span>
     </div>
 
@@ -109,6 +109,15 @@
 </ul>
 <p>The above is the simplest case. You should also write some load tests as usual, but these can now concentrate entirely on what rows the particular import is expected to add. See the vignette for more detail.</p>
 </div>
+<div class="section level1">
+<h1 id="testing">Testing<a class="anchor" aria-label="anchor" href="#testing"></a>
+</h1>
+<p>Some unit tests require a database connection to be able to run. Use helper commands to start a docker container with a testing database * <code>./inst/db/db_start</code> - to start the test database * <code>./inst/db/db_stop</code> - stop the test database * <code>./inst/db/db_clear</code> - remove all data from the test database</p>
+<p>Or from R</p>
+<pre><code><span class="fu">test_db_start</span><span class="op">(</span><span class="op">)</span>
+<span class="fu">test_db_stop</span><span class="op">(</span><span class="op">)</span>
+<span class="fu">test_db_clear</span><span class="op">(</span><span class="op">)</span></code></pre>
+</div>
 
   </div>
 
@@ -164,7 +173,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer>
