@@ -417,3 +417,7 @@ empty_dump <- function() {
   dir.create(tmp, showWarnings = FALSE)
   tmp
 }
+
+expect_no_error <- function(object) {
+  expect_error(object, NA)
+}
