@@ -534,16 +534,16 @@ test_that("stochastic_upload can upload csv file", {
   result <- stochastic_runner(upload = FALSE)
 
   new_csv_file <- tempfile(fileext = ".csv")
-  write_csv(x = result$cal, file = new_csv_file)
+  write_csv(x = result$cal_u5, file = new_csv_file)
 
   stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
                           "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
-                          is_under5 = FALSE, allow_new_database = TRUE,
+                          is_under5 = TRUE, allow_new_database = TRUE,
                           testing = TRUE)
 
   expect_true("stochastic_1" %in% DBI::dbListTables(result$test$con))
   data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_1")
-  expect_equal(data, result$cal)
+  expect_equal(data, result$cal_u5)
 })
 
 ##############################################################################
