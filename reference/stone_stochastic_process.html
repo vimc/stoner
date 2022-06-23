@@ -20,7 +20,7 @@ calendar year, or birth-cohort year."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.7</span>
       </span>
     </div>
 
@@ -83,7 +83,8 @@ calendar year, or birth-cohort year.</p>
   annex <span class="op">=</span> <span class="cn">NULL</span>,
   allow_new_database <span class="op">=</span> <span class="cn">FALSE</span>,
   bypass_cert_check <span class="op">=</span> <span class="cn">FALSE</span>,
-  testing <span class="op">=</span> <span class="cn">FALSE</span>
+  testing <span class="op">=</span> <span class="cn">FALSE</span>,
+  lines <span class="op">=</span> <span class="cn">Inf</span>
 <span class="op">)</span></code></pre></div>
     </div>
 
@@ -203,6 +204,12 @@ parameter certificate (if provided).</p></dd>
 
 <dt>testing</dt>
 <dd><p>For internal use only.</p></dd>
+
+
+<dt>lines</dt>
+<dd><p>Number of lines to read from each file, Inf by default to
+read all lines. Set a lower number for testing subset of process before
+doing the full run.</p></dd>
 
 </dl></div>
 
