@@ -356,7 +356,8 @@ stochastic_runner <- function(same_countries = TRUE,
                               bypass_cert_check = TRUE,
                               dalys_df = NULL,
                               cert = "",
-                              pre_aggregation_path = NULL) {
+                              pre_aggregation_path = NULL,
+                              lines = Inf) {
 
   test <- new_test()
 
@@ -404,7 +405,8 @@ stochastic_runner <- function(same_countries = TRUE,
                            upload_to_annex = upload, annex = test$con,
                            allow_new_database = allow_new_database,
                            bypass_cert_check = bypass_cert_check,
-                           testing = TRUE)
+                           testing = TRUE,
+                           lines = lines)
   list(
     test = test,
     raw = res$raw,
@@ -527,10 +529,10 @@ test_that("Stochastic - with upload", {
 
   result$cal$deaths_pies <- round(result$cal$deaths_pies / 2)
 
-  new_csv_file <- tempfile(fileext = ".qs")
-  qs::qsave(x = result$cal, file = new_csv_file)
+  new_qs_file <- tempfile(fileext = ".qs")
+  qs::qsave(x = result$cal, file = new_qs_file)
 
-  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+  stone_stochastic_upload(new_qs_file, result$test$con, result$test$con,
                           "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
                           is_under5 = FALSE, allow_new_database = FALSE,
                           testing = TRUE)
@@ -541,6 +543,23 @@ test_that("Stochastic - with upload", {
   expect_equal(sum(result$cal$deaths_pies), new_total)
   new_meta <- DBI::dbReadTable(result$test$con, "stochastic_file")
   expect_equal(2, new_meta$version[!new_meta$is_cohort & !new_meta$is_under5])
+})
+
+test_that("stochastic_upload can upload csv file", {
+  test <- new_test()
+  result <- stochastic_runner(upload = FALSE)
+
+  new_csv_file <- tempfile(fileext = ".csv")
+  write_csv(x = result$cal_u5, file = new_csv_file)
+
+  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+                          "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
+                          is_under5 = TRUE, allow_new_database = TRUE,
+                          testing = TRUE)
+
+  expect_true("stochastic_1" %in% DBI::dbListTables(result$test$con))
+  data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_1")
+  expect_equal(data, result$cal_u5)
 })
 
 ##############################################################################
@@ -822,4 +841,12 @@ test_that("preaggregated data can be saved to disk", {
                     "cases_hot_chocolate", "dalys_hot_chocolate",
                     "deaths_holly", "cases_holly", "dalys_holly"))
   expect_true(all(country_716$country == 716))
+})
+
+test_that("Stochastic - can run with subset of data", {
+  out <- stochastic_runner(lines = 10)
+  expect_equal(nrow(out$cal), 10)
+  expect_equal(nrow(out$cal_u5), 10)
+  expect_equal(nrow(out$coh), 10)
+  expect_equal(nrow(out$coh_u5), 10)
 })

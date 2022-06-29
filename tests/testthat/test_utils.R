@@ -62,3 +62,12 @@ test_that("Asserts", {
   expect_invisible(assert_scalar_logical(FALSE))
 
 })
+
+test_that("assert_scalar_numeric works as expected", {
+  expect_no_error(assert_scalar_numeric(Inf))
+  expect_no_error(assert_scalar_numeric(10))
+  expect_error(assert_scalar_numeric(c(2, 10)), "'c(2, 10)' must be a scalar",
+               fixed = TRUE)
+  expect_error(assert_scalar_numeric("test"), "'\"test\"' must be a number",
+               fixed = TRUE)
+})

@@ -41,3 +41,10 @@ Some unit tests require a database connection to be able to run. Use helper comm
 * `./inst/db/db_start` - to start the test database
 * `./inst/db/db_stop` - stop the test database
 * `./inst/db/db_clear` - remove all data from the test database
+
+Or from R
+```
+test_db_start()
+test_db_stop()
+test_db_clear()
+```
