@@ -360,7 +360,7 @@ stoner_dalys_for_db <- function(con, dalys_params, modelling_group = NULL,
   # Optionally write a CSV file out.
 
   if (!is.null(output_file)) {
-    write.csv(data_dalys$data, output_file, row.names = FALSE)
+    qs::qsave(as.data.frame(data_dalys$data), output_file)
   }
 
   data_dalys

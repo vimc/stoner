@@ -408,25 +408,26 @@ add_na_countries <- function(aggregated_stochastic, missing) {
 
 
 write_output_to_disk <- function(output, out_path, modelling_group, disease) {
-  all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.csv",
+  all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.qs",
                                                  modelling_group, disease))
-  write.csv(x = output$u5_calendar_year, file = all_u5_cal_file,
-            row.names = FALSE)
+  qs::qsave(x = as.data.frame(output$u5_calendar_year),
+            file = all_u5_cal_file)
 
 
-  all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.csv",
+  all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.qs",
                                               modelling_group, disease))
-  write.csv(x = output$all_calendar_year, file = all_cal_file,
-            row.names = FALSE)
+  qs::qsave(x = as.data.frame(output$all_calendar_year),
+            file = all_cal_file)
 
-  all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.csv",
+  all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.qs",
                                                  modelling_group, disease))
-  write.csv(x = output$u5_cohort, file = all_u5_coh_file,
-            row.names = FALSE)
+  qs::qsave(x = as.data.frame(output$u5_cohort),
+            file = all_u5_coh_file)
 
-  all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.csv",
+  all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.qs",
                                               modelling_group, disease))
-  write.csv(x = output$all_cohort, file = all_coh_file, row.names = FALSE)
+  qs::qsave(x = as.data.frame(output$all_cohort),
+            file = all_coh_file)
   list(
     all_u5_cal_file = all_u5_cal_file,
     all_u5_coh_file = all_u5_coh_file,

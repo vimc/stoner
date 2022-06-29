@@ -395,10 +395,10 @@ stochastic_runner <- function(same_countries = TRUE,
     test = test,
     raw = res$raw,
     data = res$data,
-    cal = read_csv(file.path(test$path, "LAP-elf_flu_calendar.csv")),
-    cal_u5 = read_csv(file.path(test$path, "LAP-elf_flu_calendar_u5.csv")),
-    coh = read_csv(file.path(test$path, "LAP-elf_flu_cohort.csv")),
-    coh_u5 = read_csv(file.path(test$path, "LAP-elf_flu_cohort_u5.csv"))
+    cal = qs::qread(file.path(test$path, "LAP-elf_flu_calendar.qs")),
+    cal_u5 = qs::qread(file.path(test$path, "LAP-elf_flu_calendar_u5.qs")),
+    coh = qs::qread(file.path(test$path, "LAP-elf_flu_cohort.qs")),
+    coh_u5 = qs::qread(file.path(test$path, "LAP-elf_flu_cohort_u5.qs"))
   )
 }
 
@@ -513,11 +513,10 @@ test_that("Stochastic - with upload", {
 
   result$cal$deaths_pies <- round(result$cal$deaths_pies / 2)
 
-  new_csv_file <- tempfile(fileext = ".csv")
-  write.csv(x = result$cal, file = new_csv_file,
-            row.names = FALSE)
+  new_qs_file <- tempfile(fileext = ".qs")
+  qs::qsave(x = result$cal, file = new_qs_file)
 
-  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+  stone_stochastic_upload(new_qs_file, result$test$con, result$test$con,
                           "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
                           is_under5 = FALSE, allow_new_database = FALSE,
                           testing = TRUE)
@@ -528,6 +527,23 @@ test_that("Stochastic - with upload", {
   expect_equal(sum(result$cal$deaths_pies), new_total)
   new_meta <- DBI::dbReadTable(result$test$con, "stochastic_file")
   expect_equal(2, new_meta$version[!new_meta$is_cohort & !new_meta$is_under5])
+})
+
+test_that("stochastic_upload can upload csv file", {
+  test <- new_test()
+  result <- stochastic_runner(upload = FALSE)
+
+  new_csv_file <- tempfile(fileext = ".csv")
+  write_csv(x = result$cal_u5, file = new_csv_file)
+
+  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+                          "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
+                          is_under5 = TRUE, allow_new_database = TRUE,
+                          testing = TRUE)
+
+  expect_true("stochastic_1" %in% DBI::dbListTables(result$test$con))
+  data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_1")
+  expect_equal(data, result$cal_u5)
 })
 
 ##############################################################################
@@ -761,7 +777,7 @@ test_that("Stochastic - with DALYs", {
 
   # Hurrah. We can *finally* test DALYs.
 
-  out <- tempfile(fileext = ".csv")
+  out <- tempfile(fileext = ".qs")
   dat <- stoner_dalys_for_db(con, dalys_df,
                               burden_estimate_set_id = new_bes,
                               output_file = out)
@@ -769,10 +785,10 @@ test_that("Stochastic - with DALYs", {
                                      "LAP-elf", "flu", "nevis-1", "pies",
                                      output_file = out)
 
-  csv <- read.csv(out)
+  df <- qs::qread(out)
 
   expect_identical(dat, dat2)
-  expect_equal(dat$data$dalys, csv$dalys)
+  expect_equal(dat$data$dalys, df$dalys)
   unlink(out)
 
   # Check db method got the same answer as doing dalys from the files
