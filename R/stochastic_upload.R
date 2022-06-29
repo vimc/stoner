@@ -155,7 +155,7 @@ read_processed_stochastic_data <- function(file, is_cohort) {
   if (type == "csv") {
     read_stochastic_csv(file, is_cohort)
   } else if (type == "qs") {
-    read <-read_stochastic_qs(file, is_cohort)
+    read_stochastic_qs(file, is_cohort)
   } else {
     stop(paste0("Can only read csv or qs format stochastic data, got ", type))
   }
