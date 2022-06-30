@@ -122,10 +122,10 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     lines = lines
   )
   scenario_data <- all_scenarios(con,
-                                  touchpoint = touchpoint,
-                                  scenarios = scenarios,
-                                  read_params = read_params,
-                                  outcomes = outcomes)
+                                 touchpoint = touchpoint,
+                                 scenarios = scenarios,
+                                 read_params = read_params,
+                                 outcomes = outcomes)
 
   if (!is.null(pre_aggregation_path)) {
     write_pre_aggregated_to_disk(scenario_data, touchpoint,
@@ -158,9 +158,9 @@ all_scenarios <- function(con,
 
   all_scenarios <- NULL
   all_countries <- DBI::dbGetQuery(con, "SELECT id, nid FROM country")
-  for (scenario_no in seq_along(scenarios)) {
-    scenario_name <- scenarios[scenario_no]
-    scenario_data <- process_scenario(con, scenario_name, scenario_no,
+  for (scenario in scenarios) {
+    files <- read_params$files[[scenario]]
+    scenario_data <- process_scenario(con, scenario, files,
                                       touchpoint, read_params, outcomes,
                                       all_countries)
 
@@ -229,9 +229,8 @@ aggregate_data <- function(scenario_data) {
     run_id <- year <- country <- cases <- deaths <- dalys <- NULL
     data %>%
       dplyr::group_by(run_id, year, country) %>%
-      dplyr::summarise(cases = sum(cases),
-                       dalys = sum(dalys),
-                       deaths = sum(deaths)) %>%
+      dplyr::summarise_all(sum) %>%
+      dplyr::select(-age) %>% ## Drop age as we have aggregated over it
       dplyr::arrange(run_id, country, year)
   }
 
