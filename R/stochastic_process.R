@@ -175,9 +175,9 @@ all_scenarios <- function(con,
       # make the rows line up.
 
     } else {
-      all_scenarios <- dplyr::merge(all_scenarios, scenario_data,
-                                    by = c("country", "year", "run_id", "age"),
-                                    all = TRUE)
+      all_scenarios <- dplyr::full_join(
+        all_scenarios, scenario_data,
+        by = c("country", "year", "run_id", "age"))
     }
   }
   all_scenarios
