@@ -245,8 +245,10 @@ aggregate_data <- function(scenario_data) {
   scenario_data$year <- scenario_data$year - scenario_data$age
   scen_coh <- agg_and_sort(scenario_data)
 
-  names(scen_u5_coh)[names(scen_u5_coh) == "year"] <- "cohort"
-  names(scen_coh)[names(scen_coh) == "year"] <- "cohort"
+  scen_u5_coh <- scen_u5_coh %>%
+    dplyr::rename(year = cohort)
+  scen_coh <- scen_coh %>%
+    dplyr::rename(year = cohort)
 
   list(
     u5_calendar_year = scen_u5_cal,
