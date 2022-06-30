@@ -547,19 +547,32 @@ test_that("Stochastic - with upload", {
 
 test_that("stochastic_upload can upload csv file", {
   test <- new_test()
-  result <- stochastic_runner(upload = FALSE)
+  ## Upload all tables upfront to the db so table ID is always the same
+  result <- stochastic_runner(upload = TRUE)
 
   new_csv_file <- tempfile(fileext = ".csv")
   write_csv(x = result$cal_u5, file = new_csv_file)
+  expect_message(
+    stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+                            "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
+                            is_under5 = TRUE, allow_new_database = TRUE,
+                            testing = TRUE),
+    "Overwriting table with id 1")
 
-  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
-                          "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
-                          is_under5 = TRUE, allow_new_database = TRUE,
-                          testing = TRUE)
-
-  expect_true("stochastic_1" %in% DBI::dbListTables(result$test$con))
   data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_1")
   expect_equal(data, result$cal_u5)
+
+  cohort_csv <- tempfile(fileext = ".csv")
+  write_csv(x = result$coh, file = cohort_csv)
+  expect_message(
+    stone_stochastic_upload(cohort_csv, result$test$con, result$test$con,
+                            "LAP-elf", "flu", "nevis-1", is_cohort = TRUE,
+                            is_under5 = FALSE, allow_new_database = TRUE,
+                            testing = TRUE),
+    "Overwriting table with id 4")
+
+  data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_4")
+  expect_equal(data, result$coh)
 })
 
 ##############################################################################
