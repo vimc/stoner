@@ -20,7 +20,7 @@ calendar year, or birth-cohort year."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.8</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.9</span>
       </span>
     </div>
 
@@ -74,6 +74,7 @@ calendar year, or birth-cohort year.</p>
   <span class="va">index_start</span>,
   <span class="va">index_end</span>,
   <span class="va">out_path</span>,
+  pre_aggregation_path <span class="op">=</span> <span class="cn">NULL</span>,
   deaths <span class="op">=</span> <span class="st">"deaths"</span>,
   cases <span class="op">=</span> <span class="st">"cases"</span>,
   dalys <span class="op">=</span> <span class="st">"dalys"</span>,
@@ -144,6 +145,11 @@ in each case.</p></dd>
 
 <dt>out_path</dt>
 <dd><p>Path to writing output files into</p></dd>
+
+
+<dt>pre_aggregation_path</dt>
+<dd><p>Path to dir to write out pre age-disaggregated
+data into. If NULL then this is skipped.</p></dd>
 
 
 <dt>deaths</dt>
@@ -221,7 +227,7 @@ doing the full run.</p></dd>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Wes Hinsley, Rich Fitzjohn.</p>
+  <p></p><p>Developed by Wes Hinsley, Rich Fitzjohn, Robert Ashton.</p>
 </div>
 
 <div class="pkgdown">
