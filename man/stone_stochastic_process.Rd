@@ -16,6 +16,7 @@ stone_stochastic_process(
   index_start,
   index_end,
   out_path,
+  pre_aggregation_path = NULL,
   deaths = "deaths",
   cases = "cases",
   dalys = "dalys",
@@ -63,6 +64,9 @@ a vector with an entry for each scenario, with an integer value or NA
 in each case.}
 
 \item{out_path}{Path to writing output files into}
+
+\item{pre_aggregation_path}{Path to dir to write out pre age-disaggregated
+data into. If NULL then this is skipped.}
 
 \item{deaths}{If deaths must be calculated as a sum of other burden
 outcomes, then provide a vector of the outcome names here. The default

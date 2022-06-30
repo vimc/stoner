@@ -1,10 +1,11 @@
 Package: stoner
 Title: Support for Building VIMC Montagu Touchstones, using Dettl
-Version: 0.1.8
+Version: 0.1.9
 Authors@R:
     c(person("Wes", "Hinsley",role = c("aut", "cre", "cst", "dnc", "elg", "itr", "sng"),
            email = "w.hinsley@imperial.ac.uk"),
-      person("Rich", "Fitzjohn", role = c("aut", "csl", "sng")))
+      person("Rich", "Fitzjohn", role = c("aut", "csl", "sng")),
+      person("Robert", "Ashton", role = c("aut", "cst", "wdc")))
 URL: https://github.com/vimc/stoner
 BugReports: https://github.com/vimc/stoner/issues
 Description: For montagu-imports that create touchstones, or augment existing
