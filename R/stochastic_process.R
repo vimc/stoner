@@ -196,15 +196,16 @@ all_scenarios <- function(con,
   lg <- get_logger()
   lg$info("Processing %s scenarios for modelling group: %s, disease: %s",
           length(scenarios), touchpoint$modelling_group, touchpoint$disease)
-  for (scenario in scenarios) {
-    files <- read_params$files[[scenario]]
+  for (scenario_no in seq_along(scenarios)) {
+    scenario_name <- scenarios[scenario_no]
+    files <- read_params$files[[scenario_name]]
     lg$info("Processing modelling group: %s, disease: %s, scenario (%s/%s): %s",
             touchpoint$modelling_group,
             touchpoint$disease,
             scenario_no,
             length(scenarios),
             scenario_name)
-    scenario_data <- process_scenario(con, scenario, files,
+    scenario_data <- process_scenario(con, scenario_name, files,
                                       touchpoint, read_params, outcomes,
                                       all_countries)
 
@@ -271,7 +272,7 @@ aggregate_data <- function(scenario_data) {
   agg_and_sort <- function(data) {
     ## Define run_id, year and country as NULL to avoid
     ## R CMD note about no visible binding for global variable
-    run_id <- year <- country <- cases <- deaths <- dalys <- NULL
+    run_id <- year <- country <- cases <- deaths <- dalys <- age <- NULL
     data %>%
       dplyr::group_by(run_id, year, country) %>%
       dplyr::summarise_all(sum) %>%
