@@ -17,7 +17,6 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     DBI,
-    RPostgres,
     data.table,
     gdata,
     jsonlite,
@@ -33,7 +32,8 @@ RoxygenNote: 7.1.2
 Roxygen: list(markdown = TRUE)
 Suggests:
     knitr,
-    rmarkdown,
     rcmdcheck,
+    rmarkdown,
+    RPostgres,
     testthat
 VignetteBuilder: knitr
