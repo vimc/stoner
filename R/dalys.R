@@ -93,7 +93,7 @@ stoner_calculate_dalys <- function(con, touchstone, data, dalys_params,
 test_args <- function(con, dalys_params, life_table) {
   assert_connection(con)
 
-  if (class(dalys_params) != "data.frame") {
+  if (!is.data.frame(dalys_params)) {
     stop("dalys_params must be a data.frame")
   }
 
