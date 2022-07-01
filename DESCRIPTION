@@ -18,12 +18,12 @@ LazyData: true
 Imports:
     DBI,
     data.table,
-    gdata,
     jsonlite,
     lgr,
     qs,
     dplyr,
     magrittr,
+    prettyunits,
     readr,
     utils,
     withr

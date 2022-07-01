@@ -418,7 +418,7 @@ write_pre_aggregated_to_disk <- function(data, touchpoint,
                                 country))
       data <- as.data.frame(data)
       qs::qsave(data[data$country == country, ], path)
-    }, "Saved %s size %s", path, gdata::humanReadable(file.size(path)))
+    }, "Saved %s size %s", path, prettyunits::pretty_bytes(file.size(path)))
   }
   invisible(TRUE)
 }
@@ -430,7 +430,7 @@ write_output_to_disk <- function(output, out_path, modelling_group, disease) {
   timed(qs::qsave(x = as.data.frame(output$u5_calendar_year),
             file = all_u5_cal_file),
         "Saved %s size %s", all_u5_cal_file,
-        gdata::humanReadable(file.size(all_u5_cal_file)))
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
 
   all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.qs",
@@ -438,21 +438,21 @@ write_output_to_disk <- function(output, out_path, modelling_group, disease) {
   timed(qs::qsave(x = as.data.frame(output$all_calendar_year),
             file = all_cal_file),
         "Saved %s size %s", all_u5_cal_file,
-        gdata::humanReadable(file.size(all_u5_cal_file)))
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
   all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.qs",
                                                  modelling_group, disease))
   timed(qs::qsave(x = as.data.frame(output$u5_cohort),
             file = all_u5_coh_file),
         "Saved %s size %s", all_u5_cal_file,
-        gdata::humanReadable(file.size(all_u5_cal_file)))
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
   all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.qs",
                                               modelling_group, disease))
   timed(qs::qsave(x = as.data.frame(output$all_cohort),
             file = all_coh_file),
         "Saved %s size %s", all_u5_cal_file,
-        gdata::humanReadable(file.size(all_u5_cal_file)))
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
   list(
     all_u5_cal_file = all_u5_cal_file,
     all_u5_coh_file = all_u5_coh_file,
