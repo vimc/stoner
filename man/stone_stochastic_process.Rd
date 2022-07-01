@@ -27,6 +27,7 @@ stone_stochastic_process(
   allow_new_database = FALSE,
   bypass_cert_check = FALSE,
   testing = FALSE,
+  lines = Inf,
   log_file = NULL,
   silent = FALSE
 )
@@ -108,6 +109,10 @@ creating the stochastic_file table if it is not found.}
 parameter certificate (if provided).}
 
 \item{testing}{For internal use only.}
+
+\item{lines}{Number of lines to read from each file, Inf by default to
+read all lines. Set a lower number for testing subset of process before
+doing the full run.}
 
 \item{log_file}{Path to file to save logs to, NULL to not log to file.
 If file exists it will be appended to, otherwise file will be created.}

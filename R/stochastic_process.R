@@ -63,9 +63,15 @@
 ##' @param bypass_cert_check If TRUE, then no checks are carried out on the
 ##' parameter certificate (if provided).
 ##' @param testing For internal use only.
+##' @param lines Number of lines to read from each file, Inf by default to
+##' read all lines. Set a lower number for testing subset of process before
+##' doing the full run.
 ##' @param log_file Path to file to save logs to, NULL to not log to file.
 ##' If file exists it will be appended to, otherwise file will be created.
 ##' @param silent TRUE to silence console logs.
+##' @param lines Number of lines to read from each file, Inf by default to
+##' read all lines. Set a lower number for testing subset of process before
+##' doing the full run.
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
@@ -79,6 +85,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      allow_new_database = FALSE,
                                      bypass_cert_check = FALSE,
                                      testing = FALSE,
+                                     lines = Inf,
                                      log_file = NULL,
                                      silent = FALSE) {
 
@@ -99,32 +106,31 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     cases = cases,
     dalys = dalys
   )
-  inputs <- stochastic_process_validate(
-    con,
-    touchpoint = touchpoint,
-    scenarios = scenarios,
-    in_path = in_path,
-    files = files,
-    index_start = index_start,
-    index_end = index_end,
-    out_path = out_path,
-    pre_aggregation_path = pre_aggregation_path,
-    outcomes = outcomes,
-    runid_from_file = runid_from_file,
-    upload_to_annex = upload_to_annex,
-    annex = annex,
-    cert = cert,
-    bypass_cert_check = bypass_cert_check,
-    log_file = log_file,
-    silent = silent)
+  files <- stochastic_process_validate(con,
+                                       touchpoint = touchpoint,
+                                       scenarios = scenarios,
+                                       in_path = in_path,
+                                       files = files,
+                                       index_start = index_start,
+                                       index_end = index_end,
+                                       out_path = out_path,
+                                       pre_aggregation_path = pre_aggregation_path,
+                                       outcomes = outcomes,
+                                       runid_from_file = runid_from_file,
+                                       upload_to_annex = upload_to_annex,
+                                       annex = annex,
+                                       cert = cert,
+                                       bypass_cert_check = bypass_cert_check,
+                                       lines = lines,
+                                       log_file = log_file,
+                                       silent = silent)
 
   read_params <- list(
     in_path = in_path,
-    files = inputs$files,
-    index_start = inputs$index_start,
-    index_end = inputs$index_end,
+    files = files,
     runid_from_file = runid_from_file,
-    allow_missing_disease = allow_missing_disease
+    allow_missing_disease = allow_missing_disease,
+    lines = lines
   )
 
   lg <- get_logger()
@@ -190,15 +196,15 @@ all_scenarios <- function(con,
   lg <- get_logger()
   lg$info("Processing %s scenarios for modelling group: %s, disease: %s",
           length(scenarios), touchpoint$modelling_group, touchpoint$disease)
-  for (scenario_no in seq_along(scenarios)) {
-    scenario_name <- scenarios[scenario_no]
+  for (scenario in scenarios) {
+    files <- read_params$files[[scenario]]
     lg$info("Processing modelling group: %s, disease: %s, scenario (%s/%s): %s",
             touchpoint$modelling_group,
             touchpoint$disease,
             scenario_no,
             length(scenarios),
             scenario_name)
-    scenario_data <- process_scenario(con, scenario_name, scenario_no,
+    scenario_data <- process_scenario(con, scenario, files,
                                       touchpoint, read_params, outcomes,
                                       all_countries)
 
@@ -213,9 +219,9 @@ all_scenarios <- function(con,
       # make the rows line up.
 
     } else {
-      all_scenarios <- merge(all_scenarios, scenario_data,
-                             by = c("country", "year", "run_id", "age"),
-                             all = TRUE)
+      all_scenarios <- dplyr::full_join(
+        all_scenarios, scenario_data,
+        by = c("country", "year", "run_id", "age"))
     }
   }
   all_scenarios
@@ -228,46 +234,23 @@ rename_cols <- function(df, scenario_name) {
   df
 }
 
-process_scenario <- function(con, scenario, scenario_no, touchpoint,
-                             read_params, outcomes,
-                             countries) {
+process_scenario <- function(con, scenario, files, touchpoint,
+                             read_params, outcomes, countries) {
   scenario_data <- list()
-
-  if (length(read_params$index_start) != 1) {
-    index_from <- read_params$index_start[scenario_no]
-    index_to <- read_params$index_end[scenario_no]
-  } else {
-    index_from <- read_params$index_start
-    index_to <- read_params$index_end
-  }
-
-  if (is.na(index_from)) {
-    index_from <- 1
-    index_to <- 1
-  }
+  lines <- read_params$lines
 
   ################################################################
 
-  for (i in index_from:index_to) {
-
-    the_file <- read_params$files[scenario_no]
-    the_file <- gsub(":index", i, the_file)
-    the_file <- gsub(":group", touchpoint$modelling_group, the_file)
-    the_file <- gsub(":touchstone", touchpoint$touchstone, the_file)
-    the_file <- gsub(":disease", touchpoint$disease, the_file)
-    the_file <- gsub(":scenario", scenario, the_file)
-
-    if (!file.exists(the_file)) {
-      stop(sprintf("File not found: %s", the_file))
-    }
-    lg <- get_logger()
+  lg <- get_logger()
+  for (i in seq_along(files)) {
+    the_file <- files[i]
     lg$info("Reading %s", the_file)
-
     scenario_data[[i]] <-
       read_xz_csv(con, the_file, outcomes,
                   read_params$allow_missing_disease,
                   read_params$runid_from_file, i,
-                  touchpoint$touchstone, countries)
+                  touchpoint$touchstone, countries,
+                  lines = lines)
   }
 
   # We now have a full scenario. Eliminate age, splitting into
@@ -275,7 +258,7 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
   # For now, in the cohort files, I'm going to call cohort
   # 'year' - just to keep code tidier, as the code is common...
 
-  if (index_from == index_to) {
+  if (length(scenario_data) == 1) {
     scenario_data <- scenario_data[[1]]
   } else {
     scenario_data <- rbindlist(scenario_data)
@@ -286,15 +269,14 @@ process_scenario <- function(con, scenario, scenario_no, touchpoint,
 
 aggregate_data <- function(scenario_data) {
   agg_and_sort <- function(data) {
-    # Next lines are just to avoid travis NOTEs on
-    # the by = list line.
-    run_id <- NULL
-    year <- NULL
-    country <- NULL
-    data <- data[ , lapply(.SD, sum),
-                  by = list(run_id, year, country)]
-    data$age <- NULL ## We've aggregated over age so remove column
-    data[order(data$run_id, data$country, data$year), ]
+    ## Define run_id, year and country as NULL to avoid
+    ## R CMD note about no visible binding for global variable
+    run_id <- year <- country <- cases <- deaths <- dalys <- NULL
+    data %>%
+      dplyr::group_by(run_id, year, country) %>%
+      dplyr::summarise_all(sum) %>%
+      dplyr::select(-age) %>% ## Drop age as we have aggregated over it
+      dplyr::arrange(run_id, country, year)
   }
 
   scen_u5 <- scenario_data[scenario_data$age <= 4 , ]
@@ -308,8 +290,10 @@ aggregate_data <- function(scenario_data) {
   scenario_data$year <- scenario_data$year - scenario_data$age
   scen_coh <- agg_and_sort(scenario_data)
 
-  names(scen_u5_coh)[names(scen_u5_coh) == "year"] <- "cohort"
-  names(scen_coh)[names(scen_coh) == "year"] <- "cohort"
+  scen_u5_coh <- scen_u5_coh %>%
+    dplyr::rename(cohort = year)
+  scen_coh <- scen_coh %>%
+    dplyr::rename(cohort = year)
 
   list(
     u5_calendar_year = scen_u5_cal,
@@ -351,7 +335,8 @@ calc_outcomes <- function(csv, outcomes, single_outcome) {
 }
 
 read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
-                        runid_from_file, run_id, touchstone, countries) {
+                        runid_from_file, run_id, touchstone, countries,
+                        lines) {
 
   if (is.data.frame(outcomes$dalys)) {
     dalys_cols <- unique(outcomes$dalys$outcome)
@@ -387,7 +372,8 @@ read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
   csv <- suppressMessages(as.data.table(
     read_large_file(the_file,
                     col_types = columns,
-                    progress = FALSE, na = "NA")
+                    progress = FALSE, na = "NA",
+                    n_max = lines)
   ))
 
   for (n in names(csv)) {
@@ -504,6 +490,7 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                                         upload_to_annex,
                                         annex,
                                         cert, bypass_cert_check,
+                                        lines,
                                         log_file,
                                         silent) {
   assert_connection(con)
@@ -628,10 +615,10 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
     }
   }
 
+  assert_scalar_numeric(lines)
+
   for (scenario in scenarios) {
-    stochastic_validate_scenario(con, touchpoint$touchstone, scenario,
-                                 touchpoint$disease,
-                                 touchpoint$modelling_group)
+    stochastic_validate_scenario(con, touchpoint, scenario)
   }
 
   check_outcomes(con, "cases", outcomes$cases)
@@ -642,11 +629,47 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
     check_outcomes(con, "dalys", outcomes$dalys)
   }
 
-  list(
-    files = file.path(in_path, files),
-    index_start = index_start,
-    index_end = index_end
-  )
+  validate_paths(file.path(in_path, files), scenarios,
+                 touchpoint, index_start, index_end)
+}
+
+
+validate_paths <- function(files, scenarios, touchpoint,
+                                          index_start, index_end) {
+
+  scenario_substitute_path <- function(scenario_no) {
+    if (length(index_start) != 1) {
+      index_from <- index_start[scenario_no]
+      index_to <- index_end[scenario_no]
+    } else {
+      index_from <- index_start
+      index_to <- index_end
+    }
+
+    if (is.na(index_from)) {
+      index_from <- 1
+      index_to <- 1
+    }
+
+    scenario <- scenarios[scenario_no]
+    files <- lapply(index_from:index_to, function(i) {
+      the_file <- files[scenario_no]
+      the_file <- gsub(":index", i, the_file)
+      the_file <- gsub(":group", touchpoint$modelling_group, the_file)
+      the_file <- gsub(":touchstone", touchpoint$touchstone, the_file)
+      the_file <- gsub(":disease", touchpoint$disease, the_file)
+      the_file <- gsub(":scenario", scenario, the_file)
+
+      if (!file.exists(the_file)) {
+        stop(sprintf("File not found: %s", the_file))
+      }
+      the_file
+    })
+    unlist(files)
+  }
+  paths <- lapply(seq_along(scenarios), scenario_substitute_path)
+  names(paths) <- scenarios
+  paths
 }
 
 
@@ -668,8 +691,7 @@ check_outcomes <- function(con, type, options) {
   invisible(TRUE)
 }
 
-stochastic_validate_scenario <- function(con, touchstone, scenario, disease,
-                                         modelling_group) {
+stochastic_validate_scenario <- function(con, touchpoint, scenario) {
   # Scenario-specific tests:
   # 1. (touchstone, scenario_description) exists in scenario table
   # 2. (scenario_description, disease) exists in scenario_description table
@@ -678,26 +700,28 @@ stochastic_validate_scenario <- function(con, touchstone, scenario, disease,
   #    scenario id comes from #1, and responsibility_set id from #3
   scenario_id <- DBI::dbGetQuery(con, "
       SELECT id FROM scenario WHERE touchstone = $1
-         AND scenario_description = $2", list(touchstone, scenario))$id
+         AND scenario_description = $2",
+                                 list(touchpoint$touchstone, scenario))$id
   if (length(scenario_id) != 1) {
     stop(sprintf("scenario %s not found in touchstone %s",
-                 scenario, touchstone))
+                 scenario, touchpoint$touchstone))
   }
 
   scenario_descs <- DBI::dbGetQuery(con, "
       SELECT count(*) FROM scenario_description WHERE id = $1
-         AND disease = $2", list(scenario, disease))$count
+         AND disease = $2", list(scenario, touchpoint$disease))$count
   if (scenario_descs != 1) {
     stop(sprintf("scenario_description %s not valid for disease %s",
-                 scenario, disease))
+                 scenario, touchpoint$disease))
   }
 
   respset_id <- DBI::dbGetQuery(con, "
       SELECT id FROM responsibility_set WHERE touchstone = $1
-         AND modelling_group = $2", list(touchstone, modelling_group))$id
+         AND modelling_group = $2", list(touchpoint$touchstone,
+                                         touchpoint$modelling_group))$id
   if (length(respset_id) != 1) {
     stop(sprintf("No responsibility_set for group %s in touchstone %s",
-                 modelling_group, touchstone))
+                 touchpoint$modelling_group, touchpoint$touchstone))
   }
 
   resp_id <- DBI::dbGetQuery(con, "
@@ -705,7 +729,7 @@ stochastic_validate_scenario <- function(con, touchstone, scenario, disease,
          AND scenario = $2", list(respset_id, scenario_id))$id
   if (length(resp_id) != 1) {
     stop(sprintf("No responsibility for group %s, scenario %s, touchstone %s",
-                 modelling_group, scenario, touchstone))
+                 touchpoint$modelling_group, scenario, touchpoint$touchstone))
   }
   # Possibly, we could check that all scenarios are included, but
   # the exceptions are the groups that have to do a VIS report, as they

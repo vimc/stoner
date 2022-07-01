@@ -367,6 +367,7 @@ stochastic_runner <- function(same_countries = TRUE,
                               dalys_df = NULL,
                               cert = "",
                               pre_aggregation_path = NULL,
+                              lines = Inf,
                               log_file = NULL,
                               silent = TRUE) {
 
@@ -417,6 +418,7 @@ stochastic_runner <- function(same_countries = TRUE,
                            allow_new_database = allow_new_database,
                            bypass_cert_check = bypass_cert_check,
                            testing = TRUE,
+                           lines = lines,
                            log_file = log_file,
                            silent = silent)
   list(
@@ -541,10 +543,10 @@ test_that("Stochastic - with upload", {
 
   result$cal$deaths_pies <- round(result$cal$deaths_pies / 2)
 
-  new_csv_file <- tempfile(fileext = ".qs")
-  qs::qsave(x = result$cal, file = new_csv_file)
+  new_qs_file <- tempfile(fileext = ".qs")
+  qs::qsave(x = result$cal, file = new_qs_file)
 
-  stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+  stone_stochastic_upload(new_qs_file, result$test$con, result$test$con,
                           "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
                           is_under5 = FALSE, allow_new_database = FALSE,
                           testing = TRUE)
@@ -555,6 +557,36 @@ test_that("Stochastic - with upload", {
   expect_equal(sum(result$cal$deaths_pies), new_total)
   new_meta <- DBI::dbReadTable(result$test$con, "stochastic_file")
   expect_equal(2, new_meta$version[!new_meta$is_cohort & !new_meta$is_under5])
+})
+
+test_that("stochastic_upload can upload csv file", {
+  test <- new_test()
+  ## Upload all tables upfront to the db so table ID is always the same
+  result <- stochastic_runner(upload = TRUE)
+
+  new_csv_file <- tempfile(fileext = ".csv")
+  write_csv(x = result$cal_u5, file = new_csv_file)
+  expect_message(
+    stone_stochastic_upload(new_csv_file, result$test$con, result$test$con,
+                            "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
+                            is_under5 = TRUE, allow_new_database = TRUE,
+                            testing = TRUE),
+    "Overwriting table with id 1")
+
+  data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_1")
+  expect_equal(data, result$cal_u5)
+
+  cohort_csv <- tempfile(fileext = ".csv")
+  write_csv(x = result$coh, file = cohort_csv)
+  expect_message(
+    stone_stochastic_upload(cohort_csv, result$test$con, result$test$con,
+                            "LAP-elf", "flu", "nevis-1", is_cohort = TRUE,
+                            is_under5 = FALSE, allow_new_database = TRUE,
+                            testing = TRUE),
+    "Overwriting table with id 4")
+
+  data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_4")
+  expect_equal(data, result$coh)
 })
 
 ##############################################################################
@@ -856,4 +888,12 @@ test_that("info about stochastic processing can be logged", {
   expect_true(any(grepl(paste0("Processing for modelling_group: LAP-elf, ",
                                "disease: flu completed in "), logs)))
   expect_true(any(grepl("size \\d+\\.\\d KiB", logs)))
+})
+
+test_that("Stochastic - can run with subset of data", {
+  out <- stochastic_runner(lines = 10)
+  expect_equal(nrow(out$cal), 10)
+  expect_equal(nrow(out$cal_u5), 10)
+  expect_equal(nrow(out$coh), 10)
+  expect_equal(nrow(out$coh_u5), 10)
 })
