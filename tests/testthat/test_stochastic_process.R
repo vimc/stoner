@@ -887,7 +887,7 @@ test_that("info about stochastic processing can be logged", {
   expect_true(any(grepl("[Elapsed: 0.\\d+ secs]", logs)))
   expect_true(any(grepl(paste0("Processing for modelling_group: LAP-elf, ",
                                "disease: flu completed in "), logs)))
-  expect_true(any(grepl("size \\d+\\.\\d KiB", logs)))
+  expect_true(any(grepl("size \\d+\\.\\d kB", logs)))
 })
 
 test_that("Stochastic - can run with subset of data", {
