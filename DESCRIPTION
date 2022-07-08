@@ -1,6 +1,6 @@
 Package: stoner
 Title: Support for Building VIMC Montagu Touchstones, using Dettl
-Version: 0.1.9
+Version: 0.1.10
 Authors@R:
     c(person("Wes", "Hinsley",role = c("aut", "cre", "cst", "dnc", "elg", "itr", "sng"),
            email = "w.hinsley@imperial.ac.uk"),
@@ -17,21 +17,23 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     DBI,
-    RPostgres,
-    utils,
     data.table,
+    jsonlite,
+    lgr,
     qs,
     dplyr,
     magrittr,
+    prettyunits,
     readr,
-    withr,
-    jsonlite
+    utils,
+    withr
 Language: en-GB
 RoxygenNote: 7.1.2
 Roxygen: list(markdown = TRUE)
 Suggests:
     knitr,
-    rmarkdown,
     rcmdcheck,
+    rmarkdown,
+    RPostgres,
     testthat
 VignetteBuilder: knitr

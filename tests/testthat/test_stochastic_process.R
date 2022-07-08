@@ -173,6 +173,16 @@ test_that("Bad arguments", {
     "", 1, 1, ".", deaths = "deaths", cases = "cases", dalys = "dalys",
     runid_from_file = TRUE, bypass_cert_check = TRUE),
     "Must have index_start and index_end as 1..200 to imply run_id")
+
+  expect_error(stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "pies", ".",
+    "", "", NA, NA, ".", bypass_cert_check = TRUE, log_file = "."),
+    "Log file '.' is a directory, must be a path to a file")
+
+  expect_error(stone_stochastic_process(test$con,
+    "LAP-elf", "flu", "nevis-1", "pies", ".",
+    "", "", NA, NA, ".", bypass_cert_check = TRUE, log_file = "not/a/path"),
+    "Cannot create file: directory 'not/a' does not exist.")
 })
 
 
@@ -357,7 +367,9 @@ stochastic_runner <- function(same_countries = TRUE,
                               dalys_df = NULL,
                               cert = "",
                               pre_aggregation_path = NULL,
-                              lines = Inf) {
+                              lines = Inf,
+                              log_file = NULL,
+                              silent = TRUE) {
 
   test <- new_test()
 
@@ -406,7 +418,9 @@ stochastic_runner <- function(same_countries = TRUE,
                            allow_new_database = allow_new_database,
                            bypass_cert_check = bypass_cert_check,
                            testing = TRUE,
-                           lines = lines)
+                           lines = lines,
+                           log_file = log_file,
+                           silent = silent)
   list(
     test = test,
     raw = res$raw,
@@ -854,6 +868,26 @@ test_that("preaggregated data can be saved to disk", {
                     "cases_hot_chocolate", "dalys_hot_chocolate",
                     "deaths_holly", "cases_holly", "dalys_holly"))
   expect_true(all(country_716$country == 716))
+})
+
+test_that("info about stochastic processing can be logged", {
+  t <- tempfile()
+  dir.create(t, FALSE, TRUE)
+  log <- file.path(t, "new_file.txt")
+  pre_aggregation_path <- tempfile()
+  dir.create(pre_aggregation_path, FALSE, TRUE)
+  output <- stochastic_runner(log_file = log,
+                              pre_aggregation_path = pre_aggregation_path,
+                              silent = FALSE)
+
+  logs <- readLines(log)
+  expect_true(any(grepl(paste0("Validated inputs, processing scenario data ",
+                               "for modelling_group: LAP-elf, disease: flu"),
+                        logs)))
+  expect_true(any(grepl("[Elapsed: 0.\\d+ secs]", logs)))
+  expect_true(any(grepl(paste0("Processing for modelling_group: LAP-elf, ",
+                               "disease: flu completed in "), logs)))
+  expect_true(any(grepl("size \\d+\\.\\d+ kB", logs)))
 })
 
 test_that("Stochastic - can run with subset of data", {

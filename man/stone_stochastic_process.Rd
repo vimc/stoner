@@ -27,7 +27,9 @@ stone_stochastic_process(
   allow_new_database = FALSE,
   bypass_cert_check = FALSE,
   testing = FALSE,
-  lines = Inf
+  lines = Inf,
+  log_file = NULL,
+  silent = FALSE
 )
 }
 \arguments{
@@ -111,6 +113,11 @@ parameter certificate (if provided).}
 \item{lines}{Number of lines to read from each file, Inf by default to
 read all lines. Set a lower number for testing subset of process before
 doing the full run.}
+
+\item{log_file}{Path to file to save logs to, NULL to not log to file.
+If file exists it will be appended to, otherwise file will be created.}
+
+\item{silent}{TRUE to silence console logs.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,

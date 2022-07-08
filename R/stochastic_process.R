@@ -66,6 +66,12 @@
 ##' @param lines Number of lines to read from each file, Inf by default to
 ##' read all lines. Set a lower number for testing subset of process before
 ##' doing the full run.
+##' @param log_file Path to file to save logs to, NULL to not log to file.
+##' If file exists it will be appended to, otherwise file will be created.
+##' @param silent TRUE to silence console logs.
+##' @param lines Number of lines to read from each file, Inf by default to
+##' read all lines. Set a lower number for testing subset of process before
+##' doing the full run.
 stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
@@ -79,8 +85,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      allow_new_database = FALSE,
                                      bypass_cert_check = FALSE,
                                      testing = FALSE,
-                                     lines = Inf) {
+                                     lines = Inf,
+                                     log_file = NULL,
+                                     silent = FALSE) {
 
+  start <- Sys.time()
   ## Setup life table cache
   cache$life_table <- NULL
 
@@ -112,7 +121,9 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                        annex = annex,
                                        cert = cert,
                                        bypass_cert_check = bypass_cert_check,
-                                       lines = lines)
+                                       lines = lines,
+                                       log_file = log_file,
+                                       silent = silent)
 
   read_params <- list(
     in_path = in_path,
@@ -121,31 +132,55 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     allow_missing_disease = allow_missing_disease,
     lines = lines
   )
-  scenario_data <- all_scenarios(con,
-                                 touchpoint = touchpoint,
-                                 scenarios = scenarios,
-                                 read_params = read_params,
-                                 outcomes = outcomes)
+
+  lg <- get_logger()
+  if (silent) {
+    threshold <- lg$inherited_appenders$console$threshold
+    lg$inherited_appenders$console$set_threshold("error")
+    on.exit(lg$inherited_appenders$console$set_threshold(threshold), add = TRUE)
+  }
+  if (!is.null(log_file)) {
+    lg$add_appender(lgr::AppenderFile$new(log_file), name = "file")
+    on.exit(lg$remove_appender("file"), add = TRUE)
+  }
+  lg$info(paste0("Validated inputs, processing scenario data for ",
+                 "modelling_group: %s, disease: %s"), modelling_group, disease)
+
+  scenario_data <- timed(
+    all_scenarios(con,
+                  touchpoint = touchpoint,
+                  scenarios = scenarios,
+                  read_params = read_params,
+                  outcomes = outcomes),
+    "Processed %s scenarios for modelling group: %s, disease: %s",
+    length(scenarios), touchpoint$modelling_group, touchpoint$disease)
 
   if (!is.null(pre_aggregation_path)) {
-    write_pre_aggregated_to_disk(scenario_data, touchpoint,
-                                 pre_aggregation_path)
+    timed(write_pre_aggregated_to_disk(scenario_data, touchpoint,
+                                       pre_aggregation_path),
+          "Wrote all pre-aggregated output to dir %s", pre_aggregation_path)
   }
 
-  all_aggregated <- aggregate_data(scenario_data)
+  all_aggregated <- timed(aggregate_data(scenario_data),
+                          "Finished aggregating all scenario data")
 
-  paths <- write_output_to_disk(all_aggregated, out_path,
-                                modelling_group, disease)
+  paths <- timed(write_output_to_disk(all_aggregated, out_path,
+                                      modelling_group, disease),
+                 "Wrote all output to dir %s", out_path)
 
   # Upload to Annex. Only allow possibility of creating new stochastic_file
   # table on the first one; it will either fail there, or exist for the later
   # three uploads.
   if (upload_to_annex) {
-    write_output_to_annex(paths, con, annex, modelling_group,
+    timed(write_output_to_annex(paths, con, annex, modelling_group,
                           disease, touchstone, allow_new_database,
-                          testing)
+                          testing),
+          "Wrote outputs to annex")
   }
 
+  elapsed <- Sys.time() - start
+  lg$info("Processing for modelling_group: %s, disease: %s completed in %s",
+          modelling_group, disease, human_readable_time(elapsed))
   invisible()
 }
 
@@ -158,9 +193,19 @@ all_scenarios <- function(con,
 
   all_scenarios <- NULL
   all_countries <- DBI::dbGetQuery(con, "SELECT id, nid FROM country")
-  for (scenario in scenarios) {
-    files <- read_params$files[[scenario]]
-    scenario_data <- process_scenario(con, scenario, files,
+  lg <- get_logger()
+  lg$info("Processing %s scenarios for modelling group: %s, disease: %s",
+          length(scenarios), touchpoint$modelling_group, touchpoint$disease)
+  for (scenario_no in seq_along(scenarios)) {
+    scenario_name <- scenarios[scenario_no]
+    files <- read_params$files[[scenario_name]]
+    lg$info("Processing modelling group: %s, disease: %s, scenario (%s/%s): %s",
+            touchpoint$modelling_group,
+            touchpoint$disease,
+            scenario_no,
+            length(scenarios),
+            scenario_name)
+    scenario_data <- process_scenario(con, scenario_name, files,
                                       touchpoint, read_params, outcomes,
                                       all_countries)
 
@@ -197,9 +242,10 @@ process_scenario <- function(con, scenario, files, touchpoint,
 
   ################################################################
 
+  lg <- get_logger()
   for (i in seq_along(files)) {
     the_file <- files[i]
-    message(the_file)
+    lg$info("Reading %s", the_file)
     scenario_data[[i]] <-
       read_xz_csv(con, the_file, outcomes,
                   read_params$allow_missing_disease,
@@ -226,7 +272,7 @@ aggregate_data <- function(scenario_data) {
   agg_and_sort <- function(data) {
     ## Define run_id, year and country as NULL to avoid
     ## R CMD note about no visible binding for global variable
-    run_id <- year <- country <- cases <- deaths <- dalys <- NULL
+    run_id <- year <- country <- cases <- deaths <- dalys <- age <- NULL
     data %>%
       dplyr::group_by(run_id, year, country) %>%
       dplyr::summarise_all(sum) %>%
@@ -364,38 +410,49 @@ write_pre_aggregated_to_disk <- function(data, touchpoint,
                                          pre_aggregation_path) {
   countries <- unique(data$country)
   for (country in countries) {
-    path <- file.path(pre_aggregation_path,
-                      sprintf("%s_%s_%s_pre_aggregation.qs",
-                              touchpoint$modelling_group,
-                              touchpoint$disease,
-                              country))
-    data <- as.data.frame(data)
-    qs::qsave(data[data$country == country, ], path)
+    timed({
+      path <- file.path(pre_aggregation_path,
+                        sprintf("%s_%s_%s_pre_aggregation.qs",
+                                touchpoint$modelling_group,
+                                touchpoint$disease,
+                                country))
+      data <- as.data.frame(data)
+      qs::qsave(data[data$country == country, ], path)
+    }, "Saved %s size %s", path, prettyunits::pretty_bytes(file.size(path)))
   }
+  invisible(TRUE)
 }
 
 
 write_output_to_disk <- function(output, out_path, modelling_group, disease) {
   all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.qs",
                                                  modelling_group, disease))
-  qs::qsave(x = as.data.frame(output$u5_calendar_year),
-            file = all_u5_cal_file)
+  timed(qs::qsave(x = as.data.frame(output$u5_calendar_year),
+            file = all_u5_cal_file),
+        "Saved %s size %s", all_u5_cal_file,
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
 
   all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.qs",
                                               modelling_group, disease))
-  qs::qsave(x = as.data.frame(output$all_calendar_year),
-            file = all_cal_file)
+  timed(qs::qsave(x = as.data.frame(output$all_calendar_year),
+            file = all_cal_file),
+        "Saved %s size %s", all_u5_cal_file,
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
   all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.qs",
                                                  modelling_group, disease))
-  qs::qsave(x = as.data.frame(output$u5_cohort),
-            file = all_u5_coh_file)
+  timed(qs::qsave(x = as.data.frame(output$u5_cohort),
+            file = all_u5_coh_file),
+        "Saved %s size %s", all_u5_cal_file,
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
   all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.qs",
                                               modelling_group, disease))
-  qs::qsave(x = as.data.frame(output$all_cohort),
-            file = all_coh_file)
+  timed(qs::qsave(x = as.data.frame(output$all_cohort),
+            file = all_coh_file),
+        "Saved %s size %s", all_u5_cal_file,
+        prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
   list(
     all_u5_cal_file = all_u5_cal_file,
     all_u5_coh_file = all_u5_coh_file,
@@ -433,9 +490,10 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                                         runid_from_file,
                                         upload_to_annex,
                                         annex,
-                                        cert,
-                                        bypass_cert_check,
-                                        lines) {
+                                        cert, bypass_cert_check,
+                                        lines,
+                                        log_file,
+                                        silent) {
   assert_connection(con)
   if (upload_to_annex) {
     assert_connection(annex)
@@ -469,6 +527,19 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                    pre_aggregation_path))
     }
   }
+
+  if (!is.null(log_file)) {
+    assert_scalar_character(log_file)
+    if (dir.exists(log_file)) {
+      stop(sprintf("Log file '%s' is a directory, must be a path to a file",
+                   log_file))
+    }
+    if (!file.exists(log_file)) {
+      file.create(log_file, showWarnings = FALSE, overwrite = FALSE)
+    }
+  }
+
+  assert_scalar_logical(silent)
 
 
   # Certificate check (if enabled).

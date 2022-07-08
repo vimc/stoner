@@ -63,12 +63,12 @@ extract_touchstone_demographic_dataset <- function(e, path, con) {
     stop("Incorrect columns in touchstone_demographic_dataset.csv")
   }
 
-  if (class(e_tdd_csv$demographic_source) != "character") {
+  if (!is.character(e_tdd_csv$demographic_source)) {
     stop(paste("demographic_source in touchstone_demographic_dataset.csv",
                 "must be character"))
   }
 
-  if (class(e_tdd_csv$demographic_statistic_type) != "character") {
+  if (!is.character(e_tdd_csv$demographic_statistic_type)) {
     stop(paste0("demographic_statistic_type in touchstone_demographic_",
                 "dataset.csv must be character"))
   }
