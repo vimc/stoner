@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.10</span>
       </span>
     </div>
 
@@ -72,7 +72,7 @@
       <h1 data-toc-skip>stoner</h1>
                         <h4 data-toc-skip class="author">Wes Hinsley</h4>
             
-            <h4 data-toc-skip class="date">2022-06-30</h4>
+            <h4 data-toc-skip class="date">2022-07-08</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/vimc/stoner/blob/HEAD/vignettes/stoner.Rmd" class="external-link"><code>vignettes/stoner.Rmd</code></a></small>
       <div class="hidden name"><code>stoner.Rmd</code></div>
@@ -516,36 +516,36 @@
 <p>Possibly the best approach to tests is to write the <code>test-queries</code> function for dettl in the following form:-</p>
 <p style="font-size:0.6em">
 </p>
-<pre><code><span class="va">test_queries</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">con</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>
-  tn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  tddn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone_demographic_dataset"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  tcn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone_country"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  sdn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM scenario_description"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  sn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM scenario"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  been <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  beoen <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_outcome_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  becen <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_country_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  rsn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM responsibility_set"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,
-  rn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM responsibility"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>
-<span class="op">)</span><span class="op">}</span></code></pre>
+<pre><code><span><span class="va">test_queries</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">con</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  tn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  tddn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone_demographic_dataset"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  tcn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM touchstone_country"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  sdn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM scenario_description"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  sn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM scenario"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  been <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  beoen <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_outcome_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  becen <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM burden_estimate_country_expectation"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  rsn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM responsibility_set"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span>,</span>
+<span>  rn <span class="op">=</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"SELECT count(*) FROM responsibility"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span><span class="op">]</span></span>
+<span><span class="op">)</span><span class="op">}</span></span></code></pre>
 
 <p>and a <code>test_load.R</code> that tests how many rows have been added, for example…</p>
 <p style="font-size:0.6em">
 </p>
-<pre><code><span class="fu">context</span><span class="op">(</span><span class="st">"load"</span><span class="op">)</span>
-
-<span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_that.html" class="external-link">test_that</a></span><span class="op">(</span><span class="st">"Expected rows added"</span>, <span class="op">{</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tn</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tddn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tddn</span> <span class="op">+</span> <span class="fl">23</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tcn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tcn</span> <span class="op">+</span> <span class="fl">946</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">sdn</span>, <span class="va">before</span><span class="op">$</span><span class="va">sdn</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">sn</span>, <span class="va">before</span><span class="op">$</span><span class="va">sn</span> <span class="op">+</span> <span class="fl">67</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">been</span>, <span class="va">before</span><span class="op">$</span><span class="va">been</span> <span class="op">+</span> <span class="fl">26</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">beoen</span>, <span class="va">before</span><span class="op">$</span><span class="va">beoen</span> <span class="op">+</span> <span class="fl">128</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">becen</span>, <span class="va">before</span><span class="op">$</span><span class="va">becen</span> <span class="op">+</span> <span class="fl">2137</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">rsn</span>, <span class="va">before</span><span class="op">$</span><span class="va">rsn</span> <span class="op">+</span> <span class="fl">17</span><span class="op">)</span>
-  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">rn</span>, <span class="va">before</span><span class="op">$</span><span class="va">rn</span> <span class="op">+</span> <span class="fl">127</span><span class="op">)</span>
-<span class="op">}</span><span class="op">)</span></code></pre>
+<pre><code><span><span class="fu">context</span><span class="op">(</span><span class="st">"load"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_that.html" class="external-link">test_that</a></span><span class="op">(</span><span class="st">"Expected rows added"</span>, <span class="op">{</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tn</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tddn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tddn</span> <span class="op">+</span> <span class="fl">23</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">tcn</span>, <span class="va">before</span><span class="op">$</span><span class="va">tcn</span> <span class="op">+</span> <span class="fl">946</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">sdn</span>, <span class="va">before</span><span class="op">$</span><span class="va">sdn</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">sn</span>, <span class="va">before</span><span class="op">$</span><span class="va">sn</span> <span class="op">+</span> <span class="fl">67</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">been</span>, <span class="va">before</span><span class="op">$</span><span class="va">been</span> <span class="op">+</span> <span class="fl">26</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">beoen</span>, <span class="va">before</span><span class="op">$</span><span class="va">beoen</span> <span class="op">+</span> <span class="fl">128</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">becen</span>, <span class="va">before</span><span class="op">$</span><span class="va">becen</span> <span class="op">+</span> <span class="fl">2137</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">rsn</span>, <span class="va">before</span><span class="op">$</span><span class="va">rsn</span> <span class="op">+</span> <span class="fl">17</span><span class="op">)</span></span>
+<span>  <span class="fu">expect_equal</span><span class="op">(</span><span class="va">after</span><span class="op">$</span><span class="va">rn</span>, <span class="va">before</span><span class="op">$</span><span class="va">rn</span> <span class="op">+</span> <span class="fl">127</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre>
 
 <p>For this though, you will have to have prior knowledge about how many of the rows in your various CSV files exist already in the database, and how many you are expecting will need to be created.</p>
 </div>
@@ -723,19 +723,19 @@
 </tbody>
 </table>
 <p>which would continue for all the countries, years and ages, for 200 runs of a particular scenario. A separate file would exist for each scenario. To transform this into the four intermediate files, we might write below - where the argument names are included just for clarity, and are not needed.</p>
-<pre><code><span class="fu"><a href="../reference/stone_stochastic_process.html">stone_stochastic_process</a></span><span class="op">(</span>
-    con <span class="op">=</span> <span class="va">con</span>,
-    modelling_group <span class="op">=</span> <span class="st">"IC-Garske"</span>,
-    disease <span class="op">=</span> <span class="st">"YF"</span>,
-    touchstone <span class="op">=</span> <span class="st">"201910gavi-4"</span>,
-    scenarios <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-preventive-bestcase"</span>,
-                  <span class="st">"yf-preventive-default"</span>, <span class="st">"yf-routine-bestcase"</span>,
-                  <span class="st">"yf-routine-default"</span>, <span class="st">"yf-stop"</span><span class="op">)</span>,
-    in_path <span class="op">=</span> <span class="st">"E:/Dropbox/File Requests/IC-Garske"</span>,
-    file <span class="op">=</span> <span class="st">":scenario.csv.xz"</span>,
-    cert <span class="op">=</span> <span class="st">"certfile"</span>,
-    index_start <span class="op">=</span> <span class="cn">NA</span>, index_end <span class="op">=</span> <span class="cn">NA</span>,
-    out_path <span class="op">=</span> <span class="st">"E:/Stochastic_Outputs"</span><span class="op">)</span></code></pre>
+<pre><code><span>  <span class="fu"><a href="../reference/stone_stochastic_process.html">stone_stochastic_process</a></span><span class="op">(</span></span>
+<span>    con <span class="op">=</span> <span class="va">con</span>,</span>
+<span>    modelling_group <span class="op">=</span> <span class="st">"IC-Garske"</span>,</span>
+<span>    disease <span class="op">=</span> <span class="st">"YF"</span>,</span>
+<span>    touchstone <span class="op">=</span> <span class="st">"201910gavi-4"</span>,</span>
+<span>    scenarios <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-preventive-bestcase"</span>,</span>
+<span>                  <span class="st">"yf-preventive-default"</span>, <span class="st">"yf-routine-bestcase"</span>,</span>
+<span>                  <span class="st">"yf-routine-default"</span>, <span class="st">"yf-stop"</span><span class="op">)</span>,</span>
+<span>    in_path <span class="op">=</span> <span class="st">"E:/Dropbox/File Requests/IC-Garske"</span>,</span>
+<span>    file <span class="op">=</span> <span class="st">":scenario.csv.xz"</span>,</span>
+<span>    cert <span class="op">=</span> <span class="st">"certfile"</span>,</span>
+<span>    index_start <span class="op">=</span> <span class="cn">NA</span>, index_end <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>    out_path <span class="op">=</span> <span class="st">"E:/Stochastic_Outputs"</span><span class="op">)</span></span></code></pre>
 <p>This assumes that in the <code>in_path</code> folder, 6 .csv files are present. The <code>file</code> argument indicates the template for those files. In this case we are assuming all the files follow the same template, where <code>:scenario</code> will be replaced by each of the 6 specified scenarios in turn. If the files do not obey such a simple templating, then you can supply a vector of strings for <code>file</code>, to indicate which files; just note there should be either a one-to-one mapping, or a many-to-one mapping between the different scenarios, and the different files indicated.</p>
 <p>In this example, there is only one file per scenario; the <code>index_start</code> and <code>index_end</code> arguments are set to <code>NA</code>, and there is no reference to <code>:index</code> in the <code>file</code> template. We will see later multi-file examples where these three fields are changed to describe the sequence of files we are expecting.</p>
 <p>The result is that four files are written - below is an abbreviated section of each.</p>
@@ -1078,19 +1078,19 @@
 </h4>
 <p>Some groups submit a file per stochastic run, or a file per country. Some have even arbitrarily started a new file when one file has become, say, 10Mb in size. Stoner doesn’t mind at what point the files are split, except that data for two scenarios cannot exist in the same file, and the files that make up a set must be numbered with contiguous integers.</p>
 <p>The example below will expect runs numbered from 1 to 200, as indicated with <code>index_start</code> and <code>index_end</code>. Also notice the presence of the <code>:index</code> placeholder in the <code>file</code> stub, which will be replaced with the sequence number when the files are parsed.</p>
-<pre><code><span class="fu"><a href="../reference/stone_stochastic_process.html">stone_stochastic_process</a></span><span class="op">(</span>
-    con <span class="op">=</span> <span class="va">con</span>,
-    modelling_group <span class="op">=</span> <span class="st">"IC-Garske"</span>,
-    disease <span class="op">=</span> <span class="st">"YF"</span>,
-    touchstone <span class="op">=</span> <span class="st">"201910gavi-4"</span>,
-    scenarios <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-preventive-bestcase"</span>,
-                  <span class="st">"yf-preventive-default"</span>, <span class="st">"yf-routine-bestcase"</span>,
-                  <span class="st">"yf-routine-default"</span>, <span class="st">"yf-stop"</span><span class="op">)</span>,
-    in_path <span class="op">=</span> <span class="st">"E:/Dropbox/File Requests/IC-Garske"</span>,
-    file <span class="op">=</span> <span class="st">":scenario_:index.csv.xz"</span>,
-    cert <span class="op">=</span> <span class="st">"certfile"</span>,
-    index_start <span class="op">=</span> <span class="fl">1</span>, index_end <span class="op">=</span> <span class="fl">200</span>,
-    out_path <span class="op">=</span> <span class="st">"E:/Stochastic_Outputs"</span><span class="op">)</span></code></pre>
+<pre><code><span>  <span class="fu"><a href="../reference/stone_stochastic_process.html">stone_stochastic_process</a></span><span class="op">(</span></span>
+<span>    con <span class="op">=</span> <span class="va">con</span>,</span>
+<span>    modelling_group <span class="op">=</span> <span class="st">"IC-Garske"</span>,</span>
+<span>    disease <span class="op">=</span> <span class="st">"YF"</span>,</span>
+<span>    touchstone <span class="op">=</span> <span class="st">"201910gavi-4"</span>,</span>
+<span>    scenarios <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-preventive-bestcase"</span>,</span>
+<span>                  <span class="st">"yf-preventive-default"</span>, <span class="st">"yf-routine-bestcase"</span>,</span>
+<span>                  <span class="st">"yf-routine-default"</span>, <span class="st">"yf-stop"</span><span class="op">)</span>,</span>
+<span>    in_path <span class="op">=</span> <span class="st">"E:/Dropbox/File Requests/IC-Garske"</span>,</span>
+<span>    file <span class="op">=</span> <span class="st">":scenario_:index.csv.xz"</span>,</span>
+<span>    cert <span class="op">=</span> <span class="st">"certfile"</span>,</span>
+<span>    index_start <span class="op">=</span> <span class="fl">1</span>, index_end <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>    out_path <span class="op">=</span> <span class="st">"E:/Stochastic_Outputs"</span><span class="op">)</span></span></code></pre>
 <p>Some groups might also submit different numbers of files for each scenario. For example, HepB for some groups requires different numbers of countries to be modelled for different scenarios, dependingn on what campaigns were made in those countries. If a group wishes to split their results by country, they will then have different numbers of files per scenario. In this case, <code>index_start</code> and <code>index_end</code> can be vectors, of the same length as the <code>scenarios</code> vector, giving the start and end ids for each scenario.</p>
 <p>Stoner can also support a mixture of single and multi-files for different scenarios. For that case, you’ll need vectors for both the <code>file</code> stub, and the <code>index_start</code> and <code>index_end</code> - Stoner will test that whenever the file stub contains <code>:index</code>, the <code>index_start</code> and <code>index_end</code> are specified, otherwise not.</p>
 </div>
@@ -1179,7 +1179,7 @@
     out_path = "E:/Stochastic_Outputs"),
     bypass_cert_check = TRUE)</code></pre>
 <p>You can also manually perform validation of a certificate file without processing stochastic data, with the call:-</p>
-<pre><code><span class="fu"><a href="../reference/stone_stochastic_cert_verify.html">stone_stochastic_cert_verify</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"certfile"</span>, <span class="st">"IC-Garske"</span>, <span class="st">"201910gavi-5"</span>, <span class="st">"YF"</span><span class="op">)</span></code></pre>
+<pre><code><span>  <span class="fu"><a href="../reference/stone_stochastic_cert_verify.html">stone_stochastic_cert_verify</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"certfile"</span>, <span class="st">"IC-Garske"</span>, <span class="st">"201910gavi-5"</span>, <span class="st">"YF"</span><span class="op">)</span></span></code></pre>
 <p>This call will stop with an error if either the modelling group, or the touchstone do not match with the details used to submit the parameter set, and retrieve the <code>certfile</code> provided here.</p>
 </div>
 </div>
@@ -1290,22 +1290,22 @@
 <p>We use the <code>vaultr</code> package, and assume that the <code>VAULT_ADDR</code> and <code>VAULT_AUTH_GITHUB_TOKEN</code> environment variables are set up - we won’t go into doing that here.</p>
 <p>A read-only connection to the production database is used to validate the outcomes and countries against those in a group’s expectations. To get the connection to production:-</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R">  <span class="va">vault</span> <span class="op">&lt;-</span> <span class="fu">vaultr</span><span class="fu">::</span><span class="fu">vault_client</span><span class="op">(</span>login <span class="op">=</span> <span class="st">"github"</span><span class="op">)</span>
-  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/database/production/users/readonly"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span>
-  <span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,
-                          dbname <span class="op">=</span> <span class="st">"montagu"</span>,
-                          host <span class="op">=</span> <span class="st">"production.montagu.dide.ic.ac.uk"</span>,
-                          port <span class="op">=</span> <span class="fl">5432</span>, password <span class="op">=</span> <span class="va">password</span>,
-                          user <span class="op">=</span> <span class="st">"readonly"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span>  <span class="va">vault</span> <span class="op">&lt;-</span> <span class="fu">vaultr</span><span class="fu">::</span><span class="fu">vault_client</span><span class="op">(</span>login <span class="op">=</span> <span class="st">"github"</span><span class="op">)</span></span>
+<span>  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/database/production/users/readonly"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span></span>
+<span>  <span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>                          dbname <span class="op">=</span> <span class="st">"montagu"</span>,</span>
+<span>                          host <span class="op">=</span> <span class="st">"production.montagu.dide.ic.ac.uk"</span>,</span>
+<span>                          port <span class="op">=</span> <span class="fl">5432</span>, password <span class="op">=</span> <span class="va">password</span>,</span>
+<span>                          user <span class="op">=</span> <span class="st">"readonly"</span><span class="op">)</span></span></code></pre></div>
 <p>To get a connection to annex:-</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R">  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/annex/users/vimc"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span>
-  <span class="va">annex</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,
-                          dbname <span class="op">=</span> <span class="st">"montagu"</span>,
-                          host <span class="op">=</span> <span class="st">"annex.montagu.dide.ic.ac.uk"</span>,
-                          port <span class="op">=</span> <span class="fl">15432</span>,
-                          password <span class="op">=</span> <span class="va">password</span>,
-                          user <span class="op">=</span> <span class="st">"vimc"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span>  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/annex/users/vimc"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span></span>
+<span>  <span class="va">annex</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>                          dbname <span class="op">=</span> <span class="st">"montagu"</span>,</span>
+<span>                          host <span class="op">=</span> <span class="st">"annex.montagu.dide.ic.ac.uk"</span>,</span>
+<span>                          port <span class="op">=</span> <span class="fl">15432</span>,</span>
+<span>                          password <span class="op">=</span> <span class="va">password</span>,</span>
+<span>                          user <span class="op">=</span> <span class="st">"vimc"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="use-from-within-dettl-future-work">Use from within dettl (future work)<a class="anchor" aria-label="anchor" href="#use-from-within-dettl-future-work"></a>

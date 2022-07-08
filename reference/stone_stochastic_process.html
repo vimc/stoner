@@ -20,7 +20,7 @@ calendar year, or birth-cohort year."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.10</span>
       </span>
     </div>
 
@@ -62,31 +62,33 @@ calendar year, or birth-cohort year.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">stone_stochastic_process</span><span class="op">(</span>
-  <span class="va">con</span>,
-  <span class="va">modelling_group</span>,
-  <span class="va">disease</span>,
-  <span class="va">touchstone</span>,
-  <span class="va">scenarios</span>,
-  <span class="va">in_path</span>,
-  <span class="va">files</span>,
-  <span class="va">cert</span>,
-  <span class="va">index_start</span>,
-  <span class="va">index_end</span>,
-  <span class="va">out_path</span>,
-  pre_aggregation_path <span class="op">=</span> <span class="cn">NULL</span>,
-  deaths <span class="op">=</span> <span class="st">"deaths"</span>,
-  cases <span class="op">=</span> <span class="st">"cases"</span>,
-  dalys <span class="op">=</span> <span class="st">"dalys"</span>,
-  runid_from_file <span class="op">=</span> <span class="cn">FALSE</span>,
-  allow_missing_disease <span class="op">=</span> <span class="cn">FALSE</span>,
-  upload_to_annex <span class="op">=</span> <span class="cn">FALSE</span>,
-  annex <span class="op">=</span> <span class="cn">NULL</span>,
-  allow_new_database <span class="op">=</span> <span class="cn">FALSE</span>,
-  bypass_cert_check <span class="op">=</span> <span class="cn">FALSE</span>,
-  testing <span class="op">=</span> <span class="cn">FALSE</span>,
-  lines <span class="op">=</span> <span class="cn">Inf</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">stone_stochastic_process</span><span class="op">(</span></span>
+<span>  <span class="va">con</span>,</span>
+<span>  <span class="va">modelling_group</span>,</span>
+<span>  <span class="va">disease</span>,</span>
+<span>  <span class="va">touchstone</span>,</span>
+<span>  <span class="va">scenarios</span>,</span>
+<span>  <span class="va">in_path</span>,</span>
+<span>  <span class="va">files</span>,</span>
+<span>  <span class="va">cert</span>,</span>
+<span>  <span class="va">index_start</span>,</span>
+<span>  <span class="va">index_end</span>,</span>
+<span>  <span class="va">out_path</span>,</span>
+<span>  pre_aggregation_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  deaths <span class="op">=</span> <span class="st">"deaths"</span>,</span>
+<span>  cases <span class="op">=</span> <span class="st">"cases"</span>,</span>
+<span>  dalys <span class="op">=</span> <span class="st">"dalys"</span>,</span>
+<span>  runid_from_file <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  allow_missing_disease <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  upload_to_annex <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  annex <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  allow_new_database <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  bypass_cert_check <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  testing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  lines <span class="op">=</span> <span class="cn">Inf</span>,</span>
+<span>  log_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  silent <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -216,6 +218,15 @@ parameter certificate (if provided).</p></dd>
 <dd><p>Number of lines to read from each file, Inf by default to
 read all lines. Set a lower number for testing subset of process before
 doing the full run.</p></dd>
+
+
+<dt>log_file</dt>
+<dd><p>Path to file to save logs to, NULL to not log to file.
+If file exists it will be appended to, otherwise file will be created.</p></dd>
+
+
+<dt>silent</dt>
+<dd><p>TRUE to silence console logs.</p></dd>
 
 </dl></div>
 
