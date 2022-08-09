@@ -21,10 +21,10 @@ continue_on_error <- function(expr) {
 
 
 do_stochastics_2021 <- function(con, test_run) {
-  in_path <- "E:/Dropbox (SPH Imperial College)/File requests/latest/202110gavi/"
-  out_path <- "E:/stochastic_2021_output/aggregated/"
-  pre_aggregation_path <- "E:/stochastic_2021_output/pre-aggregate/"
-  log_file <- "E:/stochsatic_2021_output/log.txt"
+  in_path <- "Z:/File requests/latest/202110gavi/"
+  out_path <- "Z:/stochastic_2021_output/aggregated/"
+  pre_aggregation_path <- "Z:/stochastic_2021_output/pre-aggregate/"
+  log_file <- "Z:/stochsatic_2021_output/log.txt"
 
   lines <- Inf
   if (isTRUE(test_run)) {
