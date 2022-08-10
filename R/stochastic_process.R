@@ -149,8 +149,9 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                        bypass_cert_check = bypass_cert_check,
                                        lines = lines),
     error = function(e) {
-      lg$fatal(e$message)
-      stop(e)
+      lg$fatal(paste0("Processing for modelling_group: %s, disease: %s ",
+                      "failed with error \n    %s"),
+               modelling_group, disease, e$message)
     }
   )
 
