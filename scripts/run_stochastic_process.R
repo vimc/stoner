@@ -24,7 +24,7 @@ do_stochastics_2021 <- function(con, test_run) {
   in_path <- "Z:/File requests/latest/202110gavi/"
   out_path <- "Z:/stochastic_2021_output/aggregated/"
   pre_aggregation_path <- "Z:/stochastic_2021_output/pre-aggregate/"
-  log_file <- "Z:/stochsatic_2021_output/log.txt"
+  log_file <- "Z:/stochastic_2021_output/log.txt"
 
   lines <- Inf
   if (isTRUE(test_run)) {
