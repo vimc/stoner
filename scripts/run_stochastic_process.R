@@ -103,8 +103,8 @@ do_stochastics_2021 <- function(con, test_run) {
               paste0(stub, "coverage_202110gavi-3_hpv-routine-ia2030_target_run_:index.csv.xz")),
     cert = "",
     index_start = 1,
-    index_end = 200, out_path =
-      out_path,
+    index_end = 200,
+    out_path = out_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     runid_from_file = TRUE,
