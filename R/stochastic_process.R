@@ -90,6 +90,31 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      silent = FALSE) {
 
   start <- Sys.time()
+
+  ## Initialise logger
+  if (!is.null(log_file)) {
+    assert_scalar_character(log_file)
+    if (dir.exists(log_file)) {
+      stop(sprintf("Log file '%s' is a directory, must be a path to a file",
+                   log_file))
+    }
+    if (!file.exists(log_file)) {
+      file.create(log_file, showWarnings = FALSE, overwrite = FALSE)
+    }
+  }
+  assert_scalar_logical(silent)
+
+  lg <- get_logger()
+  if (silent) {
+    threshold <- lg$inherited_appenders$console$threshold
+    lg$inherited_appenders$console$set_threshold("error")
+    on.exit(lg$inherited_appenders$console$set_threshold(threshold), add = TRUE)
+  }
+  if (!is.null(log_file)) {
+    lg$add_appender(lgr::AppenderFile$new(log_file), name = "file")
+    on.exit(lg$remove_appender("file"), add = TRUE)
+  }
+
   ## Setup life table cache
   cache$life_table <- NULL
 
@@ -106,7 +131,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     cases = cases,
     dalys = dalys
   )
-  files <- stochastic_process_validate(con,
+  withCallingHandlers(
+    files <- stochastic_process_validate(con,
                                        touchpoint = touchpoint,
                                        scenarios = scenarios,
                                        in_path = in_path,
@@ -121,9 +147,13 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                        annex = annex,
                                        cert = cert,
                                        bypass_cert_check = bypass_cert_check,
-                                       lines = lines,
-                                       log_file = log_file,
-                                       silent = silent)
+                                       lines = lines),
+    error = function(e) {
+      lg$fatal(paste0("Processing for modelling_group: %s, disease: %s ",
+                      "failed with error \n    %s"),
+               modelling_group, disease, e$message)
+    }
+  )
 
   read_params <- list(
     in_path = in_path,
@@ -133,16 +163,6 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     lines = lines
   )
 
-  lg <- get_logger()
-  if (silent) {
-    threshold <- lg$inherited_appenders$console$threshold
-    lg$inherited_appenders$console$set_threshold("error")
-    on.exit(lg$inherited_appenders$console$set_threshold(threshold), add = TRUE)
-  }
-  if (!is.null(log_file)) {
-    lg$add_appender(lgr::AppenderFile$new(log_file), name = "file")
-    on.exit(lg$remove_appender("file"), add = TRUE)
-  }
   lg$info(paste0("Validated inputs, processing scenario data for ",
                  "modelling_group: %s, disease: %s"), modelling_group, disease)
 
@@ -492,8 +512,7 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                                         annex,
                                         cert, bypass_cert_check,
                                         lines,
-                                        log_file,
-                                        silent) {
+                                        logger) {
   assert_connection(con)
   if (upload_to_annex) {
     assert_connection(annex)
@@ -527,20 +546,6 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                    pre_aggregation_path))
     }
   }
-
-  if (!is.null(log_file)) {
-    assert_scalar_character(log_file)
-    if (dir.exists(log_file)) {
-      stop(sprintf("Log file '%s' is a directory, must be a path to a file",
-                   log_file))
-    }
-    if (!file.exists(log_file)) {
-      file.create(log_file, showWarnings = FALSE, overwrite = FALSE)
-    }
-  }
-
-  assert_scalar_logical(silent)
-
 
   # Certificate check (if enabled).
   if (!is.na(cert)) {
