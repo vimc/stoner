@@ -22,10 +22,10 @@ continue_on_error <- function(expr) {
 
 do_stochastics_2021 <- function(con, test_run) {
   in_path <- "Z:/File requests/latest/202110gavi/"
-  out_path <- "Z:/stochastic_2021_output/aggregated/"
-  pre_aggregation_path <- "Z:/stochastic_2021_output/pre-aggregate/"
-  log_file <- "Z:/stochastic_2021_output/log.txt"
-  output_files <- "Z:/stochastic_2021_output/output_files.csv"
+  out_path <- "Z:/stochastic_2021_output_2/aggregated/"
+  pre_aggregation_path <- "Z:/stochastic_2021_output_2/pre-aggregate/"
+  log_file <- "Z:/stochastic_2021_output_2/log.txt"
+  output_files <- "Z:/stochastic_2021_output_2/output_files.csv"
   files <- data.frame(
     touchstone = character(0),
     modelling_group = character(0),
@@ -34,6 +34,8 @@ do_stochastics_2021 <- function(con, test_run) {
     is_cohort = logical(0),
     is_under5 = logical(0)
   )
+  dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
+  dir.create(pre_aggregation_path, showWarnings = FALSE, recursive = TRUE)
   write.csv(files, output_files, row.names = FALSE)
 
   lines <- Inf
@@ -45,39 +47,42 @@ do_stochastics_2021 <- function(con, test_run) {
   modelling_group = "Cambridge-Trotter"
   disease = "MenA"
   touchstone = "202110gavi-3"
-  continue_on_error(paths <- stone_stochastic_process(
-    con,
-    modelling_group = modelling_group,
-    disease = disease,
-    touchstone = touchstone,
-    scenarios = c("mena-no-vaccination", "mena-campaign-default",
-                  "mena-routine-default", "mena-booster-default",
-                  "mena-campaign-ia2030_target", "mena-routine-ia2030_target"),
-    in_path = file.path(in_path, "Cambridge-Trotter"),
-    files = c(paste0(stub, "no_vaccination_:index.csv.xz"),
-              paste0(stub, "campaign_default_:index.csv.xz"),
-              paste0(stub, "routine_default_:index.csv.xz"),
-              paste0(stub, "booster_:index.csv.xz"),
-              paste0(stub, "campaign-ia2030_target_:index.csv.xz"),
-              paste0(stub, "routine-ia2030_target_:index.csv.xz")),
-    cert = "",
-    index_start = 1,
-    index_end = 26,
-    out_path = out_path,
-    pre_aggregation_path = pre_aggregation_path,
-    log_file = log_file,
-    bypass_cert_check = TRUE,
-    lines = lines))
-  files <- data.frame(
-    touchstone = touchstone,
-    modelling_group = modelling_group,
-    disease = disease,
-    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-              paths$all_cal_file, paths$all_coh_file),
-    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-  )
-  write.csv(files, output_files, append = TRUE, row.names = FALSE)
+  continue_on_error({
+    paths <- stone_stochastic_process(
+      con,
+      modelling_group = modelling_group,
+      disease = disease,
+      touchstone = touchstone,
+      scenarios = c("mena-no-vaccination", "mena-campaign-default",
+                    "mena-routine-default", "mena-booster-default",
+                    "mena-campaign-ia2030_target", "mena-routine-ia2030_target"),
+      in_path = file.path(in_path, "Cambridge-Trotter"),
+      files = c(paste0(stub, "no_vaccination_:index.csv.xz"),
+                paste0(stub, "campaign_default_:index.csv.xz"),
+                paste0(stub, "routine_default_:index.csv.xz"),
+                paste0(stub, "booster_:index.csv.xz"),
+                paste0(stub, "campaign-ia2030_target_:index.csv.xz"),
+                paste0(stub, "routine-ia2030_target_:index.csv.xz")),
+      cert = "",
+      index_start = 1,
+      index_end = 26,
+      out_path = out_path,
+      pre_aggregation_path = pre_aggregation_path,
+      log_file = log_file,
+      bypass_cert_check = TRUE,
+      lines = lines)
+    files <- data.frame(
+      touchstone = touchstone,
+      modelling_group = modelling_group,
+      disease = disease,
+      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+                paths$all_cal_file, paths$all_coh_file),
+      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+    )
+  })
+  write.table(files, output_files, sep = ",", append = TRUE,
+              row.names = FALSE, col.names = FALSE)
 
   #############################################################################
 
