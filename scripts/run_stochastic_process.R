@@ -133,7 +133,7 @@ do_stochastics_2021 <- function(con, test_run) {
                   "hpv-campaign-ia2030_target",
                   "hpv-routine-default",
                   "hpv-routine-ia2030_target"),
-    in_path = in_path,
+    in_path = file.path(in_path, "Harvard-Sweet"),
     files = c(paste0(stub, "novacc_run_:index.csv.xz"),
               paste0(stub, "coverage_202110gavi-3_hpv-campaign-default_run_:index.csv.xz"),
               paste0(stub, "coverage_202110gavi-3_hpv-campaign-ia2030_target_run_:index.csv.xz"),
@@ -175,7 +175,7 @@ do_stochastics_2021 <- function(con, test_run) {
                   "yf-preventive-ia2030_target",
                   "yf-routine-default",
                   "yf-routine-ia2030_target"),
-    in_path = file.path(in_path, "IC-Garske-YF"),
+    in_path = file.path(in_path, "IC-Garske"),
     files = paste0(stub, ":scenario_:index.csv.xz"),
     cert = "",
     index_start = 1,
@@ -209,7 +209,7 @@ do_stochastics_2021 <- function(con, test_run) {
     scenarios = c("typhoid-no-vaccination",
                   "typhoid-campaign-default", "typhoid-campaign-ia2030_target",
                   "typhoid-routine-default",  "typhoid-routine-ia2030_target"),
-    in_path = in_path,
+    in_path = file.path(in_path, "IVI-Kim-Typhoid"),
     files = c("Jong-Hoon Kim - stoch_Typhoid_novacc_20211217T1.csv.xz",
               "Jong-Hoon Kim - stoch_Typhoid_campaign-default_20211217T1.csv.xz",
               "Jong-Hoon Kim - stoch_Typhoid_campaign-ia2030_20211217T1.csv.xz",
@@ -252,7 +252,7 @@ do_stochastics_2021 <- function(con, test_run) {
                   "hepb-hepb-routine-default",
                   "hepb-hepb-routine-ia2030_target",
                   "hepb-no-vaccination"),
-    in_path = in_path,
+    in_path = file.path(in_path, "IC-Hallett"),
     files = paste0(stub, ":scenario_:index.csv.xz"),
     cert = "Margaret de Villiers - cert115",
     index_start = 1,
@@ -363,7 +363,7 @@ do_stochastics_2021 <- function(con, test_run) {
                   "rubella-rcv1-ia2030_target",
                   "rubella-rcv2-ia2030_target",
                   "rubella-rcv1-rcv2-ia2030_target"),
-    in_path = in_path,
+    in_path = file.path(in_path, "JHU-UGA-Winter-Rubella"),
     files = c(paste0(stub, "routine-no-vaccination_:index.csv.xz"),
               paste0(stub, "campaign-default_:index.csv.xz"),
               paste0(stub, "rcv1-default_:index.csv.xz"),
@@ -418,7 +418,7 @@ do_stochastics_2021 <- function(con, test_run) {
     disease = disease,
     touchstone = touchstone,
     scenarios = hib_scenarios,
-    in_path = file.path(in_path),
+    in_path = file.path(in_path, "JHU-Tam-Carter-Hib"),
     files = ":scenario.csv.xz",
     cert = "",
     index_start = NA,
@@ -464,7 +464,7 @@ do_stochastics_2021 <- function(con, test_run) {
     disease = disease,
     touchstone = touchstone,
     scenarios = pcv_scenarios,
-    in_path = file.path(in_path),
+    in_path = file.path(in_path, "JHU-Tam-Carter-PCV"),
     files = ":scenario.csv.xz",
     cert = "",
     index_start = NA,
@@ -506,7 +506,6 @@ do_stochastics_2021 <- function(con, test_run) {
   )
 
   rota_scenarios <- c("rota-no-vaccination-LiST",
-                      "rota-routine-default-LiST",
                       "rota-routine-ia2030_target-LiST")
 
   modelling_group = "JHU-Tam"
@@ -518,7 +517,7 @@ do_stochastics_2021 <- function(con, test_run) {
     disease = disease,
     touchstone = touchstone,
     scenarios = rota_scenarios,
-    in_path = file.path(in_path),
+    in_path = file.path(in_path, "JHU-Tam-Carter-Rota"),
     files = ":scenario.csv.xz",
     cert = "",
     index_start = NA,
@@ -552,7 +551,8 @@ do_stochastics_2021 <- function(con, test_run) {
 
   ####################################################################################
 
-  stub <- "Eric Johnson - "
+
+  stub <- "stochastic_burden_est_MenA_KPWA_"
   modelling_group = "KPW-Jackson"
   disease = "MenA"
   touchstone = "202110gavi-3"
@@ -568,10 +568,15 @@ do_stochastics_2021 <- function(con, test_run) {
                   "mena-routine-default",
                   "mena-routine-ia2030_target"),
     in_path = file.path(in_path, "KPW-Jackson-MenA"),
-    files = paste0(stub, ":scenario-202111gavi-2.MenA_KPW-Johnson.csv.xz"),
+    files = c(paste0(stub, "booster_default_:index.csv.xz"),
+              paste0(stub, "campaign_default_:index.csv.xz"),
+              paste0(stub, "campaign_ia2030_target_:index.csv.xz"),
+              paste0(stub, "none_default_:index.csv.xz"),
+              paste0(stub, "routine_default_:index.csv.xz"),
+              paste0(stub, "routine_ia2030_target_:index.csv.xz")),
     cert = "",
-    index_start = NA,
-    index_end = NA,
+    index_start = 1,
+    index_end = 26,
     out_path = out_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
@@ -607,7 +612,7 @@ do_stochastics_2021 <- function(con, test_run) {
                   "hepb-no-vaccination"
     ),
     in_path = file.path(in_path, "Li"),
-    files = paste0(":scenario:index.csv"),
+    files = paste0(":scenario:index.csv.xz"),
     cert = "cert105",
     index_start = 1,
     index_end = 200,
@@ -712,7 +717,7 @@ do_stochastics_2021 <- function(con, test_run) {
                   "hpv-routine-default",
                   "hpv-campaign-ia2030_target",
                   "hpv-routine-ia2030_target"),
-    in_path = "E:/Dropbox (SPH Imperial College)/File requests/latest/202110gavi/LSHTM-Jit_HPV",
+    in_path = file.path(in_path, "LSHTM-Jit_HPV"),
     files = c(paste0(stub, "novaccination_all_202110gavi-3_hpv-no-vaccination.csv.xz"),
               paste0(stub, "vaccination_all_202110gavi-3_hpv-campaign-default.csv.xz"),
               paste0(stub, "vaccination_all_202110gavi-3_hpv-routine-default.csv.xz"),
@@ -739,7 +744,7 @@ do_stochastics_2021 <- function(con, test_run) {
   stub <- "Han Fu - stochastic_burden_estimate_measles-LSHTM-Jit-"
   modelling_group = "LSHTM-Jit"
   disease = "Measles"
-  touchstone = "202110gavi-2"
+  touchstone = "202110gavi-3"
   continue_on_error(paths <- stone_stochastic_process(
     con,
     modelling_group = modelling_group,
@@ -764,7 +769,7 @@ do_stochastics_2021 <- function(con, test_run) {
               paste0(stub, "campaign-only-ia2030_target.csv.xz"),
               paste0(stub, "mcv1-ia2030_target.csv.xz"),
               paste0(stub, "mcv2-ia2030_target.csv.xz")),
-    cert = "Han Fu - cert107",
+    cert = "Han Fu - cert112_measles-LSHTM-Jit_202110gavi-3",
     index_start = NA,
     index_end = NA,
     out_path = out_path,
@@ -864,6 +869,37 @@ do_stochastics_2021 <- function(con, test_run) {
     is_under5 = c(TRUE, TRUE, FALSE, FALSE)
   )
   write.csv(files, output_files, append = TRUE, row.names = FALSE)
+
+  #############################################################################
+
+  stub <- "coverage_202110gavi-3_"
+  modelling_group = "PSU-Ferrari"
+  disease = "Measles"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
+    con,
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
+    scenarios = c("measles-campaign-default",
+                  "measles-campaign-ia2030_target",
+                  "measles-campaign-only-default",
+                  "measles-campaign-only-ia2030_target",
+                  "measles-mcv1-default",
+                  "measles-mcv1-ia2030_target",
+                  "measles-mcv2-default",
+                  "measles-mcv2-ia2030_target",
+                  "measles-no-vaccination"),
+    in_path = file.path(in_path, "PSU-Ferrari-Measles"),
+    files = paste0(stub, ":scenario.csv.xz"),
+    cert = "",
+    index_start = NA,
+    index_end = NA,
+    out_path = out_path,
+    pre_aggregation_path = pre_aggregation_path,
+    log_file = log_file,
+    bypass_cert_check = TRUE,
+    lines = lines))
 
   #############################################################################
 
@@ -1193,7 +1229,8 @@ do_stochastics_2019 <- function(con, test_run) {
               "Jong-Hoon Kim - stoch_Typhoid_routine.csv.xz"),
     cert = "Jong-Hoon Kim - cert90",
     index_start = NA,
-    index_end = NA, out_path = out_path,
+    index_end = NA,
+    out_path = out_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
