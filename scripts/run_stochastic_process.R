@@ -25,19 +25,31 @@ do_stochastics_2021 <- function(con, test_run) {
   out_path <- "Z:/stochastic_2021_output/aggregated/"
   pre_aggregation_path <- "Z:/stochastic_2021_output/pre-aggregate/"
   log_file <- "Z:/stochastic_2021_output/log.txt"
+  output_files <- "Z:/stochastic_2021_output/output_files.csv"
+  files <- data.frame(
+    touchstone = character(0),
+    modelling_group = character(0),
+    disease = character(0),
+    files = character(0),
+    is_cohort = logical(0),
+    is_under5 = logical(0)
+  )
+  write.csv(files, output_files, row.names = FALSE)
 
   lines <- Inf
   if (isTRUE(test_run)) {
     lines <- 30
   }
 
-
   stub <- "Andromachi Karachaliou - stochastic-burden.202110gavi-2.MenA_Cambridge-Trotter_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "Cambridge-Trotter"
+  disease = "MenA"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "Cambridge-Trotter",
-    disease = "MenA",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("mena-no-vaccination", "mena-campaign-default",
                   "mena-routine-default", "mena-booster-default",
                   "mena-campaign-ia2030_target", "mena-routine-ia2030_target"),
@@ -56,15 +68,28 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
   stub <- "Aniruddha Deshpande - stochastic_burden_est_lopman_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "Emory-Lopman"
+  disease = "Rota"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "Emory-Lopman",
-    disease = "Rota",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("rota-no-vaccination",
                   "rota-routine-default",
                   "rota-routine-ia2030_target"),
@@ -81,15 +106,28 @@ do_stochastics_2021 <- function(con, test_run) {
     allow_missing_disease = TRUE,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
   stub <- "Allison Portnoy - stochastic-burden-est."
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "Harvard-Sweet"
+  disease = "HPV"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "Harvard-Sweet",
-    disease = "HPV",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("hpv-no-vaccination",
                   "hpv-campaign-default",
                   "hpv-campaign-ia2030_target",
@@ -110,15 +148,28 @@ do_stochastics_2021 <- function(con, test_run) {
     runid_from_file = TRUE,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
    #############################################################################
 
   stub <- "Keith Fraser - stochastic-burden-estimates.202110gavi-3_YF_IC-Garske_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "IC-Garske"
+  disease = "YF"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "IC-Garske",
-    disease = "YF",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("yf-no-vaccination",
                   "yf-preventive-default",
                   "yf-preventive-ia2030_target",
@@ -134,14 +185,27 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "IVI-Kim"
+  disease = "Typhoid"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "IVI-Kim",
-    disease = "Typhoid",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("typhoid-no-vaccination",
                   "typhoid-campaign-default", "typhoid-campaign-ia2030_target",
                   "typhoid-routine-default",  "typhoid-routine-ia2030_target"),
@@ -159,15 +223,28 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #####################################################
 
   stub <- "stochastic_burden_est_HepB-IC-Hallett_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "IC-Hallett"
+  disease = "HepB"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "IC-Hallett",
-    disease = "HepB",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("hepb-bd-default-hepb-routine-default",
                   "hepb-bd-routine-default",
                   "hepb-bd-routine-ia2030_target-hepb-routine-ia2030_target",
@@ -188,14 +265,27 @@ do_stochastics_2021 <- function(con, test_run) {
               "hepb_cases_hcc_no_cirrh"),
     dalys = "dalys",
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "IVI-Kim"
+  disease = "Cholera"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "IVI-Kim",
-    disease = "Cholera",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("cholera-no-vaccination", "cholera-campaign-default"),
     in_path = file.path(in_path, "IVI-Kim-Cholera"),
     files = c("Jong-Hoon Kim - stoch_Cholera_novacc_20211221T00.csv.xz",
@@ -208,14 +298,27 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "JHU-Lee"
+  disease = "Cholera"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "JHU-Lee",
-    disease = "Cholera",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("cholera-no-vaccination", "cholera-campaign-default"),
     in_path = file.path(in_path, "JHU-Lee-Cholera"),
     files = c("Kaiyue Zou - no-vaccination.csv.xz",
@@ -228,16 +331,29 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
 
   stub <- "Amy Winter - stochastic_burden_est-rubella-"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "JHU-Lessler"
+  disease = "Rubella"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "JHU-Lessler",
-    disease = "Rubella",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("rubella-routine-no-vaccination",
                   "rubella-campaign-default",
                   "rubella-rcv1-default",
@@ -268,6 +384,16 @@ do_stochastics_2021 <- function(con, test_run) {
     dalys = "dalys",
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
@@ -283,11 +409,14 @@ do_stochastics_2021 <- function(con, test_run) {
                      "hib-routine-default-LiST",
                      "hib-routine-ia2030_target-LiST")
 
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "JHU-Tam"
+  disease = "Hib"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "JHU-Tam",
-    disease = "Hib",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = hib_scenarios,
     in_path = file.path(in_path),
     files = ":scenario.csv.xz",
@@ -302,6 +431,16 @@ do_stochastics_2021 <- function(con, test_run) {
     dalys = list_params_hib_pcv,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   # And to sort out DALYs on the centrals:
 
@@ -316,11 +455,14 @@ do_stochastics_2021 <- function(con, test_run) {
                      "pcv-routine-default-LiST",
                      "pcv-routine-ia2030_target-LiST")
 
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "JHU-Tam"
+  disease = "PCV"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "JHU-Tam",
-    disease = "PCV",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = pcv_scenarios,
     in_path = file.path(in_path),
     files = ":scenario.csv.xz",
@@ -335,6 +477,16 @@ do_stochastics_2021 <- function(con, test_run) {
     dalys = list_params_hib_pcv,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   # And to sort out DALYs on the centrals:
 
@@ -357,11 +509,14 @@ do_stochastics_2021 <- function(con, test_run) {
                       "rota-routine-default-LiST",
                       "rota-routine-ia2030_target-LiST")
 
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "JHU-Tam"
+  disease = "Rota"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "JHU-Tam",
-    disease = "Rota",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = rota_scenarios,
     in_path = file.path(in_path),
     files = ":scenario.csv.xz",
@@ -374,6 +529,16 @@ do_stochastics_2021 <- function(con, test_run) {
     dalys = list_params_rota,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
 
   # And to sort out DALYs on the centrals:
@@ -388,11 +553,14 @@ do_stochastics_2021 <- function(con, test_run) {
   ####################################################################################
 
   stub <- "Eric Johnson - "
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "KPW-Jackson"
+  disease = "MenA"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "KPW-Jackson",
-    disease = "MenA",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("mena-booster-default",
                   "mena-campaign-default",
                   "mena-campaign-ia2030_target",
@@ -409,14 +577,27 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "Li"
+  disease = "HepB"
+  touchstone = "202110gavi-2"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "Li",
-    disease = "HepB",
-    touchstone = "202110gavi-2",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("hepb-bd-default-hepb-routine-default",
                   "hepb-bd-routine-default",
                   "hepb-bd-routine-ia2030_target-hepb-routine-ia2030_target",
@@ -438,15 +619,28 @@ do_stochastics_2021 <- function(con, test_run) {
               "hepb_cases_chronic", "hepb_chronic_symptomatic_in_acute_phase"),
     dalys = "dalys",
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
   stub <- "Kaja Abbas - PSA_202110gavi-3_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "LSHTM-Clark"
+  disease = "Hib"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "LSHTM-Clark",
-    disease = "Hib",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("hib-no-vaccination","hib-routine-default","hib-routine-ia2030_target"),
     in_path = file.path(in_path, "LSHTM-Clark_Hib"),
     files = c(paste0(stub, ":scenario.csv.xz")),
@@ -457,16 +651,29 @@ do_stochastics_2021 <- function(con, test_run) {
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
 
   stub <- "Kaja Abbas - PSA_202110gavi-3_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "LSHTM-Clark"
+  disease = "Rota"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "LSHTM-Clark",
-    disease = "Rota",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("rota-no-vaccination","rota-routine-default","rota-routine-ia2030_target"),
     in_path = file.path(in_path, "LSHTM-Clark_Rota"),
     files = c(paste0(stub, ":scenario.csv.xz")),
@@ -477,16 +684,29 @@ do_stochastics_2021 <- function(con, test_run) {
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
 
   stub <- "stochastic-burden-"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "LSHTM-Jit"
+  disease = "HPV"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "LSHTM-Jit",
-    disease = "HPV",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("hpv-no-vaccination",
                   "hpv-campaign-default",
                   "hpv-routine-default",
@@ -503,15 +723,28 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
   stub <- "Han Fu - stochastic_burden_estimate_measles-LSHTM-Jit-"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "LSHTM-Jit"
+  disease = "Measles"
+  touchstone = "202110gavi-2"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "LSHTM-Jit",
-    disease = "Measles",
-    touchstone = "202110gavi-2",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("measles-no-vaccination",
                   "measles-campaign-default",
                   "measles-campaign-only-default",
@@ -538,15 +771,28 @@ do_stochastics_2021 <- function(con, test_run) {
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
   stub <- "stochastic_burden_est_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "NUS-Chen"
+  disease = "PCV"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "NUS-Chen",
-    disease = "PCV",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("pcv-no-vaccination","pcv-routine-default","pcv-routine-ia2030_target"),
     in_path = file.path(in_path, "LSHTM-NUS-Chen_PCV"),
     files = paste0(stub, ":scenario.csv.xz"),
@@ -557,14 +803,27 @@ do_stochastics_2021 <- function(con, test_run) {
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
+  #############################################################################
 
-
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "PHE-Vynnycky"
+  disease = "Rubella"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "PHE-Vynnycky",
-    disease = "Rubella",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("rubella-routine-no-vaccination",
                   "rubella-campaign-default",
                   "rubella-rcv1-default",
@@ -595,15 +854,28 @@ do_stochastics_2021 <- function(con, test_run) {
     dalys = "dalys",
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 
   #############################################################################
 
   stub <- "Sean Moore - stochastic_burden_est_JE_UND-Moore_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "UND-Moore"
+  disease = "JE"
+  touchstone = "202110gavi-2"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "UND-Moore",
-    disease = "JE",
-    touchstone = "202110gavi-2",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("je-routine-no-vaccination",
                   "je-campaign-default",
                   "je-routine-default",
@@ -619,13 +891,30 @@ do_stochastics_2021 <- function(con, test_run) {
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
+
+
+  #############################################################################
+
 
   stub <- "stochastic_burden_est_YF_UND-Perkins_"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "UND-Perkins"
+  disease = "YF"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "UND-Perkins",
-    disease = "YF",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("yf-no-vaccination",
                   "yf-preventive-default",
                   "yf-preventive-ia2030_target",
@@ -641,13 +930,30 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
+
+
+  #############################################################################
+
 
   stub <- "Holly Burrows - stochastic_burden_est_TF-Yale-Burrows"
-  continue_on_error(stone_stochastic_process(
+  modelling_group = "Yale-Pitzer"
+  disease = "Typhoid"
+  touchstone = "202110gavi-3"
+  continue_on_error(paths <- stone_stochastic_process(
     con,
-    modelling_group = "Yale-Pitzer",
-    disease = "Typhoid",
-    touchstone = "202110gavi-3",
+    modelling_group = modelling_group,
+    disease = disease,
+    touchstone = touchstone,
     scenarios = c("typhoid-no-vaccination",
                   "typhoid-campaign-default", "typhoid-campaign-ia2030_target",
                   "typhoid-routine-default",  "typhoid-routine-ia2030_target"),
@@ -665,6 +971,16 @@ do_stochastics_2021 <- function(con, test_run) {
     log_file = log_file,
     bypass_cert_check = TRUE,
     lines = lines))
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.csv(files, output_files, append = TRUE, row.names = FALSE)
 }
 
 do_stochastics_2019 <- function(con, test_run) {
