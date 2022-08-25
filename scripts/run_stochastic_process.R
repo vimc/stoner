@@ -541,6 +541,7 @@ do_stochastics_2021 <- function(con, test_run) {
   )
 
   rota_scenarios <- c("rota-no-vaccination-LiST",
+                      "rota-routine-default-LiST",
                       "rota-routine-ia2030_target-LiST")
 
   modelling_group = "JHU-Tam"
