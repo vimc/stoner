@@ -22,10 +22,10 @@ continue_on_error <- function(expr) {
 
 do_stochastics_2021 <- function(con, test_run) {
   in_path <- "Z:/File requests/latest/202110gavi/"
-  out_path <- "Z:/stochastic_2021_output_2/aggregated/"
-  pre_aggregation_path <- "Z:/stochastic_2021_output_2/pre-aggregate/"
-  log_file <- "Z:/stochastic_2021_output_2/log.txt"
-  output_files <- "Z:/stochastic_2021_output_2/output_files.csv"
+  out_path <- "Z:/stochastic_2021_output/aggregated/"
+  pre_aggregation_path <- "Z:/stochastic_2021_output/pre-aggregate/"
+  log_file <- "Z:/stochastic_2021_output/log.txt"
+  output_files <- "Z:/stochastic_2021_output/output_files.csv"
   files <- data.frame(
     touchstone = character(0),
     modelling_group = character(0),
