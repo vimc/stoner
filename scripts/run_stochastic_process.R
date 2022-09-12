@@ -20,12 +20,11 @@ continue_on_error <- function(expr) {
 }
 
 
-do_stochastics_2021 <- function(con, test_run) {
-  in_path <- "Z:/File requests/latest/202110gavi/"
-  out_path <- "Z:/stochastic_2021_output/aggregated/"
-  pre_aggregation_path <- "Z:/stochastic_2021_output/pre-aggregate/"
-  log_file <- "Z:/stochastic_2021_output/log.txt"
-  output_files <- "Z:/stochastic_2021_output/output_files.csv"
+do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
+  aggregated_path <- file.path(out_path, "aggregated")
+  pre_aggregation_path <- file.path(out_path, "pre-aggregate")
+  log_file <- file.path(out_path, "log.txt")
+  output_files <- file.path(out_path, "output_files.csv")
   files <- data.frame(
     touchstone = character(0),
     modelling_group = character(0),
@@ -34,7 +33,7 @@ do_stochastics_2021 <- function(con, test_run) {
     is_cohort = logical(0),
     is_under5 = logical(0)
   )
-  dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
+  dir.create(aggregated_path, showWarnings = FALSE, recursive = TRUE)
   dir.create(pre_aggregation_path, showWarnings = FALSE, recursive = TRUE)
   write.csv(files, output_files, row.names = FALSE)
 
@@ -66,7 +65,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = 1,
       index_end = 26,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -106,7 +105,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       allow_missing_disease = TRUE,
@@ -151,7 +150,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = 1,
       index_end = 200,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       runid_from_file = TRUE,
@@ -192,7 +191,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = 1,
       index_end = 200,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -233,7 +232,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -275,7 +274,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "Margaret de Villiers - cert115",
       index_start = 1,
       index_end = 200,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       deaths = "deaths",
@@ -314,7 +313,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -350,7 +349,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -403,7 +402,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = 1,
       index_end = 11,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       deaths = "rubella_deaths_congenital",
@@ -453,7 +452,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       deaths = c("deaths_men", "deaths_pneumo"),
@@ -477,10 +476,11 @@ do_stochastics_2021 <- function(con, test_run) {
   # And to sort out DALYs on the centrals:
 
   for (hib_scenario in hib_scenarios) {
-    stoner::stoner_dalys_for_db(con, list_params_hib_pcv, "JHU-Tam",
-                                "Hib", "202110gavi-3", hib_scenario,
-                                output_file = file.path(out_path, sprintf("%s_central_dalys.qs",
-                                                                          hib_scenario)))
+    stoner::stoner_dalys_for_db(
+      con, list_params_hib_pcv, "JHU-Tam",
+      "Hib", "202110gavi-3", hib_scenario,
+      output_file = file.path(aggregated_path,
+                              sprintf("%s_central_dalys.qs", hib_scenario)))
   }
 
   pcv_scenarios <- c("pcv-no-vaccination-LiST",
@@ -502,7 +502,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       deaths = c("deaths_men", "deaths_pneumo"),
@@ -526,10 +526,11 @@ do_stochastics_2021 <- function(con, test_run) {
   # And to sort out DALYs on the centrals:
 
   for (pcv_scenario in pcv_scenarios) {
-    stoner::stoner_dalys_for_db(con, list_params_hib_pcv, "JHU-Tam",
-                                "PCV", "202110gavi-3", pcv_scenario,
-                                output_file = file.path(out_path, sprintf("%s_central_dalys.qs",
-                                                                          pcv_scenario)))
+    stoner::stoner_dalys_for_db(
+      con, list_params_hib_pcv, "JHU-Tam",
+      "PCV", "202110gavi-3", pcv_scenario,
+      output_file = file.path(aggregated_path,
+                              sprintf("%s_central_dalys.qs", pcv_scenario)))
   }
 
 
@@ -559,7 +560,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       dalys = list_params_rota,
@@ -582,10 +583,11 @@ do_stochastics_2021 <- function(con, test_run) {
   # And to sort out DALYs on the centrals:
 
   for (rota_scenario in rota_scenarios) {
-    stoner::stoner_dalys_for_db(con, list_params_rota, "JHU-Tam",
-                                "Rota", "202110gavi-3", rota_scenario,
-                                output_file = file.path(out_path, sprintf("%s_central_dalys.qs",
-                                                                          rota_scenario)))
+    stoner::stoner_dalys_for_db(
+      con, list_params_rota, "JHU-Tam",
+      "Rota", "202110gavi-3", rota_scenario,
+      output_file = file.path(aggregated_path,
+                              sprintf("%s_central_dalys.qs", rota_scenario)))
   }
 
   ####################################################################################
@@ -617,7 +619,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = 1,
       index_end = 26,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -659,7 +661,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "cert105",
       index_start = 1,
       index_end = 200,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       deaths = c("hepb_deaths_acute", "hepb_deaths_total_cirrh", "hepb_deaths_hcc"),
@@ -698,7 +700,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "Kaja Abbas - hib_cert116",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
@@ -734,7 +736,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "Kaja Abbas - rota_cert117",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
@@ -775,7 +777,10 @@ do_stochastics_2021 <- function(con, test_run) {
                 paste0(stub, "vaccination_all_202110gavi-3_hpv-routine-default.csv.xz"),
                 paste0(stub, "vaccination_all_202110gavi-3_hpv-campaign-ia2030_target.csv.xz"),
                 paste0(stub, "vaccination_all_202110gavi-3_hpv-routine-ia2030_target.csv.xz")),
-      cert = "cert104", index_start = NA, index_end = NA, out_path = out_path,
+      cert = "cert104",
+      index_start = NA,
+      index_end = NA,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -827,7 +832,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "Han Fu - cert112_measles-LSHTM-Jit_202110gavi-3",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
@@ -862,7 +867,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "Jemima Koh - cert121",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
@@ -912,7 +917,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = 1,
       index_end = 112,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       deaths = "rubella_deaths_congenital",
@@ -959,7 +964,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -1000,7 +1005,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "Sean Moore - cert108",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
@@ -1041,7 +1046,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = 1,
       index_end = 200,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -1085,7 +1090,7 @@ do_stochastics_2021 <- function(con, test_run) {
       cert = "",
       index_start = NA,
       index_end = NA,
-      out_path = out_path,
+      out_path = aggregated_path,
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       bypass_cert_check = TRUE,
@@ -1104,11 +1109,10 @@ do_stochastics_2021 <- function(con, test_run) {
   })
 }
 
-do_stochastics_2019 <- function(con, test_run) {
-  in_path <- "E:/Dropbox (SPH Imperial College)/File requests/latest/201910gavi"
-  out_path <- "E:/stochastic_2019_output/aggregated/"
-  pre_aggregation_path <- "E:/stochastic_2019_output/pre-aggregate/"
-  log_file <- "E:/stochsatic_2019_output/log.txt"
+do_stochastics_2019 <- function(con, test_run, in_path, out_path) {
+  aggregation_path <- file.path(out_path, "aggregated")
+  pre_aggregation_path <- file.path(out_path, "pre-aggregate")
+  log_file <- file.path(out_path, "log.txt")
 
   lines <- Inf
   if (isTRUE(test_run)) {
@@ -1134,7 +1138,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "cert60",
     index_start = 1,
     index_end = 52,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1168,7 +1172,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Ivane Gamkrelidze - cert68",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     deaths = c("hepb_deaths_acute","hepb_deaths_dec_cirrh","hepb_deaths_hcc"),
@@ -1192,7 +1196,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Molly Steele - cert66",
     index_start = NA,
     index_end = NA,
-    out_path= out_path,
+    out_path= aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     allow_missing_disease = TRUE,
@@ -1220,7 +1224,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "",
     index_start = 1,
     index_end = 200,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     runid_from_file = TRUE,
@@ -1246,7 +1250,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Katy Gaythorpe - cert62",
     index_start = 1,
     index_end = 200,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1272,7 +1276,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Margaret de Villiers  - cert73",
     index_start = 1,
     index_end = 200,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     deaths = "deaths",
@@ -1295,7 +1299,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Jong-Hoon Kim - cert89",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1315,7 +1319,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Jong-Hoon Kim - cert90",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1343,7 +1347,7 @@ do_stochastics_2019 <- function(con, test_run) {
               paste0(stub, "rubella-no-vaccination_:index.csv.xz"),
               rep(paste0(stub, ":scenario_:index.csv.xz"), 7)),
     cert = "Amy Winter - cert70",
-    index_start = 1, index_end = 12, out_path = out_path,
+    index_start = 1, index_end = 12, out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     deaths = "rubella_deaths_congenital",
@@ -1373,7 +1377,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "cert61",
     index_start = 1,
     index_end = 26,
-    out_path = out_path,
+    out_path = aggregated_path,
     lines = lines))
 
   #############################################################################
@@ -1390,7 +1394,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     bypass_cert_check = TRUE,
@@ -1417,7 +1421,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "",
     index_start = 1,
     index_end = 14,
-    out_path = out_path,
+    out_path = aggregated_path,
     deaths = c("deaths_men", "deaths_pneumo"),
     cases = c("cases_men", "cases_pneumo"),
     dalys = list_params_hib_pcv,
@@ -1437,7 +1441,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "",
     index_start = 1,
     index_end = 14,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     deaths = c("deaths_men", "deaths_pneumo"),
@@ -1464,7 +1468,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert  = "",
     index_start = 1,
     index_end = 14,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     dalys = list_params_rota,
@@ -1492,7 +1496,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "cert74",
     index_start = 1,
     index_end = 200,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     deaths = c("hepb_deaths_acute", "hepb_deaths_total_cirrh", "hepb_deaths_hcc"),
@@ -1517,7 +1521,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "cert81",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1536,7 +1540,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "cert82",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1555,7 +1559,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1582,7 +1586,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Kaja Abbas - stochastic_parameters_certificate_HPV_LSHTM-Jit_201910gavi-4",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     bypass_cert_check = TRUE,
@@ -1612,7 +1616,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "cert83",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1639,7 +1643,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "cert76",
     index_start = 1,
     index_end = 200,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1666,7 +1670,7 @@ do_stochastics_2019 <- function(con, test_run) {
     files = paste0(stub, ":scenario_country:index.csv.xz"),
     cert = "", index_start = 1,
     index_end = 112,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     deaths = "rubella_deaths_congenital",
@@ -1706,7 +1710,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Heather Santos - cert80",
     index_start = 1,
     index_end = 8,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1733,7 +1737,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Sean Moore - cert58",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1757,7 +1761,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "John Huber - cert85",
     index_start = 1,
     index_end = 200,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1777,7 +1781,7 @@ do_stochastics_2019 <- function(con, test_run) {
     cert = "Virginia Pitzer - cert88",
     index_start = NA,
     index_end = NA,
-    out_path = out_path,
+    out_path = aggregated_path,
     pre_aggregation_path = pre_aggregation_path,
     log_file = log_file,
     lines = lines))
@@ -1788,5 +1792,10 @@ library(stoner)
 dettl_root <- "~/projects/montagu-imports/"
 con <- dettl:::db_connect("production", dettl_root)
 
-do_stochastics_2021(con, test_run = TRUE)
+in_path <- "Z:/File requests/latest/202110gavi/"
+out_path <- "Z:/stochastic_2021_output/"
+
+do_stochastics_2021(con, test_run = TRUE,
+                    in_path = in_path,
+                    out_path = out_path)
 
