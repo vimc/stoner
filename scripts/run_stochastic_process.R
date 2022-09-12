@@ -43,9 +43,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   }
 
   stub <- "Andromachi Karachaliou - stochastic-burden.202110gavi-2.MenA_Cambridge-Trotter_"
-  modelling_group = "Cambridge-Trotter"
-  disease = "MenA"
-  touchstone = "202110gavi-3"
+  modelling_group <- "Cambridge-Trotter"
+  disease <- "MenA"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -86,9 +86,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "Aniruddha Deshpande - stochastic_burden_est_lopman_"
-  modelling_group = "Emory-Lopman"
-  disease = "Rota"
-  touchstone = "202110gavi-3"
+  modelling_group <- "Emory-Lopman"
+  disease <- "Rota"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -127,9 +127,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "Allison Portnoy - stochastic-burden-est."
-  modelling_group = "Harvard-Sweet"
-  disease = "HPV"
-  touchstone = "202110gavi-3"
+  modelling_group <- "Harvard-Sweet"
+  disease <- "HPV"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -172,9 +172,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "Keith Fraser - stochastic-burden-estimates.202110gavi-3_YF_IC-Garske_"
-  modelling_group = "IC-Garske"
-  disease = "YF"
-  touchstone = "202110gavi-3"
+  modelling_group <- "IC-Garske"
+  disease <- "YF"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -211,9 +211,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
   #############################################################################
 
-  modelling_group = "IVI-Kim"
-  disease = "Typhoid"
-  touchstone = "202110gavi-3"
+  modelling_group <- "IVI-Kim"
+  disease <- "Typhoid"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -253,9 +253,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #####################################################
 
   stub <- "stochastic_burden_est_HepB-IC-Hallett_"
-  modelling_group = "IC-Hallett"
-  disease = "HepB"
-  touchstone = "202110gavi-3"
+  modelling_group <- "IC-Hallett"
+  disease <- "HepB"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -297,9 +297,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
   #############################################################################
 
-  modelling_group = "IVI-Kim"
-  disease = "Cholera"
-  touchstone = "202110gavi-3"
+  modelling_group <- "IVI-Kim"
+  disease <- "Cholera"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -333,9 +333,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
   #############################################################################
 
-  modelling_group = "JHU-Lee"
-  disease = "Cholera"
-  touchstone = "202110gavi-3"
+  modelling_group <- "JHU-Lee"
+  disease <- "Cholera"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -371,9 +371,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
 
   stub <- "Amy Winter - stochastic_burden_est-rubella-"
-  modelling_group = "JHU-Lessler"
-  disease = "Rubella"
-  touchstone = "202110gavi-3"
+  modelling_group <- "JHU-Lessler"
+  disease <- "Rubella"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -437,9 +437,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
                      "hib-routine-default-LiST",
                      "hib-routine-ia2030_target-LiST")
 
-  modelling_group = "JHU-Tam"
-  disease = "Hib"
-  touchstone = "202110gavi-3"
+  modelling_group <- "JHU-Tam"
+  disease <- "Hib"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -487,9 +487,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
                      "pcv-routine-default-LiST",
                      "pcv-routine-ia2030_target-LiST")
 
-  modelling_group = "JHU-Tam"
-  disease = "PCV"
-  touchstone = "202110gavi-3"
+  modelling_group <- "JHU-Tam"
+  disease <- "PCV"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -545,9 +545,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
                       "rota-routine-default-LiST",
                       "rota-routine-ia2030_target-LiST")
 
-  modelling_group = "JHU-Tam"
-  disease = "Rota"
-  touchstone = "202110gavi-3"
+  modelling_group <- "JHU-Tam"
+  disease <- "Rota"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -594,9 +594,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
 
   stub <- "stochastic_burden_est_MenA_KPWA_"
-  modelling_group = "KPW-Jackson"
-  disease = "MenA"
-  touchstone = "202110gavi-3"
+  modelling_group <- "KPW-Jackson"
+  disease <- "MenA"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -639,9 +639,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
   #############################################################################
 
-  modelling_group = "Li"
-  disease = "HepB"
-  touchstone = "202110gavi-2"
+  modelling_group <- "Li"
+  disease <- "HepB"
+  touchstone <- "202110gavi-2"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -685,9 +685,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "Kaja Abbas - PSA_202110gavi-3_"
-  modelling_group = "LSHTM-Clark"
-  disease = "Hib"
-  touchstone = "202110gavi-3"
+  modelling_group <- "LSHTM-Clark"
+  disease <- "Hib"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -721,9 +721,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
 
   stub <- "Kaja Abbas - PSA_202110gavi-3_"
-  modelling_group = "LSHTM-Clark"
-  disease = "Rota"
-  touchstone = "202110gavi-3"
+  modelling_group <- "LSHTM-Clark"
+  disease <- "Rota"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -757,9 +757,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
 
   stub <- "stochastic-burden-"
-  modelling_group = "LSHTM-Jit"
-  disease = "HPV"
-  touchstone = "202110gavi-3"
+  modelling_group <- "LSHTM-Jit"
+  disease <- "HPV"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -801,9 +801,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "Han Fu - stochastic_burden_estimate_measles-LSHTM-Jit-"
-  modelling_group = "LSHTM-Jit"
-  disease = "Measles"
-  touchstone = "202110gavi-3"
+  modelling_group <- "LSHTM-Jit"
+  disease <- "Measles"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -852,9 +852,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "stochastic_burden_est_"
-  modelling_group = "NUS-Chen"
-  disease = "PCV"
-  touchstone = "202110gavi-3"
+  modelling_group <- "NUS-Chen"
+  disease <- "PCV"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -886,9 +886,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
   #############################################################################
 
-  modelling_group = "PHE-Vynnycky"
-  disease = "Rubella"
-  touchstone = "202110gavi-3"
+  modelling_group <- "PHE-Vynnycky"
+  disease <- "Rubella"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -941,9 +941,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "coverage_202110gavi-3_"
-  modelling_group = "PSU-Ferrari"
-  disease = "Measles"
-  touchstone = "202110gavi-3"
+  modelling_group <- "PSU-Ferrari"
+  disease <- "Measles"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -985,9 +985,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   #############################################################################
 
   stub <- "Sean Moore - stochastic_burden_est_JE_UND-Moore_"
-  modelling_group = "UND-Moore"
-  disease = "JE"
-  touchstone = "202110gavi-2"
+  modelling_group <- "UND-Moore"
+  disease <- "JE"
+  touchstone <- "202110gavi-2"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -1027,9 +1027,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
 
   stub <- "stochastic_burden_est_YF_UND-Perkins_"
-  modelling_group = "UND-Perkins"
-  disease = "YF"
-  touchstone = "202110gavi-3"
+  modelling_group <- "UND-Perkins"
+  disease <- "YF"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
@@ -1069,9 +1069,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
 
 
   stub <- "Holly Burrows - stochastic_burden_est_TF-Yale-Burrows"
-  modelling_group = "Yale-Pitzer"
-  disease = "Typhoid"
-  touchstone = "202110gavi-3"
+  modelling_group <- "Yale-Pitzer"
+  disease <- "Typhoid"
+  touchstone <- "202110gavi-3"
   continue_on_error({
     paths <- stone_stochastic_process(
       con,
