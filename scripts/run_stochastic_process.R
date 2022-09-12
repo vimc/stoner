@@ -19,6 +19,20 @@ continue_on_error <- function(expr) {
   )
 }
 
+write_output_metadata <- function(touchstone, modelling_group, disease,
+                                  paths, metadata_csv) {
+  files <- data.frame(
+    touchstone = touchstone,
+    modelling_group = modelling_group,
+    disease = disease,
+    files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
+              paths$all_cal_file, paths$all_coh_file),
+    is_cohort = c(FALSE, TRUE, FALSE, TRUE),
+    is_under5 = c(TRUE, TRUE, FALSE, FALSE)
+  )
+  write.table(files, output_files, sep = ",", append = TRUE,
+              row.names = FALSE, col.names = FALSE)
+}
 
 do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
   aggregated_path <- file.path(out_path, "aggregated")
@@ -70,17 +84,9 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -111,17 +117,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       allow_missing_disease = TRUE,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -156,17 +153,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       runid_from_file = TRUE,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -196,17 +184,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -237,17 +216,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #####################################################
@@ -282,17 +252,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
                 "hepb_cases_hcc_no_cirrh"),
       dalys = "dalys",
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -318,17 +279,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -354,17 +306,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -410,17 +353,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       dalys = "dalys",
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -460,17 +394,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       dalys = list_params_hib_pcv,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   # And to sort out DALYs on the centrals:
@@ -510,17 +435,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       dalys = list_params_hib_pcv,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   # And to sort out DALYs on the centrals:
@@ -566,17 +482,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       dalys = list_params_rota,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
 
@@ -624,17 +531,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -669,17 +567,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
                 "hepb_cases_chronic", "hepb_chronic_symptomatic_in_acute_phase"),
       dalys = "dalys",
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -704,17 +593,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -740,17 +620,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -785,17 +656,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -836,17 +698,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -871,17 +724,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -925,17 +769,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       dalys = "dalys",
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -969,17 +804,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
   #############################################################################
@@ -1009,17 +835,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       pre_aggregation_path = pre_aggregation_path,
       log_file = log_file,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
 
@@ -1051,17 +868,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 
 
@@ -1095,17 +903,8 @@ do_stochastics_2021 <- function(con, test_run, in_path, out_path) {
       log_file = log_file,
       bypass_cert_check = TRUE,
       lines = lines)
-    files <- data.frame(
-      touchstone = touchstone,
-      modelling_group = modelling_group,
-      disease = disease,
-      files = c(paths$all_u5_cal_file, paths$all_u5_coh_file,
-                paths$all_cal_file, paths$all_coh_file),
-      is_cohort = c(FALSE, TRUE, FALSE, TRUE),
-      is_under5 = c(TRUE, TRUE, FALSE, FALSE)
-    )
-    write.table(files, output_files, sep = ",", append = TRUE,
-                row.names = FALSE, col.names = FALSE)
+    write_output_metadata(touchstone, modelling_group, disease,
+                          paths, output_files)
   })
 }
 
