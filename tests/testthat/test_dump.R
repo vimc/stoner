@@ -36,7 +36,7 @@ initialise_with_fake_resps <- function(test, no_resps = FALSE,
   create_ts_dds(test$path, "nevis-1", "S1", "T1")
   create_disease_csv(test$path, c("flu", "piles"),
                                 c("Elf flu", "Elf piles"), db = TRUE)
-  create_scen_type_csv(test$path, "default", "Default Scenario Type")
+  create_scen_type_csv(test$path, "default", "Default Scenario Type, with comma")
   create_scen_desc_csv(test$path, "pies", "campaign", "flu", "default")
   create_ts_country_csv(test$path, "nevis-1", c("flu", "piles"), "AFG;ZWE")
 
@@ -188,7 +188,7 @@ test_dump_scenario_type <- function(path) {
   data <- read_csv(f)
   expect_equal(nrow(data), 1)
   expect_equal(data$id, "default")
-  expect_equal(data$name, "Default Scenario Type")
+  expect_equal(data$name, "Default Scenario Type, with comma")
 }
 
 # Test that a dumped scenario_description.csv file matches the
