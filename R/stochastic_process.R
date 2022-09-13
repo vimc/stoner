@@ -201,7 +201,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   elapsed <- Sys.time() - start
   lg$info("Processing for modelling_group: %s, disease: %s completed in %s",
           modelling_group, disease, human_readable_time(elapsed))
-  invisible()
+  paths
 }
 
 
