@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.10</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.11</span>
       </span>
     </div>
 
@@ -72,7 +72,7 @@
       <h1 data-toc-skip>stoner</h1>
                         <h4 data-toc-skip class="author">Wes Hinsley</h4>
             
-            <h4 data-toc-skip class="date">2022-09-13</h4>
+            <h4 data-toc-skip class="date">2022-09-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/vimc/stoner/blob/HEAD/vignettes/stoner.Rmd" class="external-link"><code>vignettes/stoner.Rmd</code></a></small>
       <div class="hidden name"><code>stoner.Rmd</code></div>
@@ -1291,7 +1291,7 @@
 <p>A read-only connection to the production database is used to validate the outcomes and countries against those in a group’s expectations. To get the connection to production:-</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span>  <span class="va">vault</span> <span class="op">&lt;-</span> <span class="fu">vaultr</span><span class="fu">::</span><span class="fu">vault_client</span><span class="op">(</span>login <span class="op">=</span> <span class="st">"github"</span><span class="op">)</span></span>
-<span>  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/database/production/users/readonly"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span></span>
+<span>  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/vimc/database/production/users/readonly"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span></span>
 <span>  <span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>                          dbname <span class="op">=</span> <span class="st">"montagu"</span>,</span>
 <span>                          host <span class="op">=</span> <span class="st">"production.montagu.dide.ic.ac.uk"</span>,</span>
@@ -1299,7 +1299,7 @@
 <span>                          user <span class="op">=</span> <span class="st">"readonly"</span><span class="op">)</span></span></code></pre></div>
 <p>To get a connection to annex:-</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span>  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/annex/users/vimc"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span></span>
+<code class="sourceCode R"><span>  <span class="va">password</span> <span class="op">&lt;-</span> <span class="va">vault</span><span class="op">$</span><span class="fu">read</span><span class="op">(</span><span class="st">"/secret/vimc/annex/users/vimc"</span><span class="op">)</span><span class="op">$</span><span class="va">password</span></span>
 <span>  <span class="va">annex</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">RPostgres</span><span class="fu">::</span><span class="fu"><a href="https://rpostgres.r-dbi.org/reference/Postgres.html" class="external-link">Postgres</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>                          dbname <span class="op">=</span> <span class="st">"montagu"</span>,</span>
 <span>                          host <span class="op">=</span> <span class="st">"annex.montagu.dide.ic.ac.uk"</span>,</span>
