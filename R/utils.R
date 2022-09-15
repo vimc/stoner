@@ -1,5 +1,6 @@
-write_csv <- function(...) {
-  utils::write.csv(row.names = FALSE, quote = FALSE, ...)
+write_csv <- function(x, file) {
+  commas <- which(vapply(x, function(y) any(grepl(",", y)), logical(1)))
+  utils::write.csv(x, file, row.names = FALSE, quote = commas)
 }
 
 read_csv <- function(...) {

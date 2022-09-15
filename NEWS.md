@@ -1,3 +1,7 @@
+# 0.1.11
+
+Correctly quote strings with commas when dumping CSVs. (VIMC-6544)
+
 # 0.1.5
 
 Various fast-forwarding improvements, including default new responsibility being open.

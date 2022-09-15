@@ -1001,7 +1001,7 @@ connection to production:-
 
 ```R
   vault <- vaultr::vault_client(login = "github")
-  password <- vault$read("/secret/database/production/users/readonly")$password
+  password <- vault$read("/secret/vimc/database/production/users/readonly")$password
   con <- DBI::dbConnect(RPostgres::Postgres(),
                           dbname = "montagu",
                           host = "production.montagu.dide.ic.ac.uk",
@@ -1011,7 +1011,7 @@ connection to production:-
 
 To get a connection to annex:-
 ```R
-  password <- vault$read("/secret/annex/users/vimc")$password
+  password <- vault$read("/secret/vimc/annex/users/vimc")$password
   annex <- DBI::dbConnect(RPostgres::Postgres(),
                           dbname = "montagu",
                           host = "annex.montagu.dide.ic.ac.uk",
