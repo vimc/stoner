@@ -112,7 +112,7 @@ test_that("FF CSV with incorrect modelling_group / scenario / touchstone", {
     "Scenario\\(s) not found: hot_potato")
 })
 
-test_that("Main FF functionality", {
+test_that("Main FF and prune functionality", {
 
   # There is a hefty amount of support needed for adding
   # burden estimate sets...
@@ -668,6 +668,184 @@ test_that("Main FF functionality", {
   }
 
   test6()
+
+  #######################################################################
+  # Prune-stone behaviour.
+
+  test_prune <- function() {
+    clear()
+    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
+    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
+    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
+    resp_a2 <- add_responsibility("nevis-2", resp_set_a2, "hot_chocolate")
+
+    bes_a1 <- add_burden_estimate_set(resp_a1)
+    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+    bes_a2 <- add_burden_estimate_set(resp_a1)
+    add_burden_estimates(pathetic_data, bes_a2, resp_a1)
+    bes_a3 <- add_burden_estimate_set(resp_a1)
+    add_burden_estimates(pathetic_data, bes_a3, resp_a1)
+
+    bes_b1 <- add_burden_estimate_set(resp_a2)
+    add_burden_estimates(pathetic_data, bes_b1, resp_a2)
+    bes_b2 <- add_burden_estimate_set(resp_a2)
+    add_burden_estimates(pathetic_data, bes_b2, resp_a2)
+    bes_b3 <- add_burden_estimate_set(resp_a2)
+    add_burden_estimates(pathetic_data, bes_b3, resp_a2)
+
+
+    ######################################################
+    # Search for everything. Except 2 x 2 dead sets.
+
+    tab <- stone_prune(test$con, modelling_group = NULL, disease = NULL,
+                       scenario = NULL, dry_run = TRUE, return_df = TRUE)
+
+    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
+    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
+    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
+    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
+    expect_true(nrow(tab) == 4)
+
+
+
+
+    ######################################################
+    # Limit by modelling group - expect the same
+
+    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = NULL,
+                       scenario = NULL, dry_run = TRUE, return_df = TRUE)
+
+    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
+    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
+    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
+    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
+    expect_true(nrow(tab) == 4)
+
+
+    #####################################################
+    # Incorrect/uninteresting modelling group
+
+    expect_error(stone_prune(test$con, modelling_group = c("LAP-elf", "X"),
+                             disease = NULL, scenario = NULL, touchstone = NULL,
+                             dry_run = TRUE, return_df = TRUE),
+                 "Modelling group X not found")
+
+    expect_null(stone_prune(test$con, modelling_group = c("R-deer"),
+                            disease = NULL, scenario = NULL, touchstone = NULL,
+                            dry_run = TRUE, return_df = TRUE))
+
+
+    ######################################################
+    # Limit by disease
+
+    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
+                       scenario = NULL, touchstone = NULL,
+                       dry_run = TRUE, return_df = TRUE)
+
+    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
+    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
+    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
+    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
+    expect_true(nrow(tab) == 4)
+
+    ######################################################
+    # Incorrect/uninteresting disease
+
+
+    expect_error(stone_prune(test$con, modelling_group = "LAP-elf",
+                             disease = "goat-fever", touchstone = NULL,
+                       scenario = NULL, dry_run = TRUE, return_df = TRUE),
+                 "Disease goat-fever not found")
+
+    expect_null(stone_prune(test$con, modelling_group = "LAP-elf",
+                            disease = "piles",
+                            scenario = NULL, touchstone = NULL,
+                            dry_run = TRUE, return_df = TRUE))
+
+
+    ######################################################
+    # Limit by touchstone
+
+    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
+                       scenario = NULL, touchstone = "nevis-1",
+                       dry_run = TRUE, return_df = TRUE)
+
+    expect_true(all(c(bes_a1, bes_a2) %in% tab$del_bes))
+    expect_false(any(c(bes_a3, bes_b1, bes_b2, bes_b3) %in% tab$del_bes))
+    expect_true(nrow(tab) == 2)
+
+    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
+                       scenario = NULL, touchstone = "nevis-2",
+                       dry_run = TRUE, return_df = TRUE)
+
+    expect_true(all(c(bes_b1, bes_b2) %in% tab$del_bes))
+    expect_false(any(c(bes_b3, bes_a1, bes_a2, bes_a3) %in% tab$del_bes))
+    expect_true(nrow(tab) == 2)
+
+    #######################################################
+    # Incorrect/uninteresting touchstone
+
+    expect_null(stone_prune(test$con, modelling_group = "LAP-elf",
+                            disease = "flu",
+                       scenario = NULL, touchstone = "kili-1",
+                       dry_run = TRUE, return_df = TRUE))
+
+    expect_error(stone_prune(test$con, modelling_group = "LAP-elf",
+                            disease = "flu",
+                            scenario = NULL, touchstone = "X",
+                            dry_run = TRUE, return_df = TRUE),
+                 "Touchstone X not found")
+
+    ######################################################
+    # Limit by scenario
+
+    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
+                       scenario = "hot_chocolate", touchstone = NULL,
+                       dry_run = TRUE, return_df = TRUE)
+
+    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
+    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
+    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
+    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
+    expect_true(nrow(tab) == 4)
+
+    # Invalid / uninteresting scenario
+
+
+    expect_null(stone_prune(test$con, modelling_group = "LAP-elf",
+                            disease = "flu",
+                            scenario = "pies", touchstone = NULL,
+                            dry_run = TRUE, return_df = TRUE))
+
+    expect_equal(0, stone_prune(test$con, modelling_group = "LAP-elf",
+                            disease = "flu",
+                            scenario = "pies", touchstone = NULL,
+                            dry_run = TRUE, return_df = FALSE))
+
+    expect_error(stone_prune(test$con, modelling_group = "LAP-elf",
+                             disease = "flu",
+                             scenario = "marmite", touchstone = NULL,
+                             dry_run = TRUE, return_df = TRUE),
+                 "Scenario marmite not found")
+
+    ########################################################
+    # Test actual prune works
+
+    tab <- stone_prune(test$con, modelling_group = NULL, disease = NULL,
+                scenario = NULL, touchstone = NULL, dry_run = FALSE,
+                return_df = TRUE)
+
+    # Check the results now...
+
+    expect_null(stone_prune(test$con, modelling_group = NULL, disease = NULL,
+                       scenario = NULL, touchstone = NULL, dry_run = TRUE,
+                       return_df = TRUE))
+
+    expect_equal(0, stone_prune(test$con, modelling_group = NULL, disease = NULL,
+                            scenario = NULL, touchstone = NULL, dry_run = TRUE,
+                            return_df = FALSE))
+
+  }
 
 
 })

@@ -2,31 +2,8 @@
 ##' which are not a modelling_group's current estimate set for a
 ##' particular touchstone and scenario
 
-
-###############################################################################
-# Quick helper to produce a set of WHERE x IN (a,b) <AND> clauses for
-# whichever selection of results we might consider for pruning opportunities.
-
-get_filters <- function(touchstone, modelling_group, disease, scenario) {
-
-  filters <- c(
-    if (!is.null(touchstone)) paste0(" scenario.touchstone IN ", sql_in(touchstone)) else NULL,
-    if (!is.null(modelling_group)) paste0(" modelling_group IN ", sql_in(modelling_group)) else NULL,
-    if (!is.null(disease)) paste0(" disease IN ", sql_in(disease)) else NULL,
-    if (!is.null(scenario)) paste0(" scenario_description IN ", sql_in(scenario)) else NULL
-  )
-
-  if (length(filters) > 0) {
-    paste0(" WHERE ", paste(filters, collapse = " AND "))
-  } else {
-    ""
-  }
-
-}
-
-
 ##' @export
-##' @title Prune obselete datasets
+##' @title Prune obsolete datasets
 ##' @param con DBI connection to database containing burden estimate sets
 ##' @param modelling_group Only prune specific modelling group(s).
 ##' @param disease Only prune specific disease(s)
@@ -34,24 +11,49 @@ get_filters <- function(touchstone, modelling_group, disease, scenario) {
 ##' @param scenario Only prune specific scenario description(s).
 ##' @param dry_run If true, only report details on what rows would be dropped.
 stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
-                        touchstone = NULL, scenario = NULL, dry_run = TRUE) {
+                        touchstone = NULL, scenario = NULL, dry_run = TRUE, return_df = FALSE) {
+
 
   assert_connection(con)
 
   if (!is.null(modelling_group)) {
     assert_character(modelling_group)
+    mgs <- DBI::dbGetQuery(con, "SELECT id FROM modelling_group")
+    for (mg in modelling_group) {
+      if (!mg %in% mgs$id) {
+        stop(sprintf("Modelling group %s not found", mg))
+      }
+    }
   }
 
   if (!is.null(disease)) {
     assert_character(disease)
+    ds <- DBI::dbGetQuery(con, "SELECT id FROM disease")
+    for (d in disease) {
+      if (!d %in% ds$id) {
+        stop(sprintf("Disease %s not found", d))
+      }
+    }
   }
 
   if (!is.null(touchstone)) {
     assert_character(touchstone)
+    allts <- DBI::dbGetQuery(con, "SELECT id FROM touchstone")
+    for (ts in touchstone) {
+      if (!ts %in% allts$id) {
+        stop(sprintf("Touchstone %s not found", ts))
+      }
+    }
   }
 
   if (!is.null(scenario)) {
     assert_character(scenario)
+    allts <- DBI::dbGetQuery(con, "SELECT id FROM scenario_description")
+    for (sc in scenario) {
+      if (!sc %in% allts$id) {
+        stop(sprintf("Scenario %s not found", sc))
+      }
+    }
   }
 
 
@@ -74,10 +76,23 @@ stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
         ON scenario_description.id = scenario.scenario_description
         %s", get_filters(touchstone, modelling_group, disease, scenario)))
 
+  resp_info <- resp_info[!is.na(resp_info$current_burden_estimate_set), ]
+
+  # No sets found
+
+  if (nrow(resp_info) == 0) {
+    if (!return_df) {
+      message("No matching responsibilites found")
+      return(0)
+    }
+    return(NULL)
+  }
+
 
   #################################################################
   # Find all the burden estimate sets for the above
   # responsibilities, that aren't the current_burden_estimate_set
+
 
   bes_info <- DBI::dbGetQuery(con, sprintf("
     SELECT id AS burden_estimate_set,
@@ -88,12 +103,22 @@ stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
     sql_in(resp_info$responsibility),
     sql_in(resp_info$current_burden_estimate_set)))
 
+  if (nrow(bes_info) == 0) {
+    if (!return_df) {
+      message("No obselete burden estimate sets found")
+      return(0)
+    }
+    return(NULL)
+  }
+
+
   bes_info <- dplyr::left_join(bes_info, resp_info, by = "responsibility")
   bes_info <- bes_info[order(bes_info$touchstone, bes_info$modelling_group,
                              bes_info$disease, bes_info$scenario,
                              bes_info$burden_estimate_set), ]
 
   bes_sql_list <- sql_in(bes_info$burden_estimate_set)
+
 
   #################################################################
   # If a dry-run, then just output what we we're planning to do
@@ -124,11 +149,13 @@ stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
 
     bes_info <- bes_info[, c("touchstone", "group", "scenario", "keep_bes", "del_bes", "rows")]
 
-    message(paste0(capture.output(bes_info), collapse = "\n"))
+    if (!return_df) {
+      message(paste0(capture.output(bes_info), collapse = "\n"))
+      message(sprintf("Total rows to delete: %d", sum(as.integer(bes_info$rows))))
+      return(sum(as.integer(bes_info$rows)))
+    }
 
-    cat("\nTotal rows to delete: ", sum(bes_info$rows))
-
-    return()
+    return(bes_info)
   }
 
   #################################################################
@@ -139,13 +166,33 @@ stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
 
     DBI::dbExecute(con, sprintf("
        DELETE FROM burden_estimate
-        WHERE burden_estimate_set IN ", bes_sql_list))
+        WHERE burden_estimate_set IN %s", bes_sql_list))
 
     DBI::dbExecute(con, sprintf("
       DELETE FROM burden_estimate_set
-       WHERE id IN ", bes_sql_list))
+       WHERE id IN %s", bes_sql_list))
 
     DBI::dbExecute(con, "VACUUM burden_estimate")
 
+  }
+}
+
+###############################################################################
+# Quick helper to produce a set of WHERE x IN (a,b) <AND> clauses for
+# whichever selection of results we might consider for pruning opportunities.
+
+get_filters <- function(touchstone, modelling_group, disease, scenario) {
+
+  filters <- c(
+    if (!is.null(touchstone)) paste0("scenario.touchstone IN ", sql_in(touchstone)) else NULL,
+    if (!is.null(modelling_group)) paste0("modelling_group IN ", sql_in(modelling_group)) else NULL,
+    if (!is.null(disease)) paste0("disease IN ", sql_in(disease)) else NULL,
+    if (!is.null(scenario)) paste0("scenario_description IN ", sql_in(scenario)) else NULL
+  )
+
+  if (length(filters) > 0) {
+    paste0("WHERE ", paste(filters, collapse = " AND "))
+  } else {
+    ""
   }
 }
