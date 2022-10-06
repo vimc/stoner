@@ -2,6 +2,7 @@
 ##' which are not a modelling_group's current estimate set for a
 ##' particular touchstone and scenario
 
+##' @importFrom utils capture.output
 ##' @export
 ##' @title Prune obsolete datasets
 ##' @param con DBI connection to database containing burden estimate sets
@@ -10,6 +11,11 @@
 ##' @param touchstone Only prune specific touchstone(s)
 ##' @param scenario Only prune specific scenario description(s).
 ##' @param dry_run If true, only report details on what rows would be dropped.
+##' @param return_df Used for testing or debugging; if true the function returns
+##' a data frame of the burden estimate sets being considered for deletion, or
+##' NULL if there is no work to do. If
+##' false, the function returns the number of rows proposed to be deleted, which
+##' may be zero.
 stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
                         touchstone = NULL, scenario = NULL, dry_run = TRUE, return_df = FALSE) {
 
@@ -141,11 +147,9 @@ stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
                                  by = "burden_estimate_set")
 
     bes_info$rows[is.na(bes_info$rows)] <- 0
-
-    bes_info <- dplyr::rename(bes_info,
-      keep_bes = current_burden_estimate_set,
-      del_bes = burden_estimate_set,
-      group = modelling_group)
+    names(bes_info)[names(bes_info) == "current_burden_estimate_set"] <- "keep_bes"
+    names(bes_info)[names(bes_info) == "burden_estimate_set"] <- "del_bes"
+    names(bes_info)[names(bes_info) == "modelling_group"] <- "group"
 
     bes_info <- bes_info[, c("touchstone", "group", "scenario", "keep_bes", "del_bes", "rows")]
 
