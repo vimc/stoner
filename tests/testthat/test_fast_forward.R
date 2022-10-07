@@ -847,5 +847,7 @@ test_that("Main FF and prune functionality", {
 
   }
 
+  test_prune()
+
 
 })
