@@ -830,6 +830,11 @@ test_that("Main FF and prune functionality", {
 
     ########################################################
     # Test actual prune works
+    # 4 * 4 rows to delete
+
+    expect_equal(16, stone_prune(test$con, modelling_group = NULL, disease = NULL,
+                            scenario = NULL, touchstone = NULL, dry_run = TRUE,
+                            return_df = FALSE))
 
     tab <- stone_prune(test$con, modelling_group = NULL, disease = NULL,
                 scenario = NULL, touchstone = NULL, dry_run = FALSE,
