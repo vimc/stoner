@@ -591,11 +591,16 @@ knitr::kable(data_frame(
   can be left as `*`, to look for pruning opportunities in the
   entire history of burden estimate sets.
 
-* Lastly, note that if `prune.csv` exists, no other `csv` file
+* Note that if `prune.csv` exists, no other `csv` file
   should be included - that is: a pruning import should just do
   pruning, and not any other functionality. This keeps things 
   simple, which is a good thing since here we are (somewhat
   uniquely) performing a deletion of data.
+
+* Include all the standard stoner one-lines, for the extract, test-extract, 
+  transform, test-transform, and load stages, as above, and ensure that in 
+  `dettl.yml` for the report, automatic loading is not enabled. 
+
 
 ## Using stoner as a standalone package (without Dettl)
 
