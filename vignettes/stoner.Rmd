@@ -574,7 +574,7 @@ knitr::kable(data_frame(
 
   `Example` = c("IC-Hallett;Li", "*",
                 "hepb-no-vaccination",
-                "202110gavi-2", "202110gavi-3")
+                "202110gavi-2;202110gavi-3")
 ))
 ```
 
