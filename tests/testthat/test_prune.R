@@ -253,4 +253,48 @@ test_that("Prune tests", {
   expect_true(all(c(res$a12, res$a21, res$a22, res$b11, res$b12, res$b22) %in% bes))
   expect_false(any(c(res$a11, res$b21) %in% be))
   expect_true(all(c(res$a12, res$a21, res$a22, res$b11, res$b12, res$b22) %in% be))
+
+  write_prune_csv(test, "*", "*", "*", "*")
+  res <- prepare_test_prune(test)
+  do_test(test)
+  bes <- DBI::dbGetQuery(test$con,
+    "SELECT id FROM burden_estimate_set")$id
+  be <- DBI::dbGetQuery(test$con,
+    "SELECT DISTINCT burden_estimate_set from burden_estimate")$burden_estimate_set
+
+  expect_false(any(c(res$a11, res$b21) %in% bes))
+  expect_true(all(c(res$a12, res$a21, res$a22, res$b11, res$b12, res$b22) %in% bes))
+  expect_false(any(c(res$a11, res$b21) %in% be))
+  expect_true(all(c(res$a12, res$a21, res$a22, res$b11, res$b12, res$b22) %in% be))
+
+
+})
+
+test_that("Prune must be only CSV, if provided", {
+  test <- init_for_ff_prune()
+  write_prune_csv(test, "*", "*", "*", "*")
+  write.csv(data.frame(touchstone = "nevis-1", demographic_source="S1",
+                       demographic_statistic_type = "T1"),
+            file.path(test$path, "meta", "touchstone_demographic_dataset.csv"),
+            row.names=FALSE)
+
+  expect_error(do_test(test),
+             "prune.csv, if specified, must be the only csv")
+})
+
+test_that("Empty prune CSV", {
+  test <- init_for_ff_prune()
+  write.csv(data.frame(modelling_group = character(0),
+                       touchstone = character(0), disease = character(0),
+                       scenario = character(0)),
+            file.path(test$path, "meta", "prune.csv"),
+            row.names=FALSE)
+  res <- prepare_test_prune(test)
+  do_test(test)
+  bes <- DBI::dbGetQuery(test$con,
+    "SELECT id FROM burden_estimate_set")$id
+  be <- DBI::dbGetQuery(test$con,
+    "SELECT DISTINCT burden_estimate_set from burden_estimate")$burden_estimate_set
+  expect_true(all(unlist(res) %in% bes))
+  expect_true(all(unlist(res) %in% be))
 })

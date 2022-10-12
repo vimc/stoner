@@ -40,7 +40,7 @@ stone_extract <- function(path, con) {
 
   if (!is.null(e$prune_csv)) {
     if (length(e) > 1) {
-      stop("prune.csv, if specified, bust be the only csv")
+      stop("prune.csv, if specified, must be the only csv")
     }
   }
 
