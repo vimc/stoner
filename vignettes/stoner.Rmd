@@ -572,7 +572,7 @@ Write a `prune.csv` file in the following form.
 knitr::kable(data_frame(
   `Column` = c("modelling_group", "disease", "scenario", "touchstone"),
 
-  `Example` = c("IC-Hallett;Li", "*"
+  `Example` = c("IC-Hallett;Li", "*",
                 "hepb-no-vaccination",
                 "202110gavi-2", "202110gavi-3")
 ))
