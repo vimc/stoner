@@ -56,7 +56,7 @@ extract_prune <- function(e, path, con) {
 
     touchstone <- if ("*" %in% touchstone) NULL else touchstone
     modelling_group <- if ("*" %in% modelling_group) NULL else modelling_group
-    disease <- if ("*" %in% disease) NULL else modelling_group
+    disease <- if ("*" %in% disease) NULL else disease
     scenario <- if ("*" %in% scenario) NULL else scenario
 
     # Find all the responsibilities for any of these fields, including
