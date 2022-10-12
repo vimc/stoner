@@ -112,53 +112,15 @@ test_that("FF CSV with incorrect modelling_group / scenario / touchstone", {
     "Scenario\\(s) not found: hot_potato")
 })
 
-test_that("Main FF and prune functionality", {
+test_that("Fast-Forward tests", {
 
   # There is a hefty amount of support needed for adding
-  # burden estimate sets...
+  # burden estimate sets and testing fast-forward/prune
 
   # Set up some touchstones, groups and scenarios - but can't use
   # stoner to do it, as FF needs to be a standalone thing.
 
-  test <- new_test()
-
-  # Two touchstones, nevis-1 and kili-1 - we'll add 2 more versions
-
-  standard_disease_touchstones(test)
-
-  ts_file <- file.path(test$path, "meta", "db_touchstone.csv")
-  write.csv(rbind(
-    read.csv(ts_file),
-    data.frame(
-      id = c("nevis-2", "kili-2"),
-      touchstone_name = c("nevis", "kili"),
-      version = c(2, 2),
-      description = c("nevis (version 2)", "kili (version 2)"),
-      status = c("in-preparation", "in-preparation"),
-      comment = c("Nevis 2", "Kili 2"))), ts_file, row.names = FALSE)
-
-  # Three groups. LAP-elf, EBHQ-bunny, R-deer
-  standard_modelling_groups(test)
-
-  # Four scenario_descriptions: hot_chocolate, pies, mistletoe, holly
-  standard_responsibility_support(test)
-
-  # One built in scenario, and we'll add some more
-  # New scenarios for the new touchstones
-
-  sc_file <- file.path(test$path, "meta", "db_scenario.csv")
-  write.csv(rbind(
-    read.csv(sc_file),
-    data.frame(
-      id = 2:6,
-      touchstone = c("nevis-2", "kili-1", "kili-2", "nevis-1", "nevis-2"),
-      scenario_description = c("hot_chocolate", "pies", "pies", "pies", "pies"),
-      focal_coverage_set = NA)), sc_file, row.names = FALSE)
-
-  # Now we can import all the db_ files, then remove them,
-  # so following import will be just the FF.csv file
-
-  do_test(test)
+  test <- init_for_ff_prune()
 
   expect_error(
     extract_fast_forward(list(
@@ -169,114 +131,13 @@ test_that("Main FF and prune functionality", {
     "Same touchstone appears in both touchstone_to and touchstone_from.")
 
 
-  dbfiles <- list.files(file.path(test$path, "meta"))
-  unlink(file.path(test$path, "meta", dbfiles))
-
-  # Also need to setup a model (with a null version)
-
-  DBI::dbExecute(test$con, "INSERT INTO model
-    (id, modelling_group, description, citation, is_current,
-     current_version, disease, gender_specific, gender) VALUES
-     ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-    list("elf-suite", "LAP-elf", "Description", "Citation", TRUE,
-         NA, "flu", FALSE, NA))
-
-  # Add model version
-
-  model_version <- DBI::dbGetQuery(test$con, "INSERT INTO model_version
-    (model, version, note, fingerprint, code, is_dynamic) VALUES
-    ($1, $2, $3, $4, $5, $6) RETURNING id",
-    list("elf-suite", 1, "", NA, NA, FALSE))$id
-
-  DBI::dbExecute(test$con, "
-    UPDATE model SET current_version = $1
-     WHERE id = 'elf-suite'", model_version)
-
-  # Add upload user
-
-  DBI::dbExecute(test$con, "INSERT INTO app_user
-    (username, name ,email, password_hash) VALUES
-    ($1, $2, $3, $4)", list("Elf", "Elf", "elf@lapland.edu", ""))
-
-  WLF <- DBI::dbGetQuery(test$con, "
-    SELECT nid FROM country WHERE id='WLF'")$nid
-
-  bo_cases <- DBI::dbGetQuery(test$con, "
-    SELECT id FROM burden_outcome
-     WHERE code='cases'")$id
 
   # Dummy expectations (which will, naughtily, share between everyone)
 
-  expec <- DBI::dbGetQuery(test$con, "
-    INSERT INTO burden_estimate_expectation
-                (year_min_inclusive, year_max_inclusive,
-                 age_min_inclusive, age_max_inclusive,
-                 cohort_min_inclusive, cohort_max_inclusive,
-                 description, version) VALUES
-                 ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-   list(2000, 2001, 0, 1, 2000, 2000, 'Test', 'Test Version'))$id
-
-  pathetic_data <- data.frame(burden_estimate_set = rep(NA, 4),
-                              country = rep(WLF, 4),
-                              year = c(2000,2001,2000,2001),
-                              age = c(0, 0, 1, 1),
-                              burden_outcome = rep(bo_cases, 4),
-                              value = sample(4),
-                              model_run = rep(NA, 4))
-
-
+  expec <- dummy_expectation(test)
 
   # The rest will all be do with with responsibility_set
   # and responsibility, so...
-
-  clear <- function() {
-    DBI::dbExecute(test$con, "UPDATE responsibility SET current_burden_estimate_set = NULL")
-    DBI::dbExecute(test$con, "DELETE FROM burden_estimate")
-    DBI::dbExecute(test$con, "DELETE FROM burden_estimate_set")
-    DBI::dbExecute(test$con, "DELETE FROM responsibility_comment")
-    DBI::dbExecute(test$con, "DELETE FROM responsibility")
-    DBI::dbExecute(test$con, "DELETE FROM responsibility_set_comment")
-    DBI::dbExecute(test$con, "DELETE FROM responsibility_set")
-  }
-
-  add_responsibility_set <- function(group, touchstone) {
-    DBI::dbGetQuery(test$con, "
-      INSERT INTO responsibility_set (modelling_group, touchstone, status)
-             VALUES ($1, $2, $3) RETURNING id",
-      list(group, touchstone, "incomplete"))$id
-  }
-
-  add_responsibility <- function(touchstone, responsibility_set,
-                                 scenario_description) {
-
-    scenario_id <- DBI::dbGetQuery(test$con, "
-      SELECT id FROM scenario
-       WHERE scenario_description = $1
-         AND touchstone = $2",
-      list(scenario_description, touchstone))$id
-
-    DBI::dbGetQuery(test$con, "
-      INSERT INTO responsibility (responsibility_set, scenario, expectations)
-           VALUES ($1, $2, $3) RETURNING id",
-        list(responsibility_set, scenario_id, expec))$id
-  }
-
-  add_burden_estimate_set <- function(responsibility) {
-    mv <- DBI::dbGetQuery(test$con, "SELECT id FROM model_version")$id
-    DBI::dbGetQuery(test$con, "
-      INSERT INTO burden_estimate_set (responsibility, model_version,
-                                       run_info, interpolated, uploaded_by)
-           VALUES ($1, $2, 'dummy', FALSE, 'Elf') RETURNING id",
-                    list(responsibility, mv))$id
-  }
-
-  add_burden_estimates <- function(df, bes, resp) {
-    df$burden_estimate_set <- bes
-    DBI::dbAppendTable(test$con, "burden_estimate", df)
-    DBI::dbExecute(test$con, "UPDATE responsibility
-                            SET current_burden_estimate_set = $1
-                          WHERE id = $2", list(bes, resp))
-  }
 
   get_responsibility_set <- function(modelling_group, touchstone) {
     DBI::dbGetQuery(test$con, "
@@ -352,11 +213,11 @@ test_that("Main FF and prune functionality", {
   #    Model group and scenario named explicitly in file
   ###################################################################
   test1 <- function() {
-    clear()
-    resp_set <- add_responsibility_set("LAP-elf", "nevis-1")
-    resp <- add_responsibility("nevis-1", resp_set, "hot_chocolate")
-    bes <- add_burden_estimate_set(resp)
-    add_burden_estimates(pathetic_data, bes, resp)
+    clear_test_resps(test)
+    resp_set <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp <- add_responsibility(test, "nevis-1", resp_set, "hot_chocolate", expec)
+    bes <- add_burden_estimate_set(test, resp)
+    add_burden_estimates(test, pathetic_data(test), bes, resp)
     write_ff_csv(test, "LAP-elf", "hot_chocolate", "nevis-1", "nevis-2")
 
     # To be sure, the 2nd responsibility_set doesn't exist.
@@ -439,15 +300,15 @@ test_that("Main FF and prune functionality", {
   ###################################################################
 
   test2 <- function(pass) {
-    clear()
-    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
-    resp_set_b1 <- add_responsibility_set("R-deer", "nevis-1")
-    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
-    resp_b1 <- add_responsibility("nevis-1", resp_set_b1, "hot_chocolate")
-    bes_a1 <- add_burden_estimate_set(resp_a1)
-    bes_b1 <- add_burden_estimate_set(resp_b1)
-    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
-    add_burden_estimates(pathetic_data, bes_b1, resp_b1)
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_b1 <- add_responsibility_set(test, "R-deer", "nevis-1")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    resp_b1 <- add_responsibility(test, "nevis-1", resp_set_b1, "hot_chocolate", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    bes_b1 <- add_burden_estimate_set(test, resp_b1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_b1, resp_b1)
     if (pass == 1) {
       write_ff_csv(test, "LAP-elf;R-deer", "hot_chocolate", "nevis-1", "nevis-2")
     } else if (pass == 2) {
@@ -473,15 +334,15 @@ test_that("Main FF and prune functionality", {
   ###################################################################
 
   test3 <- function(pass) {
-    clear()
-    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
-    resp_set_b1 <- add_responsibility_set("R-deer", "nevis-1")
-    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
-    resp_b1 <- add_responsibility("nevis-1", resp_set_b1, "pies")
-    bes_a1 <- add_burden_estimate_set(resp_a1)
-    bes_b1 <- add_burden_estimate_set(resp_b1)
-    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
-    add_burden_estimates(pathetic_data, bes_b1, resp_b1)
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_b1 <- add_responsibility_set(test, "R-deer", "nevis-1")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    resp_b1 <- add_responsibility(test, "nevis-1", resp_set_b1, "pies", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    bes_b1 <- add_burden_estimate_set(test, resp_b1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_b1, resp_b1)
 
     if (pass %in% c(1,4,7)) ts <- "LAP-elf;R-deer"
     if (pass %in% c(2,5,8)) ts <- c("LAP-elf", "R-deer")
@@ -508,12 +369,12 @@ test_that("Main FF and prune functionality", {
   # touchstone, but no new responsiblity yet.
 
   test4 <- function(pass) {
-    clear()
-    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
-    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
-    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
-    bes_a1 <- add_burden_estimate_set(resp_a1)
-    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_a2 <- add_responsibility_set(test, "LAP-elf", "nevis-2")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
     rsc1 <- add_comment_rs(resp_set_a1, "Five gold rings", as.Date("2021-01-01"))
     rc1 <- add_comment_r(resp_a1, "Six dplyers dplying", as.Date("2021-01-01"))
     write_ff_csv(test, "*", "*", "nevis-1", "nevis-2")
@@ -573,13 +434,13 @@ test_that("Main FF and prune functionality", {
   # is NA. Should slot into existing responsibility
 
   test5 <- function(pass) {
-    clear()
-    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
-    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
-    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
-    resp_a2 <- add_responsibility("nevis-2", resp_set_a2, "hot_chocolate")
-    bes_a1 <- add_burden_estimate_set(resp_a1)
-    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_a2 <- add_responsibility_set(test, "LAP-elf", "nevis-2")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    resp_a2 <- add_responsibility(test, "nevis-2", resp_set_a2, "hot_chocolate", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
 
     # So we should have a non-NA, and an NA bes...
 
@@ -641,15 +502,15 @@ test_that("Main FF and prune functionality", {
   # fast-forward.
 
   test6 <- function() {
-    clear()
-    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
-    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
-    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
-    resp_a2 <- add_responsibility("nevis-2", resp_set_a2, "hot_chocolate")
-    bes_a1 <- add_burden_estimate_set(resp_a1)
-    bes_a2 <- add_burden_estimate_set(resp_a1)
-    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
-    add_burden_estimates(pathetic_data, bes_a2, resp_a2)
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_a2 <- add_responsibility_set(test, "LAP-elf", "nevis-2")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    resp_a2 <- add_responsibility(test, "nevis-2", resp_set_a2, "hot_chocolate", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    bes_a2 <- add_burden_estimate_set(test, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_a2, resp_a2)
     rsc1 <- add_comment_rs(resp_set_a1, "Nine numpties numping", as.Date("2021-01-01"))
     rc1 <- add_comment_r(resp_a1, "Ten shrubbers shrubbing", as.Date("2021-01-02"))
     write_ff_csv(test, "*", "*", "nevis-1", "nevis-2")
@@ -668,191 +529,6 @@ test_that("Main FF and prune functionality", {
   }
 
   test6()
-
-  #######################################################################
-  # Prune-stone behaviour.
-
-  test_prune <- function() {
-    clear()
-    resp_set_a1 <- add_responsibility_set("LAP-elf", "nevis-1")
-    resp_set_a2 <- add_responsibility_set("LAP-elf", "nevis-2")
-    resp_a1 <- add_responsibility("nevis-1", resp_set_a1, "hot_chocolate")
-    resp_a2 <- add_responsibility("nevis-2", resp_set_a2, "hot_chocolate")
-
-    bes_a1 <- add_burden_estimate_set(resp_a1)
-    add_burden_estimates(pathetic_data, bes_a1, resp_a1)
-    bes_a2 <- add_burden_estimate_set(resp_a1)
-    add_burden_estimates(pathetic_data, bes_a2, resp_a1)
-    bes_a3 <- add_burden_estimate_set(resp_a1)
-    add_burden_estimates(pathetic_data, bes_a3, resp_a1)
-
-    bes_b1 <- add_burden_estimate_set(resp_a2)
-    add_burden_estimates(pathetic_data, bes_b1, resp_a2)
-    bes_b2 <- add_burden_estimate_set(resp_a2)
-    add_burden_estimates(pathetic_data, bes_b2, resp_a2)
-    bes_b3 <- add_burden_estimate_set(resp_a2)
-    add_burden_estimates(pathetic_data, bes_b3, resp_a2)
-
-
-    ######################################################
-    # Search for everything. Except 2 x 2 dead sets.
-
-    tab <- stone_prune(test$con, modelling_group = NULL, disease = NULL,
-                       scenario = NULL, dry_run = TRUE, return_df = TRUE)
-
-    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
-    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
-    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
-    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
-    expect_true(nrow(tab) == 4)
-
-
-
-
-    ######################################################
-    # Limit by modelling group - expect the same
-
-    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = NULL,
-                       scenario = NULL, dry_run = TRUE, return_df = TRUE)
-
-    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
-    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
-    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
-    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
-    expect_true(nrow(tab) == 4)
-
-
-    #####################################################
-    # Incorrect/uninteresting modelling group
-
-    expect_error(stone_prune(test$con, modelling_group = c("LAP-elf", "X"),
-                             disease = NULL, scenario = NULL, touchstone = NULL,
-                             dry_run = TRUE, return_df = TRUE),
-                 "Modelling group X not found")
-
-    expect_null(stone_prune(test$con, modelling_group = c("R-deer"),
-                            disease = NULL, scenario = NULL, touchstone = NULL,
-                            dry_run = TRUE, return_df = TRUE))
-
-
-    ######################################################
-    # Limit by disease
-
-    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
-                       scenario = NULL, touchstone = NULL,
-                       dry_run = TRUE, return_df = TRUE)
-
-    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
-    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
-    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
-    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
-    expect_true(nrow(tab) == 4)
-
-    ######################################################
-    # Incorrect/uninteresting disease
-
-
-    expect_error(stone_prune(test$con, modelling_group = "LAP-elf",
-                             disease = "goat-fever", touchstone = NULL,
-                       scenario = NULL, dry_run = TRUE, return_df = TRUE),
-                 "Disease goat-fever not found")
-
-    expect_null(stone_prune(test$con, modelling_group = "LAP-elf",
-                            disease = "piles",
-                            scenario = NULL, touchstone = NULL,
-                            dry_run = TRUE, return_df = TRUE))
-
-
-    ######################################################
-    # Limit by touchstone
-
-    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
-                       scenario = NULL, touchstone = "nevis-1",
-                       dry_run = TRUE, return_df = TRUE)
-
-    expect_true(all(c(bes_a1, bes_a2) %in% tab$del_bes))
-    expect_false(any(c(bes_a3, bes_b1, bes_b2, bes_b3) %in% tab$del_bes))
-    expect_true(nrow(tab) == 2)
-
-    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
-                       scenario = NULL, touchstone = "nevis-2",
-                       dry_run = TRUE, return_df = TRUE)
-
-    expect_true(all(c(bes_b1, bes_b2) %in% tab$del_bes))
-    expect_false(any(c(bes_b3, bes_a1, bes_a2, bes_a3) %in% tab$del_bes))
-    expect_true(nrow(tab) == 2)
-
-    #######################################################
-    # Incorrect/uninteresting touchstone
-
-    expect_null(stone_prune(test$con, modelling_group = "LAP-elf",
-                            disease = "flu",
-                       scenario = NULL, touchstone = "kili-1",
-                       dry_run = TRUE, return_df = TRUE))
-
-    expect_error(stone_prune(test$con, modelling_group = "LAP-elf",
-                            disease = "flu",
-                            scenario = NULL, touchstone = "X",
-                            dry_run = TRUE, return_df = TRUE),
-                 "Touchstone X not found")
-
-    ######################################################
-    # Limit by scenario
-
-    tab <- stone_prune(test$con, modelling_group = "LAP-elf", disease = "flu",
-                       scenario = "hot_chocolate", touchstone = NULL,
-                       dry_run = TRUE, return_df = TRUE)
-
-    expect_true(all(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$del_bes))
-    expect_false(any(c(bes_a3, bes_b3) %in% tab$del_bes))
-    expect_true(all(c(bes_a3, bes_b3) %in% tab$keep_bes))
-    expect_false(any(c(bes_a1, bes_a2, bes_b1, bes_b2) %in% tab$keep_bes))
-    expect_true(nrow(tab) == 4)
-
-    # Invalid / uninteresting scenario
-
-
-    expect_null(stone_prune(test$con, modelling_group = "LAP-elf",
-                            disease = "flu",
-                            scenario = "pies", touchstone = NULL,
-                            dry_run = TRUE, return_df = TRUE))
-
-    expect_equal(0, stone_prune(test$con, modelling_group = "LAP-elf",
-                            disease = "flu",
-                            scenario = "pies", touchstone = NULL,
-                            dry_run = TRUE, return_df = FALSE))
-
-    expect_error(stone_prune(test$con, modelling_group = "LAP-elf",
-                             disease = "flu",
-                             scenario = "marmite", touchstone = NULL,
-                             dry_run = TRUE, return_df = TRUE),
-                 "Scenario marmite not found")
-
-    ########################################################
-    # Test actual prune works
-    # 4 * 4 rows to delete
-
-    expect_equal(16, stone_prune(test$con, modelling_group = NULL, disease = NULL,
-                            scenario = NULL, touchstone = NULL, dry_run = TRUE,
-                            return_df = FALSE))
-
-    tab <- stone_prune(test$con, modelling_group = NULL, disease = NULL,
-                scenario = NULL, touchstone = NULL, dry_run = FALSE,
-                return_df = TRUE)
-
-    # Check the results now...
-
-    expect_null(stone_prune(test$con, modelling_group = NULL, disease = NULL,
-                       scenario = NULL, touchstone = NULL, dry_run = TRUE,
-                       return_df = TRUE))
-
-    expect_equal(0, stone_prune(test$con, modelling_group = NULL, disease = NULL,
-                            scenario = NULL, touchstone = NULL, dry_run = TRUE,
-                            return_df = FALSE))
-
-  }
-
-  test_prune()
 
 
 })

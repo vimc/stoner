@@ -421,3 +421,156 @@ empty_dump <- function() {
 expect_no_error <- function(object) {
   expect_error(object, NA)
 }
+
+######################################
+# Empty out responsibilities -
+# used by FF and prune tests
+init_for_ff_prune <- function() {
+  test <- new_test()
+
+  # Two touchstones, nevis-1 and kili-1 - we'll add 2 more versions
+
+  standard_disease_touchstones(test)
+
+  ts_file <- file.path(test$path, "meta", "db_touchstone.csv")
+  write.csv(rbind(
+    read.csv(ts_file),
+    data.frame(
+      id = c("nevis-2", "kili-2"),
+      touchstone_name = c("nevis", "kili"),
+      version = c(2, 2),
+      description = c("nevis (version 2)", "kili (version 2)"),
+      status = c("in-preparation", "in-preparation"),
+      comment = c("Nevis 2", "Kili 2"))), ts_file, row.names = FALSE)
+
+  # Three groups. LAP-elf, EBHQ-bunny, R-deer
+  standard_modelling_groups(test)
+
+  # Four scenario_descriptions: hot_chocolate, pies, mistletoe, holly
+  standard_responsibility_support(test)
+
+  # One built in scenario, and we'll add some more
+  # New scenarios for the new touchstones
+
+  sc_file <- file.path(test$path, "meta", "db_scenario.csv")
+  write.csv(rbind(
+    read.csv(sc_file),
+    data.frame(
+      id = 2:6,
+      touchstone = c("nevis-2", "kili-1", "kili-2", "nevis-1", "nevis-2"),
+      scenario_description = c("hot_chocolate", "pies", "pies", "pies", "pies"),
+      focal_coverage_set = NA)), sc_file, row.names = FALSE)
+
+  # Now we can import all the db_ files, then remove them,
+  # so following import will be just the FF.csv file
+
+  do_test(test)
+
+  dbfiles <- list.files(file.path(test$path, "meta"))
+  unlink(file.path(test$path, "meta", dbfiles))
+
+  # Also need to setup a model (with a null version)
+
+  DBI::dbExecute(test$con, "INSERT INTO model
+    (id, modelling_group, description, citation, is_current,
+     current_version, disease, gender_specific, gender) VALUES
+     ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+               list("elf-suite", "LAP-elf", "Description", "Citation", TRUE,
+                    NA, "flu", FALSE, NA))
+
+  # Add model version
+
+  model_version <- DBI::dbGetQuery(test$con, "INSERT INTO model_version
+    (model, version, note, fingerprint, code, is_dynamic) VALUES
+    ($1, $2, $3, $4, $5, $6) RETURNING id",
+                                 list("elf-suite", 1, "", NA, NA, FALSE))$id
+
+  DBI::dbExecute(test$con, "
+    UPDATE model SET current_version = $1
+     WHERE id = 'elf-suite'", model_version)
+
+  # Add upload user
+
+  DBI::dbExecute(test$con, "INSERT INTO app_user
+    (username, name ,email, password_hash) VALUES
+    ($1, $2, $3, $4)", list("Elf", "Elf", "elf@lapland.edu", ""))
+
+  test
+}
+
+clear_test_resps <- function(test) {
+  DBI::dbExecute(test$con, "UPDATE responsibility SET current_burden_estimate_set = NULL")
+  DBI::dbExecute(test$con, "DELETE FROM burden_estimate")
+  DBI::dbExecute(test$con, "DELETE FROM burden_estimate_set")
+  DBI::dbExecute(test$con, "DELETE FROM responsibility_comment")
+  DBI::dbExecute(test$con, "DELETE FROM responsibility")
+  DBI::dbExecute(test$con, "DELETE FROM responsibility_set_comment")
+  DBI::dbExecute(test$con, "DELETE FROM responsibility_set")
+}
+
+add_responsibility_set <- function(test, group, touchstone) {
+  DBI::dbGetQuery(test$con, "
+      INSERT INTO responsibility_set (modelling_group, touchstone, status)
+             VALUES ($1, $2, $3) RETURNING id",
+                  list(group, touchstone, "incomplete"))$id
+}
+
+add_responsibility <- function(test, touchstone, responsibility_set,
+                               scenario_description, expec) {
+
+  scenario_id <- DBI::dbGetQuery(test$con, "
+      SELECT id FROM scenario
+       WHERE scenario_description = $1
+         AND touchstone = $2",
+                                 list(scenario_description, touchstone))$id
+
+  DBI::dbGetQuery(test$con, "
+      INSERT INTO responsibility (responsibility_set, scenario, expectations)
+           VALUES ($1, $2, $3) RETURNING id",
+                  list(responsibility_set, scenario_id, expec))$id
+}
+
+add_burden_estimate_set <- function(test, responsibility) {
+  mv <- DBI::dbGetQuery(test$con, "SELECT id FROM model_version")$id
+  DBI::dbGetQuery(test$con, "
+      INSERT INTO burden_estimate_set (responsibility, model_version,
+                                       run_info, interpolated, uploaded_by)
+           VALUES ($1, $2, 'dummy', FALSE, 'Elf') RETURNING id",
+                  list(responsibility, mv))$id
+}
+
+add_burden_estimates <- function(test, df, bes, resp) {
+  df$burden_estimate_set <- bes
+  DBI::dbAppendTable(test$con, "burden_estimate", df)
+  DBI::dbExecute(test$con, "UPDATE responsibility
+                            SET current_burden_estimate_set = $1
+                          WHERE id = $2", list(bes, resp))
+}
+
+pathetic_data <- function(test) {
+  WLF <- DBI::dbGetQuery(test$con, "
+    SELECT nid FROM country WHERE id='WLF'")$nid
+
+  bo_cases <- DBI::dbGetQuery(test$con, "
+    SELECT id FROM burden_outcome
+     WHERE code='cases'")$id
+
+  data.frame(burden_estimate_set = rep(NA, 4),
+             country = rep(WLF, 4),
+             year = c(2000,2001,2000,2001),
+             age = c(0, 0, 1, 1),
+             burden_outcome = rep(bo_cases, 4),
+             value = sample(4),
+             model_run = rep(NA, 4))
+}
+
+dummy_expectation <- function(test) {
+  DBI::dbGetQuery(test$con, "
+    INSERT INTO burden_estimate_expectation
+                (year_min_inclusive, year_max_inclusive,
+                 age_min_inclusive, age_max_inclusive,
+                 cohort_min_inclusive, cohort_max_inclusive,
+                 description, version) VALUES
+                 ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+                           list(2000, 2001, 0, 1, 2000, 2000, 'Test', 'Test Version'))$id
+}

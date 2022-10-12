@@ -1,172 +1,129 @@
-##' To save space on production, we could delete burden estimate sets
-##' which are not a modelling_group's current estimate set for a
-##' particular touchstone and scenario
-
 ##' @importFrom utils capture.output
-##' @export
-##' @title Prune obsolete datasets
-##' @param con DBI connection to database containing burden estimate sets
-##' @param modelling_group Only prune specific modelling group(s).
-##' @param disease Only prune specific disease(s)
-##' @param touchstone Only prune specific touchstone(s)
-##' @param scenario Only prune specific scenario description(s).
-##' @param dry_run If true, only report details on what rows would be dropped.
-##' @param return_df Used for testing or debugging; if true the function returns
-##' a data frame of the burden estimate sets being considered for deletion, or
-##' NULL if there is no work to do. If
-##' false, the function returns the number of rows proposed to be deleted, which
-##' may be zero.
-stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
-                        touchstone = NULL, scenario = NULL, dry_run = TRUE, return_df = FALSE) {
 
+extract_prune <- function(e, path, con) {
 
-  assert_connection(con)
+  # The prune.csv file indicates...
+  # modelling_group, disease, scenario, and touchstones
 
-  if (!is.null(modelling_group)) {
-    assert_character(modelling_group)
-    mgs <- DBI::dbGetQuery(con, "SELECT id FROM modelling_group")
-    for (mg in modelling_group) {
-      if (!mg %in% mgs$id) {
-        stop(sprintf("Modelling group %s not found", mg))
-      }
-    }
-  }
+  # these can be '*' for wildcard,
+  # or a semi-colon separated list of options.
 
-  if (!is.null(disease)) {
-    assert_character(disease)
-    ds <- DBI::dbGetQuery(con, "SELECT id FROM disease")
-    for (d in disease) {
-      if (!d %in% ds$id) {
-        stop(sprintf("Disease %s not found", d))
-      }
-    }
-  }
-
-  if (!is.null(touchstone)) {
-    assert_character(touchstone)
-    allts <- DBI::dbGetQuery(con, "SELECT id FROM touchstone")
-    for (ts in touchstone) {
-      if (!ts %in% allts$id) {
-        stop(sprintf("Touchstone %s not found", ts))
-      }
-    }
-  }
-
-  if (!is.null(scenario)) {
-    assert_character(scenario)
-    allts <- DBI::dbGetQuery(con, "SELECT id FROM scenario_description")
-    for (sc in scenario) {
-      if (!sc %in% allts$id) {
-        stop(sprintf("Scenario %s not found", sc))
-      }
-    }
-  }
-
-
-  ############################################################
-  # Get responsibility info for all the
-  # Optionally filter to various things:-
-
-  resp_info <- DBI::dbGetQuery(con, sprintf("
-    SELECT modelling_group, disease,
-           scenario.touchstone as touchstone,
-           scenario.scenario_description as scenario,
-           responsibility.id as responsibility,
-           current_burden_estimate_set
-      FROM responsibility
-      JOIN responsibility_set
-        ON responsibility_set.id = responsibility.responsibility_set
-      JOIN scenario
-        ON responsibility.scenario = scenario.id
-      JOIN scenario_description
-        ON scenario_description.id = scenario.scenario_description
-        %s", get_filters(touchstone, modelling_group, disease, scenario)))
-
-  resp_info <- resp_info[!is.na(resp_info$current_burden_estimate_set), ]
-
-  # No sets found
-
-  if (nrow(resp_info) == 0) {
-    if (!return_df) {
-      message("No matching responsibilites found")
-      return(0)
-    }
+  # No CSV provided
+  if (is.null(e$prune_csv)) {
     return(NULL)
   }
 
-
-  #################################################################
-  # Find all the burden estimate sets for the above
-  # responsibilities, that aren't the current_burden_estimate_set
-
-
-  bes_info <- DBI::dbGetQuery(con, sprintf("
-    SELECT id AS burden_estimate_set,
-           responsibility
-      FROM burden_estimate_set
-     WHERE responsibility IN %s
-       AND NOT id IN %s",
-    sql_in(resp_info$responsibility),
-    sql_in(resp_info$current_burden_estimate_set)))
-
-  if (nrow(bes_info) == 0) {
-    if (!return_df) {
-      message("No obselete burden estimate sets found")
-      return(0)
-    }
+  # Empty CSV provided
+  if (nrow(e$prune_csv) == 0) {
     return(NULL)
   }
 
+  # Check all necessary things exist, and
+  # return vector of things.
 
-  bes_info <- dplyr::left_join(bes_info, resp_info, by = "responsibility")
-  bes_info <- bes_info[order(bes_info$touchstone, bes_info$modelling_group,
-                             bes_info$disease, bes_info$scenario,
-                             bes_info$burden_estimate_set), ]
-
-  bes_sql_list <- sql_in(bes_info$burden_estimate_set)
-
-
-  #################################################################
-  # If a dry-run, then just output what we we're planning to do
-  # with some info.
-
-  if (dry_run) {
-
-    # Look up how many rows we'll delete per defunct estimate set
-    # Note that there may be entries in bes_sql_list that have no
-    # rows in burden_estimate, so we'll need to do these zeroes
-    # manually.
-
-    del_rows_info <- DBI::dbGetQuery(con, sprintf("
-      SELECT burden_estimate_set, COUNT(*) AS rows
-        FROM burden_estimate
-       WHERE burden_estimate_set IN %s
-    GROUP BY burden_estimate_set", bes_sql_list))
-
-    bes_info <- dplyr::left_join(bes_info, del_rows_info,
-                                 by = "burden_estimate_set")
-
-    bes_info$rows[is.na(bes_info$rows)] <- 0
-    names(bes_info)[names(bes_info) == "current_burden_estimate_set"] <- "keep_bes"
-    names(bes_info)[names(bes_info) == "burden_estimate_set"] <- "del_bes"
-    names(bes_info)[names(bes_info) == "modelling_group"] <- "group"
-
-    bes_info <- bes_info[, c("touchstone", "group", "scenario", "keep_bes", "del_bes", "rows")]
-
-    if (!return_df) {
-      message(paste0(capture.output(bes_info), collapse = "\n"))
-      message(sprintf("Total rows to delete: %d", sum(as.integer(bes_info$rows))))
-      return(sum(as.integer(bes_info$rows)))
+  thing_exists <- function(entries, table) {
+    entries <- unique(unlist(strsplit(entries, ";")))
+    if ("*" %in% entries) {
+      return(NULL)
     }
-
-    return(bes_info)
+    db_entries <- DBI::dbGetQuery(con, sprintf("
+      SELECT * FROM %s WHERE id IN ('%s')", table,
+        paste(entries, collapse="','")))$id
+    if (any(!entries %in% db_entries)) {
+      entries <- paste(entries[!entries %in% db_entries],
+                       collapse = ", ")
+      stop(sprintf("%s not found: %s\n", table, entries))
+    }
+    db_entries
   }
 
-  #################################################################
-  # Otherwise, delete possibly many rows from burden_estimate, and
-  # a small number of rows from burden_estimate_set
+  modelling_group <- thing_exists(e$prune_csv$modelling_group, "modelling_group")
+  disease <- thing_exists(e$prune_csv$disease, "disease")
+  touchstone <- thing_exists(e$prune_csv$scenario, "scenario_description")
+  scenario <- thing_exists(e$prune_csv$touchstone, "touchstone")
 
-  if (nrow(bes_info) > 0) {
+
+  # For each row in the CSV file:
+
+  burden_estimate_set <- NULL
+
+  for (i in seq_len(nrow(e$prune_csv))) {
+    row <- e$prune_csv[i, ]
+    touchstone <- unlist(strsplit(row$touchstone, ";"))
+    modelling_group <- unlist(strsplit(row$modelling_group, ";"))
+    disease < unlist(strsplit(row$disease, ";"))
+    scenario <- unlist(strsplit(row$scenario, ";"))
+
+    if ("*" %in% touchstone) touchstone <- NULL
+    if ("*" %in% modelling_group) modelling_group <- NULL
+    if ("*" %in% disease) disease <- NULL
+    if ("*" %in% scenario) scenario <- NULL
+
+    # Find all the responsibilities for any of these fields, including
+    # the current_burden_estimate_set
+
+    resp_info <- DBI::dbGetQuery(con, sprintf("
+      SELECT modelling_group, disease,
+             scenario.touchstone as touchstone,
+             scenario.scenario_description as scenario,
+             responsibility.id as responsibility,
+             current_burden_estimate_set
+        FROM responsibility
+        JOIN responsibility_set
+          ON responsibility_set.id = responsibility.responsibility_set
+        JOIN scenario
+          ON responsibility.scenario = scenario.id
+        JOIN scenario_description
+          ON scenario_description.id = scenario.scenario_description
+          %s", get_filters(touchstone, modelling_group, disease, scenario)))
+
+    # Ignore where no burden_estimate_set has been uploaded.
+
+    resp_info <- resp_info[!is.na(resp_info$current_burden_estimate_set), ]
+
+    #################################################################
+    # Find all the burden estimate sets for the above
+    # responsibilities, that aren't the current_burden_estimate_set
+
+    burden_estimate_set <- rbind(burden_estimate_set,
+      DBI::dbGetQuery(con, sprintf("
+        SELECT *
+          FROM burden_estimate_set
+         WHERE responsibility IN %s
+           AND NOT id IN %s",
+        sql_in(c(-1, resp_info$responsibility)),
+        sql_in(c(-1, resp_info$current_burden_estimate_set)))))
+  }
+
+  # We now have a list of burden estimate sets to cull -
+  # Remove any duplicates, and return
+
+  burden_estimate_set <- burden_estimate_set[!duplicated(burden_estimate_set$id), ]
+  list(burden_estimate_set = burden_estimate_set)
+}
+
+test_extract_prune <- function(e) {
+
+}
+
+transform_prune <- function(extracted_data) {
+  if ("burden_estimate_set" %in% names(extracted_data)) {
+    list(burden_estimate_set = extracted_data$burden_estimate_set)
+  } else {
+    NULL
+  }
+}
+
+test_transform_prune <- function(t) {
+
+}
+
+load_prune <- function(transformed_data, con) {
+  bes_to_remove <- unique(transformed_data$burden_estimate_set$id)
+
+  if (length(bes_to_remove) > 0) {
+
+    bes_sql_list <- sql_in(bes_to_remove)
 
     DBI::dbExecute(con, sprintf("
        DELETE FROM burden_estimate
@@ -177,7 +134,6 @@ stone_prune <- function(con, modelling_group = NULL,  disease = NULL,
        WHERE id IN %s", bes_sql_list))
 
     DBI::dbExecute(con, "VACUUM burden_estimate")
-
   }
 }
 

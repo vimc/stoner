@@ -21,6 +21,7 @@ stone_transform <- function(extracted_data) {
 
   t <- c(t, transform_responsibilities(extracted_data, t))
   t <- c(t, transform_fast_forward(extracted_data))
+  t <- c(t, transform_prune(extracted_data))
 
   # Remove all rows that shouldn't be added/edited. (ie, database
   # already contains identical rows).

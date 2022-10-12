@@ -98,7 +98,7 @@ that circumstance, and avoid generating warnings.}
 
 \item{upload_to_annex}{Set to TRUE if you want to upload the results
 straight into annex. (Files will still be created, as the upload is
-relative fast; creating the csvs is slower and worth caching)}
+relatively fast; creating the csvs is slower and worth caching)}
 
 \item{annex}{DBI connection to annex, used if upload_to_annex is TRUE.}
 

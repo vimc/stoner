@@ -21,11 +21,13 @@ stone_load <- function(transformed_data, con,
                        allow_overwrite_scenario_description = FALSE,
                        allow_overwrite_scenario_type = FALSE) {
 
-  # This is a bit crude, but detect fast-forward, so we don't use
+  # This is a bit crude, but detect fast-forward and prune, so we don't use
   # load_responsibilities.
 
   if ("responsibility_comment" %in% names(transformed_data)) {
     load_fast_forward(transformed_data, con)
+  } else if ("burden_estimate_set" %in% names(transformed_data)) {
+    load_prune(transformed_data, con)
   } else {
     load_touchstone_name(transformed_data, con)
     load_touchstone(transformed_data, con)
