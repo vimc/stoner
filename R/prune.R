@@ -54,10 +54,10 @@ extract_prune <- function(e, path, con) {
     disease < unlist(strsplit(row$disease, ";"))
     scenario <- unlist(strsplit(row$scenario, ";"))
 
-    if ("*" %in% touchstone) touchstone <- NULL
-    if ("*" %in% modelling_group) modelling_group <- NULL
-    if ("*" %in% disease) disease <- NULL
-    if ("*" %in% scenario) scenario <- NULL
+    touchstone <- if ("*" %in% touchstone) NULL else touchstone
+    modelling_group <- if ("*" %in% modelling_group) NULL else modelling_group
+    disease <- if ("*" %in% disease) NULL else modelling_group
+    scenario <- if ("*" %in% scenario) NULL else scenario
 
     # Find all the responsibilities for any of these fields, including
     # the current_burden_estimate_set
