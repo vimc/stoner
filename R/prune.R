@@ -109,6 +109,20 @@ extract_prune <- function(e, path, con) {
 }
 
 test_extract_prune <- function(e) {
+  # e might not contain burden_estimate_set at all...
+
+  if (!"burden_estimate_set" %in% names(e)) {
+    return()
+  }
+
+  # If it does, it will contain 0 or more rows from the burden_estimate_set table
+  #
+
+  bes <- e$burden_estimate_set
+  expect_true("id" %in% names(bes))
+  expect_true("responsibility" %in% names(bes))#
+  expect_equal(0, sum(is.na(bes$id)))
+  expect_equal(0, sum(is.na(bes$responsibility)))
 
 }
 
@@ -121,7 +135,8 @@ transform_prune <- function(extracted_data) {
 }
 
 test_transform_prune <- function(t) {
-
+  # Nothing helpful to test here - either NULL gets passed through,
+  # or burden_estimate_set gets passed through unaltered - see above.
 }
 
 load_prune <- function(transformed_data, con) {
