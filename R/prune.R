@@ -13,6 +13,12 @@ extract_prune <- function(e, path, con) {
     return(NULL)
   }
 
+  # Check columns
+  if (!identical(sort(names(e$prune_csv)),
+                 c("disease", "modelling_group", "scenario", "touchstone"))) {
+    stop("Columns should be disease, modelling_group, scenario, touchstone")
+  }
+
   # Empty CSV provided
   if (nrow(e$prune_csv) == 0) {
     return(NULL)

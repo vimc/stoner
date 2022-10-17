@@ -297,3 +297,15 @@ test_that("Empty prune CSV", {
   expect_true(all(unlist(res) %in% bes))
   expect_true(all(unlist(res) %in% be))
 })
+
+test_that("Bad prune columns", {
+  test <- init_for_ff_prune()
+  write.csv(data.frame(xmodelling_group = character(0),
+                       touchstone = character(0), disease = character(0),
+                       scenario = character(0)),
+            file.path(test$path, "meta", "prune.csv"),
+            row.names=FALSE)
+  expect_error(do_test(test),
+    "Columns should be disease, modelling_group, scenario, touchstone")
+
+})
