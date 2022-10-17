@@ -28,7 +28,7 @@ extract_prune <- function(e, path, con) {
   # return vector of things.
 
   thing_exists <- function(entries, table) {
-    entries <- unique(unlist(strsplit(entries, ";")))
+    entries <- unique(unlist(lapply(entries, split_semi)))
     if ("*" %in% entries) {
       return(NULL)
     }
@@ -55,10 +55,10 @@ extract_prune <- function(e, path, con) {
 
   for (i in seq_len(nrow(e$prune_csv))) {
     row <- e$prune_csv[i, ]
-    touchstone <- unlist(strsplit(row$touchstone, ";"))
-    modelling_group <- unlist(strsplit(row$modelling_group, ";"))
-    disease < unlist(strsplit(row$disease, ";"))
-    scenario <- unlist(strsplit(row$scenario, ";"))
+    touchstone <- split_semi(row$touchstone)
+    modelling_group <- split_semi(row$modelling_group)
+    disease < split_semi(row$disease)
+    scenario <- split_semi(row$scenario)
 
     touchstone <- if ("*" %in% touchstone) NULL else touchstone
     modelling_group <- if ("*" %in% modelling_group) NULL else modelling_group
@@ -130,6 +130,23 @@ load_prune <- function(transformed_data, con) {
   if (length(bes_to_remove) > 0) {
 
     bes_sql_list <- sql_in(bes_to_remove)
+
+    info <- DBI::dbGetQuery(con, sprintf("
+      SELECT modelling_group, responsibility_set.touchstone as touchstone,
+             scenario_description, burden_estimate_set.id as id FROM burden_estimate_set
+        JOIN responsibility
+          ON burden_estimate_set.responsibility = responsibility.id
+        JOIN responsibility_set
+          ON responsibility_set.id = responsibility.responsibility_set
+        JOIN scenario
+          ON scenario.id = responsibility.scenario
+       WHERE burden_estimate_set.id IN %s", bes_sql_list))
+
+    for (i in seq_len(nrow(info))) {
+      cat(sprintf("Pruning burden estimate set %d : %s, %s, %s\n",
+                  info$id[i], info$modelling_group[i],
+                  info$touchstone[i], info$scenario_description[i]))
+    }
 
     DBI::dbExecute(con, sprintf("
        DELETE FROM burden_estimate
