@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">stoner</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.11</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.12</span>
       </span>
     </div>
 
@@ -72,7 +72,7 @@
       <h1 data-toc-skip>stoner</h1>
                         <h4 data-toc-skip class="author">Wes Hinsley</h4>
             
-            <h4 data-toc-skip class="date">2022-09-15</h4>
+            <h4 data-toc-skip class="date">2022-10-18</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/vimc/stoner/blob/HEAD/vignettes/stoner.Rmd" class="external-link"><code>vignettes/stoner.Rmd</code></a></small>
       <div class="hidden name"><code>stoner.Rmd</code></div>
@@ -620,6 +620,48 @@
 <li><p>Note that fast-forwarding must be the only thing in the import, and the only .csv file in use. Combining fast-forwarding with other touchstone creation or management functions is too stressful to contemplate. Do them separate, and test them separately.</p></li>
 <li><p>Also, while you can do fastforwarding for different touchstones in the same CSV, be careful with it as it gets confusing. Stoner will not let you fastforward into, and out of, the same touchstone (ie, from version 1 to 2, and 2 to 3) in the same CSV file.</p></li>
 <li><p>The <code>modelling_group</code> and <code>scenario</code> columns can either be single items, with multiple rows in the csv file. Or, they can be semi-colon separated, to give multiple combinations of groups and scenarios. Finally, they can be wildcard <code>*</code> to match anything.</p></li>
+<li><p>Include all the standard stoner one-lines, for the extract, test-extract, transform, test-transform, and load stages, as above, and ensure that in <code>dettl.yml</code> for the report, automatic loading is not enabled.</p></li>
+</ul>
+</div>
+</div>
+<div class="section level3">
+<h3 id="pruning-burden-estimate-sets">Pruning burden estimate sets<a class="anchor" aria-label="anchor" href="#pruning-burden-estimate-sets"></a>
+</h3>
+<p>When modelling groups upload more than one burden estimate set for the same responsibility (that is, the same touchstone, scenario, disease), only the most recent is regarded as interesting, and is marked as the <code>current_burden_estimate_set</code> for the responsibility. To save space (for some groups, a considerable amount of space), the old orphaned burden estimate sets can be deleted.</p>
+<p>Note that this should be considered a “final” delete; rows will be dropped from the <code>burden_estimate_set</code> table, and especially the <code>burden_estimate</code> table. While rolling the database back via backups is possible, it’s not desirable. That said, there should be no reason to keep previous versions of a burden estimate set. If both the old and new versions are important, they should both be “current” burden estimate sets, in different touchstones or reponsibilities perhaps.</p>
+<div class="section level4">
+<h4 id="how-to-write-a-prune-import">How to write a prune import<a class="anchor" aria-label="anchor" href="#how-to-write-a-prune-import"></a>
+</h4>
+<p>Write a <code>prune.csv</code> file in the following form.</p>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Column</th>
+<th align="left">Example</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">modelling_group</td>
+<td align="left">IC-Hallett;Li</td>
+</tr>
+<tr class="even">
+<td align="left">disease</td>
+<td align="left">*</td>
+</tr>
+<tr class="odd">
+<td align="left">scenario</td>
+<td align="left">hepb-no-vaccination</td>
+</tr>
+<tr class="even">
+<td align="left">touchstone</td>
+<td align="left">202110gavi-2;202110gavi-3</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p>Each field can be semi-colon-separated, and the result is that all possibilities are multipled out. (So in the above example, both touchstones, for both modelling groups will be examined for pruning opportunities).</p></li>
+<li><p>You can also include multiple lines in the CSV file, which will be considered one at a time, thus allowing flexibility to look at a number of specific combinations for pruning.</p></li>
+<li><p>The <code>*</code> is a wildcard, and in the simplest case, all the fields can be left as <code>*</code>, to look for pruning opportunities in the entire history of burden estimate sets.</p></li>
+<li><p>Note that if <code>prune.csv</code> exists, no other <code>csv</code> file should be included - that is: a pruning import should just do pruning, and not any other functionality. This keeps things simple, which is a good thing since here we are (somewhat uniquely) performing a deletion of data.</p></li>
 <li><p>Include all the standard stoner one-lines, for the extract, test-extract, transform, test-transform, and load stages, as above, and ensure that in <code>dettl.yml</code> for the report, automatic loading is not enabled.</p></li>
 </ul>
 </div>
