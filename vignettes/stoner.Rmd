@@ -546,6 +546,62 @@ knitr::kable(data_frame(
   `dettl.yml` for the report, automatic loading is not enabled. 
 
 
+### Pruning burden estimate sets
+
+When modelling groups upload more than one burden estimate set for the same
+responsibility (that is, the same touchstone, scenario, disease), only the
+most recent is regarded as interesting, and is marked as the 
+`current_burden_estimate_set` for the responsibility. To save space (for
+some groups, a considerable amount of space), the old orphaned 
+burden estimate sets can be deleted.
+
+Note that this should be considered a "final" delete; rows will be dropped 
+from the `burden_estimate_set` table, and especially the `burden_estimate`
+table. While rolling the database back via backups is possible, it's not
+desirable. That said, there should be no reason to keep previous versions
+of a burden estimate set. If both the old and new versions are important,
+they should both be "current" burden estimate sets, in different touchstones
+or reponsibilities perhaps. 
+
+#### How to write a prune import
+
+Write a `prune.csv` file in the following form.
+
+```{r echo = FALSE, results = 'asis'}
+
+knitr::kable(data_frame(
+  `Column` = c("modelling_group", "disease", "scenario", "touchstone"),
+
+  `Example` = c("IC-Hallett;Li", "*",
+                "hepb-no-vaccination",
+                "202110gavi-2;202110gavi-3")
+))
+```
+
+* Each field can be semi-colon-separated, and the result is that
+  all possibilities are multipled out. (So in the above example,
+  both touchstones, for both modelling groups will be examined for
+  pruning opportunities).
+
+* You can also include multiple lines in the CSV file, which will
+  be considered one at a time, thus allowing flexibility to look
+  at a number of specific combinations for pruning.
+
+* The `*` is a wildcard, and in the simplest case, all the fields
+  can be left as `*`, to look for pruning opportunities in the
+  entire history of burden estimate sets.
+
+* Note that if `prune.csv` exists, no other `csv` file
+  should be included - that is: a pruning import should just do
+  pruning, and not any other functionality. This keeps things 
+  simple, which is a good thing since here we are (somewhat
+  uniquely) performing a deletion of data.
+
+* Include all the standard stoner one-lines, for the extract, test-extract, 
+  transform, test-transform, and load stages, as above, and ensure that in 
+  `dettl.yml` for the report, automatic loading is not enabled. 
+
+
 ## Using stoner as a standalone package (without Dettl)
 
 ### Dumping touchstones

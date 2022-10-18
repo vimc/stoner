@@ -22,18 +22,25 @@ stone_extract <- function(path, con) {
     touchstone_demographic_dataset_csv = read_meta(path, "touchstone_demographic_dataset.csv"),
     touchstone_countries_csv = read_meta(path, "touchstone_country.csv"),
     responsibilities_csv = extract_responsibilities_csv(path),
-    fast_forward_csv = read_meta(path, "fast_forward.csv")
+    fast_forward_csv = read_meta(path, "fast_forward.csv"),
+    prune_csv = read_meta(path, "prune.csv")
   )
 
   # Remove any NULLs
 
   e <- e[!vlapply(e, is.null)]
 
-  # If fast-forwarding, then that must be the only CSV
+  # If fast-forwarding, or pruning, then that must be the only CSV
 
   if (!is.null(e$fast_forward_csv)) {
     if (length(e) > 1) {
       stop("fast_forward.csv, if specified, must be the only csv")
+    }
+  }
+
+  if (!is.null(e$prune_csv)) {
+    if (length(e) > 1) {
+      stop("prune.csv, if specified, must be the only csv")
     }
   }
 
@@ -46,6 +53,7 @@ stone_extract <- function(path, con) {
     extract_touchstone_demographic_dataset(e, path, con),
     extract_touchstone_country(e, path, con),
     extract_responsibilities(e, path, con),
-    extract_fast_forward(e, path, con)
+    extract_fast_forward(e, path, con),
+    extract_prune(e, path, con)
   )
 }

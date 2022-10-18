@@ -1,3 +1,7 @@
+# 0.1.12
+
+Support for pruning obsolete burden estimate sets
+
 # 0.1.11
 
 Correctly quote strings with commas when dumping CSVs. (VIMC-6544)

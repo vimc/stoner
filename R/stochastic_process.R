@@ -56,7 +56,7 @@
 ##' that circumstance, and avoid generating warnings.
 ##' @param upload_to_annex Set to TRUE if you want to upload the results
 ##' straight into annex. (Files will still be created, as the upload is
-##' relative fast; creating the csvs is slower and worth caching)
+##' relatively fast; creating the csvs is slower and worth caching)
 ##' @param annex DBI connection to annex, used if upload_to_annex is TRUE.
 ##' @param allow_new_database If uploading, then set this to TRUE to enable
 ##' creating the stochastic_file table if it is not found.
