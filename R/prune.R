@@ -48,6 +48,18 @@ extract_prune <- function(e, path, con) {
   touchstone <- thing_exists(e$prune_csv$scenario, "scenario_description")
   scenario <- thing_exists(e$prune_csv$touchstone, "touchstone")
 
+  # I don't think we still use these tables, but there might be some legacy
+  # burden estimate sets with foreign keys in these tables, so we'll ignore them.
+
+  ignore_these <- unique(c(
+    DBI::dbGetQuery(con, "
+      SELECT DISTINCT focal_burden_estimate_set
+                 FROM impact_estimate_set")$focal_burden_estimate_set,
+    DBI::dbGetQuery(con, "
+      SELECT DISTINCT burden_estimate_set
+                 FROM impact_estimate_set_ingredient")$burden_estimate_set))
+
+
 
   # For each row in the CSV file:
 
@@ -90,6 +102,7 @@ extract_prune <- function(e, path, con) {
     #################################################################
     # Find all the burden estimate sets for the above
     # responsibilities, that aren't the current_burden_estimate_set
+    # and also doesn't occur in impact_estimate_set
 
     burden_estimate_set <- rbind(burden_estimate_set,
       DBI::dbGetQuery(con, sprintf("
@@ -102,9 +115,14 @@ extract_prune <- function(e, path, con) {
   }
 
   # We now have a list of burden estimate sets to cull -
-  # Remove any duplicates, and return
+  # Remove any duplicates, and any in the ignore list, and return
 
-  burden_estimate_set <- burden_estimate_set[!duplicated(burden_estimate_set$id), ]
+  burden_estimate_set <- burden_estimate_set[
+    !duplicated(burden_estimate_set$id), ]
+
+  burden_estimate_set <- burden_estimate_set[
+    !burden_estimate_set$id %in% ignore_these, ]
+
   list(burden_estimate_set = burden_estimate_set)
 }
 
@@ -162,6 +180,10 @@ load_prune <- function(transformed_data, con) {
                   info$id[i], info$modelling_group[i],
                   info$touchstone[i], info$scenario_description[i]))
     }
+
+    DBI::dbExecute(con, sprintf("
+       DELETE FROM burden_estimate_set_problem
+        wHERE burden_estimate_set IN %s", bes_sql_list))
 
     DBI::dbExecute(con, sprintf("
        DELETE FROM burden_estimate
