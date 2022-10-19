@@ -57,9 +57,14 @@ extract_prune <- function(e, path, con) {
                  FROM impact_estimate_set")$focal_burden_estimate_set,
     DBI::dbGetQuery(con, "
       SELECT DISTINCT burden_estimate_set
-                 FROM impact_estimate_set_ingredient")$burden_estimate_set))
+                 FROM impact_estimate_set_ingredient")$burden_estimate_set,
+
+    DBI::dbGetQuery(con, "
+      SELECT DISTINCT current_stochastic_burden_estimate_set
+                 FROM responsibility")$current_stochastic_burden_estimate_set))
 
 
+  ignore_these <- ignore_these[!is.na(ignore_these)]
 
   # For each row in the CSV file:
 
