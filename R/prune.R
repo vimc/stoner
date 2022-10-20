@@ -198,7 +198,6 @@ load_prune <- function(transformed_data, con) {
       DELETE FROM burden_estimate_set
        WHERE id IN %s", bes_sql_list))
 
-    DBI::dbExecute(con, "VACUUM burden_estimate")
   }
 }
 
