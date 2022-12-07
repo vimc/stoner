@@ -1,6 +1,10 @@
 # 0.1.15
 
-Fast-forward fixes - cope with absence of any responsibility or responsibility_set comments.
+Fast-forward fixes:
+
+  * inconsistency between burden_estimate_set->responsibility and responsibility->current_burden_estimate_set
+  * extra consistency checks in load stage
+  * allow absence of responsibility_comment or responsibility_set_comment.
 
 # 0.1.12
 

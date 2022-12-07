@@ -102,7 +102,7 @@ expand_ff_csv <- function(csv, con) {
   }
 
   # We also allow wildcard for scenarios...
-  # Here expand that now into separate rows for individual scenarios,
+  # Here expand that single row into separate rows for individual scenarios,
   # that the (already single) modelling group has in
   # the origin touchstone.
 
@@ -866,77 +866,6 @@ check_ff_consistency <- function(con) {
     stop("Consistency Errors")
   }
 
-
   invisible()
 }
 
-#fix_bes <- function(con, id) {
-#  resp_info <- DBI::dbGetQuery(con, "
-#    SELECT responsibility.id as responsibility,
-#    responsibility_set.id as responsibility_set,
-#           current_burden_estimate_set, modelling_group, touchstone
-#      FROM responsibility
-#      JOIN responsibility_set
-#        ON responsibility_set.id = responsibility.responsibility_set
-#     WHERE current_burden_estimate_set = $1", id)
-
-#  bes_info <-  DBI::dbGetQuery(con, "
-#    SELECT burden_estimate_set.id as burden_estimate_set,
-#           responsibility.id as responsibility,
-#           responsibility_set.id as responsibility_set,
-#           touchstone
-#      FROM burden_estimate_set
-#      JOIN responsibility
-#        ON burden_estimate_set.responsibility = responsibility.id
-#      JOIN responsibility_set
-#        ON responsibility_set.id = responsibility.responsibility_set
-#     WHERE burden_estimate_set.id = $1", id)
-
-#  if (resp_info$touchstone == bes_info$touchstone) {
-#    message("Touchstones match - no problem")
-#    return()
-#  }
-
-#  resp_via_bes <- DBI::dbGetQuery(con, "
-#    SELECT responsibility.id as responsibility,
-#           responsibility_set.id as responsibility_set,
-#           current_burden_estimate_set, modelling_group, touchstone
-#      FROM responsibility
-#      JOIN responsibility_set
-#        ON responsibility_set.id = responsibility.responsibility_set
-#     WHERE responsibility.id = $1", bes_info$responsibility)
-
-  # If the current_burden_estimate_set of the bes's responsibility is
-  # NA, then probably a quick FF hack has been done; we should swap this
-  # NA with the current_burden_estimate_set from the other responsibility
-
-#  if (is.na(resp_via_bes$current_burden_estimate_set)) {
-#    DBI::dbExecute(con, "
-#      UPDATE responsibility
-#         SET current_burden_estimate_set = $1
-#       WHERE responsibility.id = $2",
-#                   list(id, resp_via_bes$responsibility))
-
-#    DBI::dbExecute(con, "
-#      UPDATE responsibility
-#         SET current_burden_estimate_set = NULL
-#       WHERE responsibility.id = $1",
-#                   list(resp_info$responsibility))
-#    return()
-#  }
-
-#  invisible()
-
-#}
-
-#fix_all <- function() {
-#  DBI::dbBegin(con)
-#  for (x in c(1979, 1980,1981,1982,1983,1984,1985,2080,2081,2082,2083,2084,2376,
-#              2377,2378,2379,2380,2381,2382,2383,2384,2385,2386,2387,2389,
-#              2390,2391)) {
-#    fix_bes(con, x)
-#  }
-#  check_ff_consistency(con)
-#  DBI::dbCommit(con)
-
-#}
