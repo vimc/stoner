@@ -1,3 +1,7 @@
+# 0.1.15
+
+Fast-forward fixes - cope with absence of any responsibility or responsibility_set comments.
+
 # 0.1.12
 
 Support for pruning obsolete burden estimate sets

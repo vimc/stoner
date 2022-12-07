@@ -34,7 +34,6 @@ expand_ff_csv <- function(csv, con) {
     stop("Same touchstone appears in both touchstone_to and touchstone_from.")
   }
 
-
   # Generic function to check that all "values" exist in
   # the "table" in the database, in column "id_field".
   # Values missing from the db table are returned
@@ -103,7 +102,7 @@ expand_ff_csv <- function(csv, con) {
   }
 
   # We also allow wildcard for scenarios...
-  # Here expand that now ito separate rows for individual scenarios,
+  # Here expand that now into separate rows for individual scenarios,
   # that the (already single) modelling group has in
   # the origin touchstone.
 
@@ -128,21 +127,33 @@ expand_ff_csv <- function(csv, con) {
   }
 
   # Having expanded scenarios to one per line, check they
-  # all exist - noting we are keeping these human readable,
-  # so are really scenario.scenario_description
+  # all exist in the relevant touchstones.
 
-  scs <- missing_things(unique(csv$scenario), "scenario", con,
-                        "scenario_description")
-  if (length(scs) > 0) {
-    stop(sprintf("Scenario(s) not found: %s",
-                    paste(scs, collapse = ", ")))
+  all_scenarios <- DBI::dbGetQuery(con, sprintf("
+    SELECT * FROM scenario
+     WHERE scenario_description IN %s
+       AND touchstone IN %s",
+    sql_in(unique(csv$scenario)),
+    sql_in(unique(c(csv$touchstone_from, csv$touchstone_to)))))
+
+  all_scenarios$mash <- paste(all_scenarios$touchstone,
+                              all_scenarios$scenario_description, sep = "\r")
+
+  mash <- c(paste(csv$touchstone_from, csv$scenario, sep = "\r"),
+            paste(csv$touchstone_to, csv$scenario, sep = "\r"))
+
+  missing <- mash[!mash %in% all_scenarios$mash]
+
+  if (length(missing) > 0) {
+    stop(sprintf("Touchstone-scenario(s) not found: %s",
+                    paste(gsub("\r", ":", missing), collapse = ", ")))
   }
 
   # So now we have a list of jobs to do:-
   #
   # modelling_group, touchstone_from, touchstone_to, scenario
 
-  # We'll remove any invalid combos. Build a hash of
+  # We'll remove any invalid combos. Build a mash of
   # touchstone_from \r modelling_group \r scenario and
   # touchstone_to \r modelling_group \r scenario to see
   # what exists in the database.
@@ -160,7 +171,7 @@ expand_ff_csv <- function(csv, con) {
       SELECT CONCAT(modelling_group, '\r',
                     responsibility_set.touchstone, '\r',
                     scenario_description) as mash,
-             responsibility.scenario as scid,
+             responsibility.scenario as sc_from,
              responsibility_set.id as rset,
              responsibility.id as resp,
              current_burden_estimate_set as bes,
@@ -177,8 +188,6 @@ expand_ff_csv <- function(csv, con) {
        WHERE responsibility_set.touchstone IN %s", touchstones))
   }
 
-  # Look up all the responsibilities we *might* fast-forward...
-
   all_touchstone_from <-
     paste0("('", paste(unique(csv$touchstone_from), collapse = "','"), "')")
 
@@ -194,7 +203,7 @@ expand_ff_csv <- function(csv, con) {
   csv$rset <- db_mash1$rset[matches]
   csv$resp <- db_mash1$resp[matches]
   csv$bes <- db_mash1$bes[matches]
-  csv$scid <- db_mash1$scid[matches]
+  csv$sc_from <- db_mash1$sc_from[matches]
   csv$sbes <- db_mash1$sbes[matches]
   csv$is_open <- db_mash1$is_open[matches]
   csv$expectations <- db_mash1$expectations[matches]
@@ -260,7 +269,6 @@ expand_ff_csv <- function(csv, con) {
   }
 
 
-
   # We also might need to create new responsibility_sets...
 
   next_rsets <- DBI::dbGetQuery(con, sprintf("
@@ -272,6 +280,12 @@ expand_ff_csv <- function(csv, con) {
     csv$mash <- paste(csv$modelling_group, csv$touchstone_to, sep = "\r")
     csv$rset_to <- next_rsets$id[match(csv$mash, next_rsets$mash)]
   }
+  csv$mash <- NULL
+
+  # Look up scenario ids we're moving to.
+
+  csv$mash <- paste(csv$touchstone_to, csv$scenario, sep = "\r")
+  csv$sc_to <- all_scenarios$id[match(csv$mash, all_scenarios$mash)]
   csv$mash <- NULL
   unique(csv)
 }
@@ -372,7 +386,7 @@ test_extract_fast_forward <- function(e) {
                                   "touchstone_from", "touchstone_to",
                                   "resp", "rset", "bes", "rset_to",
                                   "resp_to", "sbes", "is_open",
-                                  "expectations", "scid")),
+                                  "expectations", "sc_from", "sc_to")),
                            label = "Correct columns in expanded ff csv")
   }
 
@@ -390,7 +404,8 @@ test_extract_fast_forward <- function(e) {
 #            rset                 eg   464 - id of resp_set in touchstone_from
 #            resp                 eg   3208 - id of resp in touchstone_from
 #            bes                  eg   NA (id of existing burden estimate set)
-#            scid                 eg   1993 id of scenario
+#            sc_from              eg   1993 id of scenario in old touchstone
+#            sc_to                eg   2001 id of scenario in new touchstone
 #            sbes                 eg   NA - stochastic burden estimate set id
 #            is_open              eg   FALSE
 #            expectations         eg   391
@@ -487,7 +502,9 @@ transform_fast_forward <- function(e) {
       new_rsets$id[match(new_responsibility_set_comments$responsibility_set,
                      new_rsets$rset)]
 
-    t[['responsibility_set_comment']] <- new_responsibility_set_comments
+    if (nrow(new_responsibility_set_comments) > 0) {
+      t[['responsibility_set_comment']] <- new_responsibility_set_comments
+    }
 
     new_rsets$rset <- NULL
     t[['responsibility_set']] <- new_rsets
@@ -502,7 +519,7 @@ transform_fast_forward <- function(e) {
   # to create new responsibilities
 
   new_resps <- unique(ff[is.na(ff$resp_to),
-                      c("resp", "rset_to", "scid", "bes", "sbes",
+                      c("resp", "rset_to", "sc_to", "bes", "sbes",
                         "is_open", "expectations")])
 
   rename_resps <- function(r) {
@@ -510,7 +527,8 @@ transform_fast_forward <- function(e) {
     names(r)[names(r) == "rset"] <- "responsibility_set"
     names(r)[names(r) == "resp_to"] <- "id"
     names(r)[names(r) == "resp"] <- "id"
-    names(r)[names(r) == "scid"] <- "scenario"
+    names(r)[names(r) == "sc_to"] <- "scenario"
+    names(r)[names(r) == "sc_from"] <- "scenario"
     names(r)[names(r) == "bes"] <- "current_burden_estimate_set"
     names(r)[names(r) == "sbes"] <- "current_stochastic_burden_estimate_set"
     r
@@ -547,8 +565,9 @@ transform_fast_forward <- function(e) {
       new_responsibility_comments$responsibility[i] <- resps_row$newid
     }
   }
-
-  t[['responsibility_comment']] <- new_responsibility_comments
+  if (nrow(new_responsibility_comments) > 0) {
+    t[['responsibility_comment']] <- new_responsibility_comments
+  }
 
   new_resps$id <- new_resps$newid
   new_resps$newid <- NULL
@@ -556,25 +575,39 @@ transform_fast_forward <- function(e) {
   # Add the update for responsibilities that already exist.
 
   resps_existing <- unique(ff[!is.na(ff$resp_to),
-                              c("rset_to", "scid", "bes", "sbes",
+                              c("rset_to", "sc_to", "bes", "sbes",
                                 "is_open", "expectations", "resp_to")])
 
   resps_existing <- rename_resps(resps_existing)
 
   # And remove the migrated estimate sets from the old touchstone
 
-  resps_remove_bes <- ff[, c("rset", "scid",
+  resps_remove_bes <- ff[, c("rset", "sc_from",
                       "is_open", "expectations", "resp")]
   resps_remove_bes$sbes <- NA
   resps_remove_bes$bes <- NA
   resps_remove_bes <- rename_resps(resps_remove_bes)
-
   t[['responsibility']] <- rbind(new_resps, resps_existing, resps_remove_bes)
+
+  # This is a bit horrible, but it's hard to infer at the load stage
+  # whether this is a fast-forward import. The best detection method is
+  # the responsibility_comment table, which is only included in a FF, but
+  # what if we don't have any responsibility_comment? dettl will not let
+  # us send a table with zero rows...
+
+  if (!"responsibility_comment" %in% names(t)) {
+    t[['responsibility_comment']] <- data.frame(
+      id = -1, responsibility = -1,
+      comment = "Fast Forward Dummy Identifier",
+      added_by = NA,
+      added_on = NA)
+  }
   t
 }
 
 
 test_transform_fast_forward <- function(transformed_data) {
+
   # Not much we can test here, as tables could
   # contain all or nothing.
 }
@@ -582,10 +615,18 @@ test_transform_fast_forward <- function(transformed_data) {
 ###############################################################################
 
 load_fast_forward <- function(transformed_data, con) {
-
   t <- transformed_data
+  t[['responsibility_comment']] <- t[['responsibility_comment']][
+    t[['responsibility_comment']]$comment != "Fast Forward Dummy Identifier", ]
+
+  if (nrow(t[['responsibility_comment']]) == 0) {
+    t[['responsibility_comment']] <- NULL
+  }
 
   # So... Up to 4 tables to work on. Shorten names to make this code easier.
+
+  # (And we'll also need to update burden_estimate_set when we change the
+  # current_burden_estimate_set)
 
   # We only have work to do if there are responsibilities...
 
@@ -637,9 +678,10 @@ load_fast_forward <- function(transformed_data, con) {
 
 
     # responsibility_set_comment with the new serial ids
-
-    rsc[['responsibility_set']] <-
-      rs$newid[match(rsc[['responsibility_set']], rs$id)]
+    if (!is.null(rsc)) {
+      rsc[['responsibility_set']] <-
+        rs$newid[match(rsc[['responsibility_set']], rs$id)]
+    }
 
     r <- rbind(rneg, rpos)
   }
@@ -648,6 +690,7 @@ load_fast_forward <- function(transformed_data, con) {
   #                    - add, remembering the mapping again...
 
   rneg <- r[r$id < 0, ]
+  rpos <- r[r$id >= 0, ]
   rneg_no_id <- rneg
   rneg_no_id$id <- NULL
 
@@ -655,7 +698,10 @@ load_fast_forward <- function(transformed_data, con) {
   # Created responsibilities will be open. Close them
   # separately afterwards if necessary. (In part, this is
   # so we can see them in the portal and verify FF was ok)
-  if (nrow(rneg_no_id) > 0) {    rneg_no_id$is_open <- TRUE
+
+  if (nrow(rneg_no_id) > 0) {
+
+    rneg_no_id$is_open <- TRUE
 
     DBI::dbAppendTable(con, "responsibility", rneg_no_id)
     rneg$mash <- paste(rneg[['responsibility_set']], rneg$scenario, sep = "\r")
@@ -673,13 +719,25 @@ load_fast_forward <- function(transformed_data, con) {
 
     # And apply to responsibility_comment, for those that needed it...
 
-    negs <- which(rc[['responsibility']] < 0)
+    if (!is.null(rc)) {
+      negs <- which(rc[['responsibility']] < 0)
+      rc[['responsibility']][negs] <-
+        rneg$newid[match(rc[['responsibility']][negs], rneg$id)]
+    }
 
-    rc[['responsibility']][negs] <-
-      rneg$newid[match(rc[['responsibility']][negs], rneg$id)]
+    # Update Burden Estimate Set to point to new responsibility
+
+    for (i in seq_len(nrow(rneg))) {
+      row <- rneg[i, ]
+      DBI::dbExecute(con, "
+        UPDATE burden_estimate_set
+           SET responsibility = $1
+         WHERE id = $2", list(row$newid, row$current_burden_estimate_set))
+    }
   }
-    # - For responsibilities that already had ids,
-    # - Update current_burden_estimate_set.
+
+  # For responsibilities that already had ids,
+  # Update current_burden_estimate_set
 
   for (i in seq_len(nrow(rpos))) {
     row <- rpos[i, ]
@@ -687,16 +745,198 @@ load_fast_forward <- function(transformed_data, con) {
       UPDATE responsibility
          SET current_burden_estimate_set = $1
        WHERE id = $2", list(row$current_burden_estimate_set, row$id))
+
+    DBI::dbExecute(con, "
+      UPDATE burden_estimate_set
+         SET responsibility = $2
+       WHERE id = $1", list(row$current_burden_estimate_set, row$id))
   }
 
   # responsibility_set_comment and responsibility_comment
   # are now ready to go. These are just additions, so id can
   # be left as serial.
 
-  if (!is.null(rsc) > 0) {
-    rsc$id <- NULL
-    DBI::dbAppendTable(con, "responsibility_set_comment", rsc)
+  if (!is.null(rsc)) {
+    if (nrow(rsc) > 0) {
+      rsc$id <- NULL
+      DBI::dbAppendTable(con, "responsibility_set_comment", rsc)
+    }
   }
-  rc$id <- NULL
-  DBI::dbAppendTable(con, "responsibility_comment", rc)
+
+  if (!is.null(rc)) {
+    if (nrow(rc) > 0) {
+      rc$id <- NULL
+      DBI::dbAppendTable(con, "responsibility_comment", rc)
+    }
+  }
+  message("Checking consistency")
+  check_ff_consistency(con)
 }
+
+###############################################################################
+# Consistency test - check that:
+#
+# For all responsibility->current_burden_estimate_set,
+# responsibility->responsibility_set->touchstone is the same as
+# current_burden_estimate_set->responsibility->responsibility_set->touchstone
+
+check_ff_consistency <- function(con) {
+
+  # Query all current_burden_estimate_set, and the
+  # touchstone for the responsibility(set) that the
+  # current_burden_estimate_set belongs to.
+
+  owner_info <- DBI::dbGetQuery(con,
+    "SELECT current_burden_estimate_set,
+            responsibility_set.touchstone as touchstone
+       FROM responsibility
+       JOIN responsibility_set
+         ON responsibility.responsibility_set = responsibility_set.id
+      ORDER BY current_burden_estimate_set")
+
+  owner_info <- owner_info[!is.na(owner_info$current_burden_estimate_set), ]
+
+  # Incidentally, these should be unique. Can't have the same b.e.s being
+  # the current b.e.s for multiple responsibilities.
+
+  test_unique <- (sum(duplicated(owner_info$current_burden_estimate_set)) == 0)
+
+  if (!test_unique) {
+    stop("Duplicate current_burden_estimate_set found")
+  }
+
+  # Now look up all current_burden_estimate_set, and the
+  # touchstone you get from burden_estimate_set->responsibility_set
+
+  all_cbes <- sql_in(owner_info$current_burden_estimate_set)
+
+  bes_info <- DBI::dbGetQuery(con, sprintf("
+    SELECT burden_estimate_set.id as current_burden_estimate_set,
+            responsibility_set.touchstone as bes_touchstone
+       FROM burden_estimate_set
+       JOIN responsibility
+         ON burden_estimate_set.responsibility = responsibility.id
+       JOIN responsibility_set
+         ON responsibility.responsibility_set = responsibility_set.id
+      WHERE burden_estimate_set.id IN %s
+   ORDER BY burden_estimate_set.id", all_cbes))
+
+  owner_info <- dplyr::left_join(owner_info, bes_info,
+                                 by = "current_burden_estimate_set")
+
+  # If the touchstones differ, we have inconsistency.
+  # Note that this should never happen...
+
+  owner_info <- owner_info[owner_info$touchstone != owner_info$bes_touchstone, ]
+  db_consistent <- (nrow(owner_info) == 0)
+
+  error <- FALSE
+  if (!db_consistent) {
+    all_cbes <- sql_in(owner_info$current_burden_estimate_set)
+
+    cat(sprintf("Inconsistent touchstone in current_burden_estimate_set for %s",
+                 all_cbes))
+    error <- TRUE
+
+
+  }
+
+  # Also check that responsibility->responsibility_set->touchstone
+  # is always equal to responsibility->scenario->touchstone
+
+  res <- DBI::dbGetQuery(con, "
+    SELECT responsibility.id as responsibility,
+           scenario.touchstone as sc_touchstone,
+           responsibility_set.touchstone as rset_touchstone
+      FROM responsibility
+      JOIN scenario
+        ON responsibility.scenario = scenario.id
+      JOIN responsibility_set
+        ON responsibility.responsibility_set = responsibility_set.id")
+
+  res <- res[res$sc_touchstone != res$rset_touchstone, ]
+  if (nrow(res) > 0) {
+    cat(sprintf(
+      "Inconsistent scenario/responsibility_set touchstone for responsibilities: %s",
+      sql_in(res$responsibility)))
+    error <- TRUE
+  }
+
+  if (error) {
+    stop("Consistency Errors")
+  }
+
+
+  invisible()
+}
+
+#fix_bes <- function(con, id) {
+#  resp_info <- DBI::dbGetQuery(con, "
+#    SELECT responsibility.id as responsibility,
+#    responsibility_set.id as responsibility_set,
+#           current_burden_estimate_set, modelling_group, touchstone
+#      FROM responsibility
+#      JOIN responsibility_set
+#        ON responsibility_set.id = responsibility.responsibility_set
+#     WHERE current_burden_estimate_set = $1", id)
+
+#  bes_info <-  DBI::dbGetQuery(con, "
+#    SELECT burden_estimate_set.id as burden_estimate_set,
+#           responsibility.id as responsibility,
+#           responsibility_set.id as responsibility_set,
+#           touchstone
+#      FROM burden_estimate_set
+#      JOIN responsibility
+#        ON burden_estimate_set.responsibility = responsibility.id
+#      JOIN responsibility_set
+#        ON responsibility_set.id = responsibility.responsibility_set
+#     WHERE burden_estimate_set.id = $1", id)
+
+#  if (resp_info$touchstone == bes_info$touchstone) {
+#    message("Touchstones match - no problem")
+#    return()
+#  }
+
+#  resp_via_bes <- DBI::dbGetQuery(con, "
+#    SELECT responsibility.id as responsibility,
+#           responsibility_set.id as responsibility_set,
+#           current_burden_estimate_set, modelling_group, touchstone
+#      FROM responsibility
+#      JOIN responsibility_set
+#        ON responsibility_set.id = responsibility.responsibility_set
+#     WHERE responsibility.id = $1", bes_info$responsibility)
+
+  # If the current_burden_estimate_set of the bes's responsibility is
+  # NA, then probably a quick FF hack has been done; we should swap this
+  # NA with the current_burden_estimate_set from the other responsibility
+
+#  if (is.na(resp_via_bes$current_burden_estimate_set)) {
+#    DBI::dbExecute(con, "
+#      UPDATE responsibility
+#         SET current_burden_estimate_set = $1
+#       WHERE responsibility.id = $2",
+#                   list(id, resp_via_bes$responsibility))
+
+#    DBI::dbExecute(con, "
+#      UPDATE responsibility
+#         SET current_burden_estimate_set = NULL
+#       WHERE responsibility.id = $1",
+#                   list(resp_info$responsibility))
+#    return()
+#  }
+
+#  invisible()
+
+#}
+
+#fix_all <- function() {
+#  DBI::dbBegin(con)
+#  for (x in c(1979, 1980,1981,1982,1983,1984,1985,2080,2081,2082,2083,2084,2376,
+#              2377,2378,2379,2380,2381,2382,2383,2384,2385,2386,2387,2389,
+#              2390,2391)) {
+#    fix_bes(con, x)
+#  }
+#  check_ff_consistency(con)
+#  DBI::dbCommit(con)
+
+#}
