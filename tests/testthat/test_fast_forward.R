@@ -575,33 +575,30 @@ test_that("Fast-Forward tests", {
     # responsibility->current_burden_estimate_set
 
     }
+  }
 
-    test_consistency(1:3)
+  test_consistency(1:3)
 
     # check detection of inconsistency with
     # responsibility->current_burden_estimate_set->responsibility
 
-    test_bes_consistency <- function() {
-      clear_test_resps(test)
-      resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
-      resp_set_b1 <- add_responsibility_set(test, "R-deer", "nevis-2")
-      resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
-      resp_b1 <- add_responsibility(test, "nevis-2", resp_set_b1, "hot_chocolate", expec)
-      bes_a1 <- add_burden_estimate_set(test, resp_a1)
-      add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
+  test_bes_consistency <- function() {
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_b1 <- add_responsibility_set(test, "R-deer", "nevis-2")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    resp_b1 <- add_responsibility(test, "nevis-2", resp_set_b1, "hot_chocolate", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
 
-      DBI::dbExecute(test$con, "UPDATE burden_estimate_set
-                                   SET responsibility = $1", resp_b1)
+    DBI::dbExecute(test$con, "UPDATE burden_estimate_set
+                                 SET responsibility = $1", resp_b1)
 
-      expect_error(stoner::check_ff_consistency(test$con),
-        "Inconsistent responsibility/burden_estimate_set linkage")
-
-    }
-
-    test_bes_consistency()
+    expect_error(stoner::check_ff_consistency(test$con),
+      "Inconsistent responsibility/burden_estimate_set linkage")
 
   }
 
-
+  test_bes_consistency()
 
 })
