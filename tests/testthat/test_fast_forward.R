@@ -549,7 +549,7 @@ test_that("Fast-Forward tests", {
     if (pass == 1) {
       bes_id <- DBI::dbGetQuery(test$con, "SELECT id FROM burden_estimate_set SET LIMIT 1")$id
       DBI::dbExecute(test$con, "UPDATE responsibility SET current_burden_estimate_set = $1", bes_id)
-      expect_error(stoner::check_ff_consistency(test$con),
+      expect_error(stoner:::check_ff_consistency(test$con),
                    "Duplicate current_burden_estimate_set")
 
     # scenario touchstone different from responsibility_set touchstone in
@@ -560,7 +560,7 @@ test_that("Fast-Forward tests", {
                                     WHERE touchstone = 'nevis-1' LIMIT 1")
       DBI::dbExecute(test$con, "UPDATE responsibility_set SET touchstone = 'nevis-2'
                                 WHERE id = $1", rset$id)
-      expect_error(stoner::check_ff_consistency(test$con),
+      expect_error(stoner:::check_ff_consistency(test$con),
                    "Inconsistent scenario/responsibility_set")
 
 
@@ -568,7 +568,7 @@ test_that("Fast-Forward tests", {
       resp <- DBI::dbGetQuery(test$con, "SELECT * FROM responsibility LIMIT 1")
       DBI::dbExecute(test$con,"UPDATE responsibility
                               SET scenario = $1", resp$scenario + 1)
-      expect_error(stoner::check_ff_consistency(test$con),
+      expect_error(stoner:::check_ff_consistency(test$con),
                    "Inconsistent scenario/responsibility_set")
 
     # burden_estimate_set->responsibility mismatch
@@ -594,7 +594,7 @@ test_that("Fast-Forward tests", {
     DBI::dbExecute(test$con, "UPDATE burden_estimate_set
                                  SET responsibility = $1", resp_b1)
 
-    expect_error(stoner::check_ff_consistency(test$con),
+    expect_error(stoner:::check_ff_consistency(test$con),
       "Inconsistent responsibility/current_burden_estimate_set linkage")
 
   }
