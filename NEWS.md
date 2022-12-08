@@ -2,9 +2,11 @@
 
 Fast-forward fixes:
 
-  * inconsistency between burden_estimate_set->responsibility and responsibility->current_burden_estimate_set
-  * extra consistency checks in load stage
-  * allow absence of responsibility_comment or responsibility_set_comment.
+  * enforce consistency between responsibility->current_burden_estimate_set and 
+    burden_estimate_set->responsibility
+  * enforce consistency between repsonsibility->scenario->touchstone and
+    responsibility.responsibility_set->touchstone
+  * prevent dettl failure when no responsibility_comments or responsibility_set_comments exist.
 
 # 0.1.12
 
