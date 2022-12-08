@@ -799,46 +799,38 @@ check_ff_consistency <- function(con) {
   # Incidentally, these should be unique. Can't have the same b.e.s being
   # the current b.e.s for multiple responsibilities.
 
-  test_unique <- (sum(duplicated(owner_info$current_burden_estimate_set)) == 0)
+  test_unique <- owner_info$current_burden_estimate_set[
+    duplicated(owner_info$current_burden_estimate_set)]
 
-  if (!test_unique) {
-    stop("Duplicate current_burden_estimate_set found")
+  if (length(test_unique) > 0) {
+    stop(sprintf("Duplicate current_burden_estimate_set(s) found : %s",
+                 sql_in(test_unique)))
   }
 
-  # Now look up all current_burden_estimate_set, and the
-  # touchstone you get from burden_estimate_set->responsibility_set
+  # Now check that responsibility->current_burden_estimate_set is always
+  # equal to burden_estimate_set->responsibility for the matching b.e.s
 
-  all_cbes <- sql_in(owner_info$current_burden_estimate_set)
+  # Note that you can have orphans (old burden_estimate_sets that
+  # weren't pruned) - so do this for only valid current_burden_estimate_set
 
-  bes_info <- DBI::dbGetQuery(con, sprintf("
-    SELECT burden_estimate_set.id as current_burden_estimate_set,
-            responsibility_set.touchstone as bes_touchstone
-       FROM burden_estimate_set
-       JOIN responsibility
-         ON burden_estimate_set.responsibility = responsibility.id
-       JOIN responsibility_set
-         ON responsibility.responsibility_set = responsibility_set.id
-      WHERE burden_estimate_set.id IN %s
-   ORDER BY burden_estimate_set.id", all_cbes))
+  # If this is the case, then by definition, touchstones will be ok,
+  # because it's the same responsibility we're talking about.
 
-  owner_info <- dplyr::left_join(owner_info, bes_info,
-                                 by = "current_burden_estimate_set")
+  bes_info <- DBI::dbGetQuery(con, "
+    SELECT burden_estimate_set.responsibility as bes_resp,
+           responsibility.id as resp_bes
+      FROM responsibility
+      JOIN burden_estimate_set
+        ON responsibility.current_burden_estimate_set =
+           burden_estimate_set.id
+     WHERE current_burden_estimate_set > 0
+       AND NOT burden_estimate_set.responsibility =
+               responsibility.id")
 
-  # If the touchstones differ, we have inconsistency.
-  # Note that this should never happen...
-
-  owner_info <- owner_info[owner_info$touchstone != owner_info$bes_touchstone, ]
-  db_consistent <- (nrow(owner_info) == 0)
-
-  error <- FALSE
-  if (!db_consistent) {
-    all_cbes <- sql_in(owner_info$current_burden_estimate_set)
-
-    cat(sprintf("Inconsistent touchstone in current_burden_estimate_set for %s",
-                 all_cbes))
-    error <- TRUE
-
-
+  if (nrow(bes_info) > 0) {
+    stop(sprintf(paste0("Inconsistent responsibility/current_burden_estimate_set linkage: ",
+                        sprintf("responsibilities %s -> cbes -> responsibilities %s",
+                        sql_in(bes_info$resp_bes), sql_in(bes_info$bes_resp)))))
   }
 
   # Also check that responsibility->responsibility_set->touchstone
@@ -856,14 +848,9 @@ check_ff_consistency <- function(con) {
 
   res <- res[res$sc_touchstone != res$rset_touchstone, ]
   if (nrow(res) > 0) {
-    cat(sprintf(
+    stop(sprintf(
       "Inconsistent scenario/responsibility_set touchstone for responsibilities: %s",
       sql_in(res$responsibility)))
-    error <- TRUE
-  }
-
-  if (error) {
-    stop("Consistency Errors")
   }
 
   invisible()
