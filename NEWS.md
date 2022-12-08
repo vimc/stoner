@@ -2,7 +2,8 @@
 
 Fast-forward fixes:
 
-  * Fix stoner not updating burden_estimate_set->responsibility during a fast-forward.
+  * Fix failure to update burden_estimate_set->responsibility 
+    and responsibility->scenario during a fast-forward.
 
   * Runtime checks to prevent the above happening in the future, and look for any inconsistencies
     between responsibility->scenario->touchstone and responsibility->repsonsibility_set->touchstone.
