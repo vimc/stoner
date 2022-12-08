@@ -548,7 +548,7 @@ test_that("Fast-Forward tests", {
 
     if (pass == 1) {
       bes_id <- DBI::dbGetQuery(test$con, "SELECT id FROM burden_estimate_set SET LIMIT 1")$id
-      DBI::dbExecute(con, "UPDATE responsibility SET current_burden_estimate_set = $1", bes_id)
+      DBI::dbExecute(test$con, "UPDATE responsibility SET current_burden_estimate_set = $1", bes_id)
       expect_error(stoner::check_ff_consistency(test$con),
                    "Duplicate current_burden_estimate_set")
 
@@ -577,7 +577,7 @@ test_that("Fast-Forward tests", {
     }
   }
 
-  test_consistency(1:3)
+  for (i in 1:3) test_consistency(i)
 
     # check detection of inconsistency with
     # responsibility->current_burden_estimate_set->responsibility
@@ -595,7 +595,7 @@ test_that("Fast-Forward tests", {
                                  SET responsibility = $1", resp_b1)
 
     expect_error(stoner::check_ff_consistency(test$con),
-      "Inconsistent responsibility/burden_estimate_set linkage")
+      "Inconsistent responsibility/current_burden_estimate_set linkage")
 
   }
 
