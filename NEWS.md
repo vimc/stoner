@@ -2,11 +2,13 @@
 
 Fast-forward fixes:
 
-  * enforce consistency between responsibility->current_burden_estimate_set and 
-    burden_estimate_set->responsibility
-  * enforce consistency between repsonsibility->scenario->touchstone and
-    responsibility.responsibility_set->touchstone
-  * prevent dettl failure when no responsibility_comments or responsibility_set_comments exist.
+  * Fix stoner not updating burden_estimate_set->responsibility during a fast-forward.
+
+  * Runtime checks to prevent the above happening in the future, and look for any inconsistencies
+    between responsibility->scenario->touchstone and responsibility->repsonsibility_set->touchstone.
+
+  * Also prevent a dettl failure when no responsibility_comments or responsibility_set_comments exist
+    during a fast-forward.
 
 # 0.1.12
 
