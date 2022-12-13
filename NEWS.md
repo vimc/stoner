@@ -1,3 +1,16 @@
+# 0.1.15
+
+Fast-forward fixes:
+
+  * Fix failure to update burden_estimate_set->responsibility 
+    and responsibility->scenario during a fast-forward.
+
+  * Runtime checks to prevent the above happening in the future, and look for any inconsistencies
+    between responsibility->scenario->touchstone and responsibility->repsonsibility_set->touchstone.
+
+  * Also prevent a dettl failure when no responsibility_comments or responsibility_set_comments exist
+    during a fast-forward.
+
 # 0.1.12
 
 Support for pruning obsolete burden estimate sets

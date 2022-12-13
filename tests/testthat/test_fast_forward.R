@@ -98,18 +98,18 @@ test_that("FF CSV with incorrect modelling_group / scenario / touchstone", {
   expect_error(
     extract_fast_forward(list(
       fast_forward_csv = ff_csv("LAP-elf", "hot_potato", "kili-1", "nevis-1")), "", test$con),
-    "Scenario\\(s) not found: hot_potato")
+    "Touchstone-scenario\\(s) not found: kili-1:hot_potato, nevis-1:hot_potato")
 
   expect_error(
     extract_fast_forward(list(
       fast_forward_csv = ff_csv("LAP-elf", "hot_potato;hot_chocolate", "kili-1", "nevis-1")), "", test$con),
-    "Scenario\\(s) not found: hot_potato")
+    "Touchstone-scenario\\(s) not found: kili-1:hot_potato, kili-1:hot_chocolate, nevis-1:hot_potato")
 
   expect_error(
     extract_fast_forward(list(
       fast_forward_csv = ff_csv("LAP-elf", c("hot_potato", "hot_chocolate"),
                                 "kili-1", "nevis-1")), "", test$con),
-    "Scenario\\(s) not found: hot_potato")
+    "Touchstone-scenario\\(s) not found: kili-1:hot_potato, kili-1:hot_chocolate, nevis-1:hot_potato")
 })
 
 test_that("Fast-Forward tests", {
@@ -530,5 +530,75 @@ test_that("Fast-Forward tests", {
 
   test6()
 
+  # Consistency checks - these errors should never occur, so will have to
+  # manually corrupt the database to emulate them.
+
+  test_consistency <- function(pass) {
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_b1 <- add_responsibility_set(test, "R-deer", "nevis-1")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    resp_b1 <- add_responsibility(test, "nevis-1", resp_set_b1, "hot_chocolate", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    bes_b1 <- add_burden_estimate_set(test, resp_b1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_b1, resp_b1)
+
+    # Muptiple responsibilities with same current_bes
+
+    if (pass == 1) {
+      bes_id <- DBI::dbGetQuery(test$con, "SELECT id FROM burden_estimate_set SET LIMIT 1")$id
+      DBI::dbExecute(test$con, "UPDATE responsibility SET current_burden_estimate_set = $1", bes_id)
+      expect_error(stoner:::check_ff_consistency(test$con),
+                   "Duplicate current_burden_estimate_set")
+
+    # scenario touchstone different from responsibility_set touchstone in
+    # same responsibility
+
+    } else if (pass == 2) {
+      rset <- DBI::dbGetQuery(test$con, "SELECT * FROM responsibility_set
+                                    WHERE touchstone = 'nevis-1' LIMIT 1")
+      DBI::dbExecute(test$con, "UPDATE responsibility_set SET touchstone = 'nevis-2'
+                                WHERE id = $1", rset$id)
+      expect_error(stoner:::check_ff_consistency(test$con),
+                   "Inconsistent scenario/responsibility_set")
+
+
+    } else if (pass == 3) {
+      resp <- DBI::dbGetQuery(test$con, "SELECT * FROM responsibility LIMIT 1")
+      DBI::dbExecute(test$con,"UPDATE responsibility
+                              SET scenario = $1", resp$scenario + 1)
+      expect_error(stoner:::check_ff_consistency(test$con),
+                   "Inconsistent scenario/responsibility_set")
+
+    # burden_estimate_set->responsibility mismatch
+    # responsibility->current_burden_estimate_set
+
+    }
+  }
+
+  for (i in 1:3) test_consistency(i)
+
+    # check detection of inconsistency with
+    # responsibility->current_burden_estimate_set->responsibility
+
+  test_bes_consistency <- function() {
+    clear_test_resps(test)
+    resp_set_a1 <- add_responsibility_set(test, "LAP-elf", "nevis-1")
+    resp_set_b1 <- add_responsibility_set(test, "R-deer", "nevis-2")
+    resp_a1 <- add_responsibility(test, "nevis-1", resp_set_a1, "hot_chocolate", expec)
+    resp_b1 <- add_responsibility(test, "nevis-2", resp_set_b1, "hot_chocolate", expec)
+    bes_a1 <- add_burden_estimate_set(test, resp_a1)
+    add_burden_estimates(test, pathetic_data(test), bes_a1, resp_a1)
+
+    DBI::dbExecute(test$con, "UPDATE burden_estimate_set
+                                 SET responsibility = $1", resp_b1)
+
+    expect_error(stoner:::check_ff_consistency(test$con),
+      "Inconsistent responsibility/current_burden_estimate_set linkage")
+
+  }
+
+  test_bes_consistency()
 
 })
