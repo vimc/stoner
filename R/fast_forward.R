@@ -599,8 +599,8 @@ transform_fast_forward <- function(e) {
     t[['responsibility_comment']] <- data.frame(
       id = -1, responsibility = -1,
       comment = "Fast Forward Dummy Identifier",
-      added_by = NA,
-      added_on = NA)
+      added_by = "katy.gaythorpe",
+      added_on = "2022-12-14 16:27:15")
   }
   t
 }
