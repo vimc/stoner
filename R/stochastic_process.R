@@ -46,6 +46,10 @@
 ##' frame here, and stoner will calculate DALYs using that recipe. The
 ##' data frame must have names `outcome`, `proportion`, `average_duration`
 ##' and `disability_weight`. See [stoner_calculate_dalys].
+##' @param yll Added in 2023, the years of life lost indicator is more
+##' helpful especially for covid burden analysis. Usually leaving as "yll"
+##' is enough, but if it is the sum of other outcomes, provide these as a
+##' string vector.
 ##' @param runid_from_file Occasionally groups have omitted the run_id
 ##' from the stochastic file, and provided 200 files, one per run_id. Set
 ##' runid_from_file to TRUE if this is the case, to deduce the run_id from
@@ -77,7 +81,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      cert, index_start, index_end, out_path,
                                      pre_aggregation_path = NULL,
                                      deaths = "deaths", cases = "cases",
-                                     dalys = "dalys",
+                                     dalys = "dalys", ylls = "yll",
                                      runid_from_file = FALSE,
                                      allow_missing_disease = FALSE,
                                      upload_to_annex = FALSE,
@@ -89,6 +93,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      log_file = NULL,
                                      silent = FALSE) {
 
+  browser()
   start <- Sys.time()
 
   ## Initialise logger
@@ -129,25 +134,27 @@ stone_stochastic_process <- function(con, modelling_group, disease,
   outcomes <- list(
     deaths = deaths,
     cases = cases,
-    dalys = dalys
+    dalys = dalys,
+    yll = yll
   )
   withCallingHandlers(
     files <- stochastic_process_validate(con,
-                                       touchpoint = touchpoint,
-                                       scenarios = scenarios,
-                                       in_path = in_path,
-                                       files = files,
-                                       index_start = index_start,
-                                       index_end = index_end,
-                                       out_path = out_path,
-                                       pre_aggregation_path = pre_aggregation_path,
-                                       outcomes = outcomes,
-                                       runid_from_file = runid_from_file,
-                                       upload_to_annex = upload_to_annex,
-                                       annex = annex,
-                                       cert = cert,
-                                       bypass_cert_check = bypass_cert_check,
-                                       lines = lines),
+      touchpoint = touchpoint,
+      scenarios = scenarios,
+      in_path = in_path,
+      files = files,
+      index_start = index_start,
+      index_end = index_end,
+      out_path = out_path,
+      pre_aggregation_path = pre_aggregation_path,
+      outcomes = outcomes,
+      runid_from_file = runid_from_file,
+      upload_to_annex = upload_to_annex,
+      annex = annex,
+      cert = cert,
+      bypass_cert_check = bypass_cert_check,
+      lines = lines),
+
     error = function(e) {
       lg$fatal(paste0("Processing for modelling_group: %s, disease: %s ",
                       "failed with error \n    %s"),
@@ -252,6 +259,7 @@ rename_cols <- function(df, scenario_name) {
   names(df)[names(df) == 'deaths'] <- paste0("deaths_", scenario_name)
   names(df)[names(df) == 'cases'] <- paste0("cases_", scenario_name)
   names(df)[names(df) == 'dalys'] <- paste0("dalys_", scenario_name)
+  names(df)[names(df) == 'yll'] <- paste0("yll_", scenario_name)
   df
 }
 
@@ -292,7 +300,7 @@ aggregate_data <- function(scenario_data) {
   agg_and_sort <- function(data) {
     ## Define run_id, year and country as NULL to avoid
     ## R CMD note about no visible binding for global variable
-    run_id <- year <- country <- cases <- deaths <- dalys <- age <- NULL
+    run_id <- year <- country <- cases <- deaths <- dalys <- yll <- age <- NULL
     data %>%
       dplyr::group_by(run_id, year, country) %>%
       dplyr::summarise_all(sum) %>%
@@ -364,7 +372,7 @@ read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
   } else {
     dalys_cols <- outcomes$dalys
   }
-  meta_cols <- unique(c(outcomes$deaths, outcomes$cases, dalys_cols))
+  meta_cols <- unique(c(outcomes$deaths, outcomes$cases, dalys_cols, outcomes$yll))
 
   col_list <- list(
     year = readr::col_integer(),
@@ -421,8 +429,9 @@ read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
 
   csv <- calc_outcomes(csv, outcomes$deaths, "deaths")
   csv <- calc_outcomes(csv, outcomes$cases, "cases")
+  csv <- calc_outcomes(csv, outcomes$yll, "yll")
 
-  csv[, c("run_id", "year", "age", "country", "deaths", "cases" ,"dalys")]
+  csv[, c("run_id", "year", "age", "country", "deaths", "cases" ,"dalys", "yll")]
 }
 
 
