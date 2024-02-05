@@ -81,7 +81,7 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      cert, index_start, index_end, out_path,
                                      pre_aggregation_path = NULL,
                                      deaths = "deaths", cases = "cases",
-                                     dalys = "dalys", ylls = "yll",
+                                     dalys = "dalys", yll = "yll",
                                      runid_from_file = FALSE,
                                      allow_missing_disease = FALSE,
                                      upload_to_annex = FALSE,
@@ -93,7 +93,6 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      log_file = NULL,
                                      silent = FALSE) {
 
-  browser()
   start <- Sys.time()
 
   ## Initialise logger
