@@ -42,10 +42,6 @@
 ##' frame here, and stoner will calculate DALYs using that recipe. The
 ##' data frame must have names `outcome`, `proportion`, `average_duration`
 ##' and `disability_weight`. See [stoner_calculate_dalys].
-##' @param yll Added in 2023, the years of life lost indicator is more
-##' helpful especially for covid burden analysis. Usually leaving as "yll"
-##' is enough, but if it is the sum of other outcomes, provide these as a
-##' string vector.
 ##' @param runid_from_file Occasionally groups have omitted the run_id
 ##' from the stochastic file, and provided 200 files, one per run_id. Set
 ##' runid_from_file to TRUE if this is the case, to deduce the run_id from
@@ -236,6 +232,7 @@ all_scenarios <- function(con,
     # If this is the first scenario, then it's easy...
     if (is.null(all_scenarios)) {
       all_scenarios <- scenario_data
+
       # Otherwise, we need to add new columns with the new scenario
       # HOWEVER: there could be different countries in different
       # scenarios, so we may need to add countries with NA data to
@@ -248,14 +245,6 @@ all_scenarios <- function(con,
     }
   }
   all_scenarios
-}
-
-rename_cols <- function(df, scenario_name) {
-  names(df)[names(df) == 'deaths'] <- paste0("deaths_", scenario_name)
-  names(df)[names(df) == 'cases'] <- paste0("cases_", scenario_name)
-  names(df)[names(df) == 'dalys'] <- paste0("dalys_", scenario_name)
-  names(df)[names(df) == 'yll'] <- paste0("yll_", scenario_name)
-  df
 }
 
 process_scenario <- function(con, scenario, files, touchpoint,
@@ -289,14 +278,25 @@ process_scenario <- function(con, scenario, files, touchpoint,
     scenario_data <- rbindlist(scenario_data)
   }
 
-  rename_cols(scenario_data, scenario)
+  for (i in seq_along(outcomes)) {
+    outcome <- names(outcomes[i])
+    names(scenario_data)[names(scenario_data) == outcome] <-
+      paste0(outcome, "_", scenario)
+  }
+
+  if (!is.null(dalys_recipe)) {
+    names(scenario_data)[names(scenario_data) == 'dalys'] <-
+      paste0("dalys_", scenario)
+  }
+
+  scenario_data
 }
 
 aggregate_data <- function(scenario_data) {
   agg_and_sort <- function(data) {
     ## Define run_id, year and country as NULL to avoid
     ## R CMD note about no visible binding for global variable
-    run_id <- year <- country <- cases <- deaths <- dalys <- yll <- age <- NULL
+    run_id <- year <- country <- age <- NULL
     data %>%
       dplyr::group_by(run_id, year, country) %>%
       dplyr::summarise_all(sum) %>%
@@ -532,7 +532,7 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
 
     # Can't specify both a DALYs sum and a recipe.
 
-    stopifnot("dalys" %in% names(outcomes))
+    stopifnot(!"dalys" %in% names(outcomes))
   }
 
   assert_scalar_character(in_path)
