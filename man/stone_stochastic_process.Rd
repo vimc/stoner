@@ -17,9 +17,8 @@ stone_stochastic_process(
   index_end,
   out_path,
   pre_aggregation_path = NULL,
-  deaths = "deaths",
-  cases = "cases",
-  dalys = "dalys",
+  outcomes = list(deaths = "deaths", cases = "cases", dalys = "dalys", yll = "yll"),
+  dalys_recipe = NULL,
   runid_from_file = FALSE,
   allow_missing_disease = FALSE,
   upload_to_annex = FALSE,
@@ -70,18 +69,13 @@ in each case.}
 \item{pre_aggregation_path}{Path to dir to write out pre age-disaggregated
 data into. If NULL then this is skipped.}
 
-\item{deaths}{If deaths must be calculated as a sum of other burden
-outcomes, then provide a vector of the outcome names here. The default
-is the existing deaths burden_outcome.}
+\item{outcomes}{A list of names vectors, where the name is the burden
+outcome, and the elements of the list are the column names in the
+stochastic files that should be summed to compute that outcome. The
+default is to expect outcomes \code{deaths}, \code{cases}, \code{dalys}, and \code{yll},
+with single columns with the same names in the stochastic files.}
 
-\item{cases}{If cases must be calculated as a sum of other burden
-outcomes, then provide a vector of the outcome names here. The default
-is the existing cases burden_outcome.}
-
-\item{dalys}{If DALYs must be calculated as a sum of other burden
-outcomes, then provide a vector of the outcome names here. The default
-is the existing DALYs burden_outcome. Alternatively, for the one
-remaining group that does not provide DALYs, you can supply a data
+\item{dalys_recipe}{If DALYs must be calculated, you can supply a data
 frame here, and stoner will calculate DALYs using that recipe. The
 data frame must have names \code{outcome}, \code{proportion}, \code{average_duration}
 and \code{disability_weight}. See \link{stoner_calculate_dalys}.}
@@ -118,6 +112,11 @@ doing the full run.}
 If file exists it will be appended to, otherwise file will be created.}
 
 \item{silent}{TRUE to silence console logs.}
+
+\item{yll}{Added in 2023, the years of life lost indicator is more
+helpful especially for covid burden analysis. Usually leaving as "yll"
+is enough, but if it is the sum of other outcomes, provide these as a
+string vector.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,

@@ -830,10 +830,11 @@ otherwise not.
 #### Summing different outcomes
 
 Some groups provide multiple deaths or cases categories which need to be summed
-to give the total deaths or cases. The example below uses the optional `deaths`,
-`cases` and `dalys` arguments, where a vector of outcomes is provided (which
-must exist in the incoming data, and in the responsibilities for that group
-and disease too), to be summed to give the final outcome.
+to give the total deaths or cases. The example below uses the optional `outcomes`
+argument, where we can give a vector of column names to be summed for each named 
+burden outcome. All the columns mentioned must exist in the incoming data, and 
+in the responsibilities for that group and disease too), to be summed to give the 
+final outcome.
 
 ```
   stone_stochastic_process(
@@ -849,9 +850,11 @@ and disease too), to be summed to give the final outcome.
     cert = "certfile",
     index_start = 1, index_end = 200,
     out_path = "E:/Stochastic_Outputs"),
-    deaths = c("deaths_cat1", "deaths_cat2"),
-    cases = c("cases_cat1", "cases_cat2"),
-    dalys = "dalys")
+    outcomes = list(
+      deaths = c("deaths_cat1", "deaths_cat2"),
+      cases = c("cases_cat1", "cases_cat2"),
+      dalys = "dalys")
+    )
 ```
 
 #### Where run_id is not specified in the CSV

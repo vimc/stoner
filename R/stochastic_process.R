@@ -33,16 +33,12 @@
 ##' @param out_path Path to writing output files into
 ##' @param pre_aggregation_path Path to dir to write out pre age-disaggregated
 ##' data into. If NULL then this is skipped.
-##' @param deaths If deaths must be calculated as a sum of other burden
-##' outcomes, then provide a vector of the outcome names here. The default
-##' is the existing deaths burden_outcome.
-##' @param cases If cases must be calculated as a sum of other burden
-##' outcomes, then provide a vector of the outcome names here. The default
-##' is the existing cases burden_outcome.
-##' @param dalys If DALYs must be calculated as a sum of other burden
-##' outcomes, then provide a vector of the outcome names here. The default
-##' is the existing DALYs burden_outcome. Alternatively, for the one
-##' remaining group that does not provide DALYs, you can supply a data
+##' @param outcomes A list of names vectors, where the name is the burden
+##' outcome, and the elements of the list are the column names in the
+##' stochastic files that should be summed to compute that outcome. The
+##' default is to expect outcomes `deaths`, `cases`, `dalys`, and `yll`,
+##' with single columns with the same names in the stochastic files.
+##' @param dalys_recipe If DALYs must be calculated, you can supply a data
 ##' frame here, and stoner will calculate DALYs using that recipe. The
 ##' data frame must have names `outcome`, `proportion`, `average_duration`
 ##' and `disability_weight`. See [stoner_calculate_dalys].
@@ -76,8 +72,11 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                                      touchstone, scenarios, in_path, files,
                                      cert, index_start, index_end, out_path,
                                      pre_aggregation_path = NULL,
-                                     deaths = "deaths", cases = "cases",
-                                     dalys = "dalys",
+                                     outcomes = list(deaths = "deaths",
+                                                     cases = "cases",
+                                                     dalys = "dalys",
+                                                     yll = "yll"),
+                                     dalys_recipe = NULL,
                                      runid_from_file = FALSE,
                                      allow_missing_disease = FALSE,
                                      upload_to_annex = FALSE,
@@ -126,28 +125,26 @@ stone_stochastic_process <- function(con, modelling_group, disease,
     disease = disease,
     touchstone = touchstone
   )
-  outcomes <- list(
-    deaths = deaths,
-    cases = cases,
-    dalys = dalys
-  )
+
   withCallingHandlers(
     files <- stochastic_process_validate(con,
-                                       touchpoint = touchpoint,
-                                       scenarios = scenarios,
-                                       in_path = in_path,
-                                       files = files,
-                                       index_start = index_start,
-                                       index_end = index_end,
-                                       out_path = out_path,
-                                       pre_aggregation_path = pre_aggregation_path,
-                                       outcomes = outcomes,
-                                       runid_from_file = runid_from_file,
-                                       upload_to_annex = upload_to_annex,
-                                       annex = annex,
-                                       cert = cert,
-                                       bypass_cert_check = bypass_cert_check,
-                                       lines = lines),
+      touchpoint = touchpoint,
+      scenarios = scenarios,
+      in_path = in_path,
+      files = files,
+      index_start = index_start,
+      index_end = index_end,
+      out_path = out_path,
+      pre_aggregation_path = pre_aggregation_path,
+      outcomes = outcomes,
+      dalys_recipe = dalys_recipe,
+      runid_from_file = runid_from_file,
+      upload_to_annex = upload_to_annex,
+      annex = annex,
+      cert = cert,
+      bypass_cert_check = bypass_cert_check,
+      lines = lines),
+
     error = function(e) {
       lg$fatal(paste0("Processing for modelling_group: %s, disease: %s ",
                       "failed with error \n    %s"),
@@ -171,7 +168,8 @@ stone_stochastic_process <- function(con, modelling_group, disease,
                   touchpoint = touchpoint,
                   scenarios = scenarios,
                   read_params = read_params,
-                  outcomes = outcomes),
+                  outcomes = outcomes,
+                  dalys_recipe = dalys_recipe),
     "Processed %s scenarios for modelling group: %s, disease: %s",
     length(scenarios), touchpoint$modelling_group, touchpoint$disease)
 
@@ -209,7 +207,8 @@ all_scenarios <- function(con,
                           touchpoint,
                           scenarios,
                           read_params,
-                          outcomes) {
+                          outcomes,
+                          dalys_recipe) {
 
   all_scenarios <- NULL
   all_countries <- DBI::dbGetQuery(con, "SELECT id, nid FROM country")
@@ -227,7 +226,7 @@ all_scenarios <- function(con,
             scenario_name)
     scenario_data <- process_scenario(con, scenario_name, files,
                                       touchpoint, read_params, outcomes,
-                                      all_countries)
+                                      dalys_recipe, all_countries)
 
     ##############################################################
     # If this is the first scenario, then it's easy...
@@ -248,15 +247,9 @@ all_scenarios <- function(con,
   all_scenarios
 }
 
-rename_cols <- function(df, scenario_name) {
-  names(df)[names(df) == 'deaths'] <- paste0("deaths_", scenario_name)
-  names(df)[names(df) == 'cases'] <- paste0("cases_", scenario_name)
-  names(df)[names(df) == 'dalys'] <- paste0("dalys_", scenario_name)
-  df
-}
-
 process_scenario <- function(con, scenario, files, touchpoint,
-                             read_params, outcomes, countries) {
+                             read_params, outcomes, dalys_recipe,
+                             countries) {
   scenario_data <- list()
   lines <- read_params$lines
 
@@ -267,7 +260,7 @@ process_scenario <- function(con, scenario, files, touchpoint,
     the_file <- files[i]
     lg$info("Reading %s", the_file)
     scenario_data[[i]] <-
-      read_xz_csv(con, the_file, outcomes,
+      read_xz_csv(con, the_file, outcomes, dalys_recipe,
                   read_params$allow_missing_disease,
                   read_params$runid_from_file, i,
                   touchpoint$touchstone, countries,
@@ -285,14 +278,25 @@ process_scenario <- function(con, scenario, files, touchpoint,
     scenario_data <- rbindlist(scenario_data)
   }
 
-  rename_cols(scenario_data, scenario)
+  for (i in seq_along(outcomes)) {
+    outcome <- names(outcomes[i])
+    names(scenario_data)[names(scenario_data) == outcome] <-
+      paste0(outcome, "_", scenario)
+  }
+
+  if (!is.null(dalys_recipe)) {
+    names(scenario_data)[names(scenario_data) == 'dalys'] <-
+      paste0("dalys_", scenario)
+  }
+
+  scenario_data
 }
 
 aggregate_data <- function(scenario_data) {
   agg_and_sort <- function(data) {
     ## Define run_id, year and country as NULL to avoid
     ## R CMD note about no visible binding for global variable
-    run_id <- year <- country <- cases <- deaths <- dalys <- age <- NULL
+    run_id <- year <- country <- age <- NULL
     data %>%
       dplyr::group_by(run_id, year, country) %>%
       dplyr::summarise_all(sum) %>%
@@ -355,16 +359,13 @@ calc_outcomes <- function(csv, outcomes, single_outcome) {
   csv
 }
 
-read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
+read_xz_csv <- function(con, the_file, outcomes, dalys_recipe, allow_missing_disease,
                         runid_from_file, run_id, touchstone, countries,
                         lines) {
-
-  if (is.data.frame(outcomes$dalys)) {
-    dalys_cols <- unique(outcomes$dalys$outcome)
-  } else {
-    dalys_cols <- outcomes$dalys
+  if (is.data.frame(dalys_recipe)) {
+    dalys_cols <- unique(dalys_recipe$outcome)
   }
-  meta_cols <- unique(c(outcomes$deaths, outcomes$cases, dalys_cols))
+  meta_cols <- unique(unlist(outcomes))
 
   col_list <- list(
     year = readr::col_integer(),
@@ -407,22 +408,22 @@ read_xz_csv <- function(con, the_file, outcomes, allow_missing_disease,
 
   csv$country <- countries$nid[match(csv$country, countries$id)]
 
-  if (is.data.frame(outcomes$dalys)) {
+  if (is.data.frame(dalys_recipe)) {
     res <- stoner_calculate_dalys(con, touchstone, csv,
-                                  outcomes$dalys, cache$life_table)
+                                  dalys_recipe, cache$life_table)
     csv <- res$data
     if (is.null(cache$life_table)) {
       cache$life_table <- res$life_table
     }
-
-  } else {
-    csv <- calc_outcomes(csv, outcomes$dalys, "dalys")
   }
 
-  csv <- calc_outcomes(csv, outcomes$deaths, "deaths")
-  csv <- calc_outcomes(csv, outcomes$cases, "cases")
+  for (i in seq_along(outcomes)) {
+    csv <- calc_outcomes(csv, outcomes[[i]], names(outcomes)[i])
+  }
 
-  csv[, c("run_id", "year", "age", "country", "deaths", "cases" ,"dalys")]
+  csv <- as.data.frame(csv)
+  cols <- unique(c("run_id", "year", "age", "country", names(outcomes), if (!is.null(dalys_recipe)) "dalys"))
+  csv[, cols]
 }
 
 
@@ -507,6 +508,7 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
                                         out_path,
                                         pre_aggregation_path,
                                         outcomes,
+                                        dalys_recipe,
                                         runid_from_file,
                                         upload_to_annex,
                                         annex,
@@ -524,9 +526,13 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
   assert_scalar_character(touchpoint$touchstone)
   assert_db_value_exists(con, "touchstone", "id", touchpoint$touchstone)
 
-  if (is.data.frame(outcomes$dalys)) {
-    stopifnot(all.equal(sort(names(outcomes$dalys)),
+  if (!is.null(dalys_recipe)) {
+    stopifnot(all.equal(sort(names(dalys_recipe)),
                         c("average_duration", "disability_weight", "outcome", "proportion")))
+
+    # Can't specify both a DALYs sum and a recipe.
+
+    stopifnot(!"dalys" %in% names(outcomes))
   }
 
   assert_scalar_character(in_path)
@@ -627,12 +633,8 @@ stochastic_process_validate <- function(con, touchpoint, scenarios, in_path,
     stochastic_validate_scenario(con, touchpoint, scenario)
   }
 
-  check_outcomes(con, "cases", outcomes$cases)
-  check_outcomes(con, "deaths", outcomes$deaths)
-  if (is.data.frame(outcomes$dalys)) {
-    check_outcomes(con, "dalys", unique(outcomes$dalys$outcome))
-  } else {
-    check_outcomes(con, "dalys", outcomes$dalys)
+  for (i in seq_along(outcomes)) {
+    check_outcome(con, names(outcomes)[i], outcomes[[i]])
   }
 
   validate_paths(file.path(in_path, files), scenarios,
@@ -679,7 +681,7 @@ validate_paths <- function(files, scenarios, touchpoint,
 }
 
 
-check_outcomes <- function(con, type, options) {
+check_outcome <- function(con, type, options) {
   assert_character(options)
   if (any(duplicated(options))) {
     stop(sprintf("Duplicated outcome in %s", type))
