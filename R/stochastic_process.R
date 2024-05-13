@@ -422,8 +422,8 @@ read_xz_csv <- function(con, the_file, outcomes, dalys_recipe, allow_missing_dis
   }
 
   csv <- as.data.frame(csv)
-  csv[, unique(c("run_id", "year", "age", "country", names(outcomes),
-          if (!is.null(dalys_recipe)) "dalys"))]
+  cols <- unique(c("run_id", "year", "age", "country", names(outcomes), if (!is.null(dalys_recipe)) "dalys"))
+  csv[, cols]
 }
 
 
