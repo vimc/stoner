@@ -829,7 +829,7 @@ test_that("Stochastic - with DALYs", {
   # Hurrah. We can *finally* test DALYs.
 
   out <- tempfile(fileext = ".qs")
-  dat <- stoner_dalys_for_db(con, dalys_df,
+  dat <- stoner_dalys_for_db(con, dalys_recipe,
                               burden_estimate_set_id = new_bes,
                               output_file = out)
   dat2 <- stoner_dalys_for_db(con, dalys_df,
