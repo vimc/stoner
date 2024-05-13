@@ -832,7 +832,7 @@ test_that("Stochastic - with DALYs", {
   dat <- stoner_dalys_for_db(con, dalys_recipe,
                               burden_estimate_set_id = new_bes,
                               output_file = out)
-  dat2 <- stoner_dalys_for_db(con, dalys_df,
+  dat2 <- stoner_dalys_for_db(con, dalys_recipe,
                                      "LAP-elf", "flu", "nevis-1", "pies",
                                      output_file = out)
 
