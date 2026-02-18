@@ -28,7 +28,6 @@ test_that("Standardise works with :scenario and :index", {
     }
   }
 
-  if (file.exists(file.path(tmpout, "north_pole_optimistic_LAP.pq")))
   tmpfile <- tempfile(tmpdir = tmpin)
   write.csv(fake, paste0(tmpfile, "_optimistic_1"), row.names = FALSE)
   write.csv(fake, paste0(tmpfile, "_fatalistic_1"), row.names = FALSE)

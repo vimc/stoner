@@ -159,18 +159,18 @@ test_that("Bad arguments", {
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".", deaths = c("deaths", "deaths"), bypass_cert_check = TRUE),
+    "", 1, 1, ".", outcomes = list(deaths = c("deaths", "deaths")), bypass_cert_check = TRUE),
     "Duplicated outcome in deaths")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".", deaths = "deaths", cases = "cases", dalys = "piles_dalys",
+    "", 1, 1, ".", outcomes = list(deaths = "deaths", cases = "cases", dalys = "piles_dalys"),
     bypass_cert_check = TRUE),
     "Outcomes not found, dalys \\('piles_dalys'\\)")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".", deaths = "deaths", cases = "cases", dalys = "dalys",
+    "", 1, 1, ".", outcomes = list(deaths = "deaths", cases = "cases", dalys = "dalys"),
     runid_from_file = TRUE, bypass_cert_check = TRUE),
     "Must have index_start and index_end as 1..200 to imply run_id")
 
@@ -392,7 +392,6 @@ stochastic_runner <- function(same_countries = TRUE,
     index_start <- 1
     index_end <- 200
   }
-
   deaths <- "deaths"
   cases <- "cases"
   dalys <- "dalys"
@@ -402,8 +401,10 @@ stochastic_runner <- function(same_countries = TRUE,
     dalys <- c("dalys_men", "dalys_pneumo")
   }
 
-  if (!is.null(dalys_df)) {
-    dalys <- dalys_df
+  if (is.data.frame(dalys_df)) {
+    outcomes <- list(deaths = deaths, cases = cases)
+  } else {
+    outcomes <- list(deaths = deaths, cases = cases, dalys = dalys)
   }
 
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
@@ -411,7 +412,8 @@ stochastic_runner <- function(same_countries = TRUE,
                            cert = cert,
                            index_start, index_end, test$path,
                            pre_aggregation_path,
-                           deaths, cases, dalys,
+                           outcomes = outcomes,
+                           dalys_recipe = dalys_df,
                            runid_from_file = !include_run_id,
                            allow_missing_disease = !include_disease,
                            upload_to_annex = upload, annex = test$con,
@@ -425,10 +427,10 @@ stochastic_runner <- function(same_countries = TRUE,
     test = test,
     raw = res$raw,
     data = res$data,
-    cal = qs::qread(file.path(test$path, "LAP-elf_flu_calendar.qs")),
-    cal_u5 = qs::qread(file.path(test$path, "LAP-elf_flu_calendar_u5.qs")),
-    coh = qs::qread(file.path(test$path, "LAP-elf_flu_cohort.qs")),
-    coh_u5 = qs::qread(file.path(test$path, "LAP-elf_flu_cohort_u5.qs"))
+    cal = qs2::qs_read(file.path(test$path, "LAP-elf_flu_calendar.qs")),
+    cal_u5 = qs2::qs_read(file.path(test$path, "LAP-elf_flu_calendar_u5.qs")),
+    coh = qs2::qs_read(file.path(test$path, "LAP-elf_flu_cohort.qs")),
+    coh_u5 = qs2::qs_read(file.path(test$path, "LAP-elf_flu_cohort_u5.qs"))
   )
 }
 
@@ -544,7 +546,7 @@ test_that("Stochastic - with upload", {
   result$cal$deaths_pies <- round(result$cal$deaths_pies / 2)
 
   new_qs_file <- tempfile(fileext = ".qs")
-  qs::qsave(x = result$cal, file = new_qs_file)
+  qs2::qs_save(result$cal, file = new_qs_file)
 
   stone_stochastic_upload(new_qs_file, result$test$con, result$test$con,
                           "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
@@ -828,7 +830,7 @@ test_that("Stochastic - with DALYs", {
                                      "LAP-elf", "flu", "nevis-1", "pies",
                                      output_file = out)
 
-  df <- qs::qread(out)
+  df <- qs2::qs_read(out)
 
   expect_identical(dat, dat2)
   expect_equal(dat$data$dalys, df$dalys)
@@ -853,7 +855,7 @@ test_that("preaggregated data can be saved to disk", {
   expect_setequal(files, c("LAP-elf_flu_4_pre_aggregation.qs",
                            "LAP-elf_flu_716_pre_aggregation.qs"))
 
-  country_4 <- qs::qread(file.path(t, "LAP-elf_flu_4_pre_aggregation.qs"))
+  country_4 <- qs2::qs_read(file.path(t, "LAP-elf_flu_4_pre_aggregation.qs"))
   expect_setequal(colnames(country_4),
                   c("country", "year", "run_id", "age", "deaths_pies",
                     "cases_pies", "dalys_pies", "deaths_hot_chocolate",
@@ -861,7 +863,7 @@ test_that("preaggregated data can be saved to disk", {
                     "deaths_holly", "cases_holly", "dalys_holly"))
   expect_true(all(country_4$country == 4))
 
-  country_716 <- qs::qread(file.path(t, "LAP-elf_flu_716_pre_aggregation.qs"))
+  country_716 <- qs2::qs_read(file.path(t, "LAP-elf_flu_716_pre_aggregation.qs"))
   expect_setequal(colnames(country_716),
                   c("country", "year", "run_id", "age", "deaths_pies",
                     "cases_pies", "dalys_pies", "deaths_hot_chocolate",

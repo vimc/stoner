@@ -34,7 +34,7 @@
 ##' @param out_path Path to writing output files into
 ##' @param pre_aggregation_path Path to dir to write out pre age-disaggregated
 ##' data into. If NULL then this is skipped.
-##' @param outcomes A list of names vectors, where the name is the burden
+##' @param outcomes A list of named vectors, where the name is the burden
 ##' outcome, and the elements of the list are the column names in the
 ##' stochastic files that should be summed to compute that outcome. The
 ##' default is to expect outcomes `deaths`, `cases`, `dalys`, and `yll`,
@@ -449,7 +449,7 @@ write_pre_aggregated_to_disk <- function(data, touchpoint,
 write_output_to_disk <- function(output, out_path, modelling_group, disease) {
   all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.qs",
                                                  modelling_group, disease))
-  timed(qs2::qs_save(x = as.data.frame(output$u5_calendar_year),
+  timed(qs2::qs_save(as.data.frame(output$u5_calendar_year),
             file = all_u5_cal_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
@@ -457,21 +457,21 @@ write_output_to_disk <- function(output, out_path, modelling_group, disease) {
 
   all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.qs",
                                               modelling_group, disease))
-  timed(qs2::qs_save(x = as.data.frame(output$all_calendar_year),
+  timed(qs2::qs_save(as.data.frame(output$all_calendar_year),
             file = all_cal_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
   all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.qs",
                                                  modelling_group, disease))
-  timed(qs2::qs_save(x = as.data.frame(output$u5_cohort),
+  timed(qs2::qs_save(as.data.frame(output$u5_cohort),
             file = all_u5_coh_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
   all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.qs",
                                               modelling_group, disease))
-  timed(qs2::qs_save(x = as.data.frame(output$all_cohort),
+  timed(qs2::qs_save(as.data.frame(output$all_cohort),
             file = all_coh_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
