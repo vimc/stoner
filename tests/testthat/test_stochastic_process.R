@@ -159,21 +159,18 @@ test_that("Bad arguments", {
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".", outcomes = list(deaths = c("deaths", "deaths")),
-    bypass_cert_check = TRUE),
+    "", 1, 1, ".", deaths = c("deaths", "deaths"), bypass_cert_check = TRUE),
     "Duplicated outcome in deaths")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".",
-    outcomes = list(deaths = "deaths", cases = "cases", dalys = "piles_dalys"),
+    "", 1, 1, ".", deaths = "deaths", cases = "cases", dalys = "piles_dalys",
     bypass_cert_check = TRUE),
     "Outcomes not found, dalys \\('piles_dalys'\\)")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".",
-    outcomes = list(deaths = "deaths", cases = "cases", dalys = "dalys"),
+    "", 1, 1, ".", deaths = "deaths", cases = "cases", dalys = "dalys",
     runid_from_file = TRUE, bypass_cert_check = TRUE),
     "Must have index_start and index_end as 1..200 to imply run_id")
 
@@ -367,7 +364,7 @@ stochastic_runner <- function(same_countries = TRUE,
                               upload = FALSE,
                               allow_new_database = TRUE,
                               bypass_cert_check = TRUE,
-                              dalys_recipe = NULL,
+                              dalys_df = NULL,
                               cert = "",
                               pre_aggregation_path = NULL,
                               lines = Inf,
@@ -378,9 +375,9 @@ stochastic_runner <- function(same_countries = TRUE,
 
   res <- random_stoch_data(test, same_countries, simple_outcomes,
                            single_file_per_scenario, include_run_id,
-                           include_disease, !is.null(dalys_recipe))
+                           include_disease, !is.null(dalys_df))
 
-  if (is.data.frame(dalys_recipe)) {
+  if (is.data.frame(dalys_df)) {
     fake_lifetable_db(test$con)
   }
 
@@ -396,21 +393,17 @@ stochastic_runner <- function(same_countries = TRUE,
     index_end <- 200
   }
 
+  deaths <- "deaths"
+  cases <- "cases"
+  dalys <- "dalys"
   if (!simple_outcomes) {
-    outcomes <- list(
-      deaths = c("deaths_acute", "deaths_chronic"),
-      cases = c("cases_acute", "cases_chronic"),
-      dalys = c("dalys_men", "dalys_pneumo"))
-  } else {
-    outcomes <- list(
-      deaths = "deaths",
-      cases = "cases",
-      dalys = "dalys")
-
+    deaths <- c("deaths_acute", "deaths_chronic")
+    cases <- c("cases_acute", "cases_chronic")
+    dalys <- c("dalys_men", "dalys_pneumo")
   }
 
-  if (!is.null(dalys_recipe)) {
-    outcomes$dalys <- NULL
+  if (!is.null(dalys_df)) {
+    dalys <- dalys_df
   }
 
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
@@ -418,8 +411,7 @@ stochastic_runner <- function(same_countries = TRUE,
                            cert = cert,
                            index_start, index_end, test$path,
                            pre_aggregation_path,
-                           outcomes,
-                           dalys_recipe,
+                           deaths, cases, dalys,
                            runid_from_file = !include_run_id,
                            allow_missing_disease = !include_disease,
                            upload_to_annex = upload, annex = test$con,
@@ -656,13 +648,13 @@ fake_lifetable_db <- function(con) {
 }
 
 test_that("Stochastic - with DALYs", {
-  dalys_recipe <- data_frame(
+  dalys_df <- data_frame(
     outcome = c("cases_acute", "deaths_chronic"),
     proportion = c(0.1, 0.2),
     average_duration = c(20, 1000),
     disability_weight = c(0.4, 0.6))
 
-  result <- stochastic_runner(upload = FALSE, dalys_recipe = dalys_recipe,
+  result <- stochastic_runner(upload = FALSE, dalys_df = dalys_df,
                               simple_outcomes = FALSE)
 
   lt <- stoner_life_table(result$test$con, "nevis-1", 2000, 2100, TRUE)
@@ -829,10 +821,10 @@ test_that("Stochastic - with DALYs", {
   # Hurrah. We can *finally* test DALYs.
 
   out <- tempfile(fileext = ".qs")
-  dat <- stoner_dalys_for_db(con, dalys_recipe,
+  dat <- stoner_dalys_for_db(con, dalys_df,
                               burden_estimate_set_id = new_bes,
                               output_file = out)
-  dat2 <- stoner_dalys_for_db(con, dalys_recipe,
+  dat2 <- stoner_dalys_for_db(con, dalys_df,
                                      "LAP-elf", "flu", "nevis-1", "pies",
                                      output_file = out)
 
