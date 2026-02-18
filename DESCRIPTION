@@ -26,6 +26,7 @@ Imports:
     magrittr,
     prettyunits,
     readr,
+    testthat,
     utils,
     withr
 Language: en-GB
@@ -35,6 +36,5 @@ Suggests:
     knitr,
     rcmdcheck,
     rmarkdown,
-    RPostgres,
-    testthat
+    RPostgres
 VignetteBuilder: knitr
