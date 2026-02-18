@@ -194,7 +194,7 @@ read_stochastic_qs <- function(file, is_cohort) {
 
   ## Read data
   message(sprintf("Reading %s", file))
-  data <- qs::qread(file)
+  data <- qs2::qs_read(file)
   if (anyNA(match(expected_cols, colnames(data)))) {
     stop("Columns in qs file not as expected")
   }

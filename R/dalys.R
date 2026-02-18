@@ -8,6 +8,7 @@
 ##'
 ##' @export
 ##' @title Calculating DALYs for stochastic or central estimates
+##' @import qs2
 ##' @param con DBI connection to a Montagu database. Used for retrieving
 ##' demographic data for life expectancy.
 ##' @param touchstone The touchstone (including version); the demographic
@@ -360,7 +361,7 @@ stoner_dalys_for_db <- function(con, dalys_params, modelling_group = NULL,
   # Optionally write a CSV file out.
 
   if (!is.null(output_file)) {
-    qs::qsave(as.data.frame(data_dalys$data), output_file)
+    qs2::qs_save(as.data.frame(data_dalys$data), output_file)
   }
 
   data_dalys
