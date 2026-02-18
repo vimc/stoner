@@ -5,7 +5,7 @@
 ##'
 ##' @export
 ##' @title Standardise stochastic data files
-##' @import data.table
+##' @importFrom data.table rbindlist
 ##' @import arrow
 ##' @param group The modelling group.
 ##' @param in_path The folder or network path where the original files are found.
@@ -20,15 +20,21 @@
 ##' files must exist that match each entry in the `scenarios` parameter, and
 ##' the same file string can be used to match all of them (perhaps additionaly
 ##' wiht `:index`).
-##' @params index This is usually a vector of ints, `1:200` to match the
+##' @param index This is usually a vector of ints, `1:200` to match the
 ##' range of stochastic files uploaded per scenario. A few groups upload one
 ##' large file containing everything, in which case `:index` shouldn't occur
 ##' in the `files` parameter, and should be omitted.
-##' @params rubella_fix Historically Rubella uploads used the burden outcome
+##' @param rubella_fix Historically Rubella uploads used the burden outcome
 ##' `rubella_deaths_congenital` and `rubella_cases_congenital` instead of
 ##' the simpler `deaths` and `cases`, and additionally provided a
 ##' `rubella_infections` field. `rubella_fix` needs to be TRUE to standardise
-##' these to the simpler names,
+##' these to the simpler names. Processing Rubella stochastic files without
+##' this set to TRUE will fail - so while we should always do this, keeping
+##' the parameter makes it more clear in the code what we're doing and why.
+##' @param missing_run_id_fix Some groups in the past have omitted run_id
+##' from the files, but included them in the filenames. This fix inserts
+##' that into the files if the index parameter indicates we have 200 runs to
+##' process.
 
 stone_stochastic_standardise <- function(
     group, in_path, out_path, scenarios, files, index = 1,
@@ -51,10 +57,11 @@ stone_stochastic_standardise <- function(
       d$country_name <- NULL
 
       # Fixes needed to standardise Rubella
-
-      names(d)[names(d) == "rubella_deaths_congenital"] <- "deaths"
-      names(d)[names(d) == "rubella_cases_congenital"] <- "cases"
-      d$rubella_infections <- NULL
+      if (rubella_fix) {
+        names(d)[names(d) == "rubella_deaths_congenital"] <- "deaths"
+        names(d)[names(d) == "rubella_cases_congenital"] <- "cases"
+        d$rubella_infections <- NULL
+      }
 
       # Detect where run_id is missing, but in filenames
 
@@ -83,6 +90,6 @@ stone_stochastic_standardise <- function(
       file <- sprintf("%s_%s_%s.pq", group, scenarios[i], country)
       arrow::write_parquet(d, file.path(out_path, file))
     }
-    cat("Completed\n")
+    cat("\r Completed\n\n")
   }
 }

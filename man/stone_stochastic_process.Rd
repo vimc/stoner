@@ -112,11 +112,6 @@ doing the full run.}
 If file exists it will be appended to, otherwise file will be created.}
 
 \item{silent}{TRUE to silence console logs.}
-
-\item{yll}{Added in 2023, the years of life lost indicator is more
-helpful especially for covid burden analysis. Usually leaving as "yll"
-is enough, but if it is the sum of other outcomes, provide these as a
-string vector.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,

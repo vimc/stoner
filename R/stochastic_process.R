@@ -5,7 +5,7 @@
 ##'
 ##' @export
 ##' @title Process stochastic data
-##' @import data.table
+##' @importFrom data.table as.data.table
 ##' @import readr
 ##' @importFrom utils write.csv
 ##' @param con DBI connection to production. Used for verifying certificate
