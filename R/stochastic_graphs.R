@@ -5,6 +5,8 @@
 ##' @title Stochastic plot
 ##' @import dplyr
 ##' @import arrow
+##' @importFrom graphics lines
+##' @importFrom stats quantile median
 ##' @param base The folder in which the standardised stochastic files are found.
 ##' @param touchstone The touchstone name (for the graph title)
 ##' @param disease The disease, used for building the filename and graph title.

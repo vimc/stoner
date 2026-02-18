@@ -317,9 +317,9 @@ aggregate_data <- function(scenario_data) {
   scen_coh <- agg_and_sort(scenario_data)
 
   scen_u5_coh <- scen_u5_coh %>%
-    dplyr::rename(cohort = year)
+    dplyr::rename(cohort = "year")
   scen_coh <- scen_coh %>%
-    dplyr::rename(cohort = year)
+    dplyr::rename(cohort = "year")
 
   list(
     u5_calendar_year = scen_u5_cal,
