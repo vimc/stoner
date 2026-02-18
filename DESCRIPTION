@@ -16,11 +16,12 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports:
+    arrow,
     DBI,
     data.table,
     jsonlite,
     lgr,
-    qs,
+    qs2,
     dplyr,
     magrittr,
     prettyunits,
