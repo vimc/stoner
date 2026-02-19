@@ -4,6 +4,7 @@
 ##' @export
 ##' @title Stochastic plot
 ##' @import dplyr
+##' @importFrom rlang :=
 ##' @import arrow
 ##' @importFrom graphics lines
 ##' @importFrom stats quantile median
@@ -38,7 +39,7 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
     d$year <- d$year - d$age
   }
   d <- d[, c("run_id", "year", "age", outcome)]
-  d <- d %>% group_by(run_id, year) %>%
+  d <- d %>% group_by(.data$run_id, .data$year) %>%
              summarise(
                !!outcome := sum(.data[[outcome]], na.rm = TRUE),
              .groups = "drop")

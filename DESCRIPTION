@@ -26,6 +26,7 @@ Imports:
     magrittr,
     prettyunits,
     readr,
+    rlang,
     testthat,
     utils,
     withr
