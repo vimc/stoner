@@ -1,7 +1,7 @@
 context("stochastic_files")
 
-test_that("Standardise works with :scenario and :index", {
-  fake <- data.frame(
+fake_data <- function() {
+  data.frame(
     disease = "elf-piles",
     country = "LAP",
     year = rep(2000:2005, each = 5),
@@ -12,6 +12,10 @@ test_that("Standardise works with :scenario and :index", {
     dalys = 61:90,
     yll = 91:120,
     run_id = 1)
+}
+
+test_that("Standardise works with :scenario and :index", {
+  fake <- fake_data()
   fake2 <- fake
   fake2$run_id <- 2
   fake <- rbind(fake, fake2)
@@ -51,11 +55,44 @@ test_that("Standardise works with :scenario and :index", {
   expect_true("north_pole_fatalistic_LAP.pq" %in% files)
   expect_true("north_pole_fatalistic_POL.pq" %in% files)
 
-
   pq <- arrow::read_parquet(file.path(tmpout, "north_pole_optimistic_LAP.pq"))
   expect_true(unique(pq$country) == "LAP")
   expect_true(all.equal(sort(unique(pq$run_id)), 1:2))
   expect_true(all.equal(sort(unique(pq$age)), 0:5))
   expect_true(all.equal(sort(unique(pq$year)), 2000:2005))
 })
+
+
+test_that("Standardise works with missing run_id column", {
+  fake <- fake_data()
+  fake$run_id <- NULL
+
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+  for (i in 1:200) {
+    write.csv(fake, paste0(tmpfile, sprintf("_opt_%d", i)), row.names = FALSE)
+    write.csv(fake, paste0(tmpfile, sprintf("_fat_%d", i)), row.names = FALSE)
+  }
+
+  stone_stochastic_standardise(
+    group = "north_pole",
+    in_path = tmpin,
+    out_path = tmpout,
+    scenarios = c("opt", "fat"),
+    files = paste0(basename(tmpfile), "_:scenario_:index"),
+    index = 1:200
+  )
+
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_fat_LAP.pq" %in% files)
+  expect_true("north_pole_opt_LAP.pq" %in% files)
+
+  pq <- arrow::read_parquet(file.path(tmpout, "north_pole_fat_LAP.pq"))
+  tab <- table(pq$run_id)
+  expect_all_equal(as.integer(tab), 30)
+  expect_equal(length(tab), 200)
+  expect_true(all.equal(names(tab), as.character(1:200)))
+})
+
 

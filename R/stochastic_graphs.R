@@ -26,32 +26,24 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
                                    scenario, outcome, ages = NULL,
                                    by_cohort = FALSE, log = FALSE) {
 
-  pq <- sprintf("%s/%s/%s_%s/%s_%s_%s.pq", base, touchstone, disease,
-                group, group, scenario, country)
+  d <- prepare_graph_data(base, touchstone, disease, group, country,
+                         scenario, outcome, ages, by_cohort)
 
-  title <- sprintf("%s, %s, %s\n%s, %s\n", touchstone, disease, group, scenario, country)
-  log <- if (log) "y" else ""
-  d <- arrow::read_parquet(pq)
-  if (!is.null(ages)) {
-    d <- d[d$age %in% ages, ]
-  }
-  if (by_cohort) {
-    d$year <- d$year - d$age
-  }
-  d <- d[, c("run_id", "year", "age", outcome)]
-  d <- d %>% group_by(.data$run_id, .data$year) %>%
-             summarise(
-               !!outcome := sum(.data[[outcome]], na.rm = TRUE),
-             .groups = "drop")
+  title <- sprintf("%s, %s, %s\n%s, %s\n", touchstone, disease, group,
+                   scenario, country)
 
+  runs <- max(d$run_id)
   miny <- max(1, min(d[[outcome]]))
   maxy <- max(d[[outcome]])
+  log <- if (log) "y" else ""
+
   plot(ylab = outcome, xlab = if (by_cohort) "Birth Cohort" else "year",
        x = d$year[d$run_id == 1], y = d[[outcome]][d$run_id == 1], type="l",
        col = "#b0b0b0", ylim = c(miny, maxy), main = title, log = log)
-  for (i in 2:200) {
+
+  for (i in 2:runs) {
     lines(x = d$year[d$run_id == i], y = d[[outcome]][d$run_id == i],
-         col = "#b0b0b0")
+          col = "#b0b0b0")
   }
 
   avgs <- d %>% group_by(.data$year) %>%
@@ -67,3 +59,26 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
   lines(x = avgs$year, y = avgs$q05, col = "#202020", lwd = 2)
   lines(x = avgs$year, y = avgs$q95, col = "#202020", lwd = 2)
 }
+
+
+prepare_graph_data <- function(base, touchstone, disease, group, country,
+                               scenario, outcome, ages, by_cohort) {
+
+  pq <- sprintf("%s/%s/%s_%s/%s_%s_%s.pq", base, touchstone, disease,
+                group, group, scenario, country)
+
+  d <- arrow::read_parquet(pq)
+  if (!is.null(ages)) {
+    d <- d[d$age %in% ages, ]
+  }
+  if (by_cohort) {
+    d$year <- d$year - d$age
+  }
+  d <- d[, c("run_id", "year", "age", outcome)]
+  d <- d %>% group_by(.data$run_id, .data$year) %>%
+    summarise(
+      !!outcome := sum(.data[[outcome]], na.rm = TRUE),
+      .groups = "drop")
+  d
+}
+
