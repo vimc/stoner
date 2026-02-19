@@ -149,7 +149,7 @@ test_that("touchstone CSV invalid", {
   create_touchstone_csv(test$path, "nevis", 1)
   mess_with(test$path, "touchstone.csv", "haggis", 1, "yummy")
   expect_error(do_test(test),
-               "Correct columns in touchstone.csv not equal to (.*)",
+               "Expected Correct columns in touchstone.csv to equal (.*)",
                class = "expectation_failure")
 })
 
@@ -158,7 +158,7 @@ test_that("touchstone_name CSV invalid", {
   create_touchstone_name_csv(test$path, "nevis", 1)
   mess_with(test$path, "touchstone_name.csv", "pie_balm", 1, "clogg_banting")
   expect_error(do_test(test),
-               "Correct columns in touchstone_name.csv not equal to (.*)",
+               "Expected Correct columns in touchstone_name.csv to equal (.*)",
                class = "expectation_failure")
 })
 
