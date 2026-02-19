@@ -30,6 +30,9 @@ stone_stochastic_graph(
 
 \item{scenario}{The scenario to plot.}
 
+\item{outcome}{The outcome to plot, for example \code{deaths}, \code{cases}, \code{dalys} or
+since 2023, \code{yll}.}
+
 \item{ages}{A vector of one or more ages to be selected and aggregated, or
 if left as NULL, then all ages are used and aggregated.}
 

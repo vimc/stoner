@@ -13,6 +13,8 @@
 ##' @param group The modelling group, used in the filename and graph title.
 ##' @param country The country to plot.
 ##' @param scenario The scenario to plot.
+##' @param outcome The outcome to plot, for example `deaths`, `cases`, `dalys` or
+##' since 2023, `yll`.
 ##' @param ages A vector of one or more ages to be selected and aggregated, or
 ##' if left as NULL, then all ages are used and aggregated.
 ##' @param by_cohort If TRUE, then age is subtracted from year to convert it to
@@ -26,8 +28,8 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
   pq <- sprintf("%s/%s/%s_%s/%s_%s_%s.pq", base, touchstone, disease,
                 group, group, scenario, country)
 
-  title <- sprintf("%s, %s, %s\n%s, %s\n %s", touchstone, disease, group, scenario, country, age_string)
-  log <- if (log) "y" else "n"
+  title <- sprintf("%s, %s, %s\n%s, %s\n", touchstone, disease, group, scenario, country)
+  log <- if (log) "y" else ""
   d <- arrow::read_parquet(pq)
   if (!is.null(ages)) {
     d <- d[d$age %in% ages, ]
