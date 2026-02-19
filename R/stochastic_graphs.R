@@ -54,7 +54,7 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
          col = "#b0b0b0")
   }
 
-  avgs <- d %>% group_by(year) %>%
+  avgs <- d %>% group_by(.data$year) %>%
     summarise(
       mean   = mean(.data[[outcome]]),
       median = median(.data[[outcome]]),
