@@ -6,8 +6,8 @@
 ##' @export
 ##' @title Process stochastic data
 ##' @importFrom data.table as.data.table
+##' @importFrom arrow write_parquet
 ##' @import readr
-##' @import qs2
 ##' @importFrom utils write.csv
 ##' @param con DBI connection to production. Used for verifying certificate
 ##' against expected properties
@@ -434,12 +434,12 @@ write_pre_aggregated_to_disk <- function(data, touchpoint,
   for (country in countries) {
     timed({
       path <- file.path(pre_aggregation_path,
-                        sprintf("%s_%s_%s_pre_aggregation.qs",
+                        sprintf("%s_%s_%s_pre_aggregation.pq",
                                 touchpoint$modelling_group,
                                 touchpoint$disease,
                                 country))
       data <- as.data.frame(data)
-      qs2::qs_save(data[data$country == country, ], path)
+      arrow::write_parquet(data[data$country == country, ], path)
     }, "Saved %s size %s", path, prettyunits::pretty_bytes(file.size(path)))
   }
   invisible(TRUE)
@@ -447,32 +447,32 @@ write_pre_aggregated_to_disk <- function(data, touchpoint,
 
 
 write_output_to_disk <- function(output, out_path, modelling_group, disease) {
-  all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.qs",
+  all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.pq",
                                                  modelling_group, disease))
-  timed(qs2::qs_save(as.data.frame(output$u5_calendar_year),
-            file = all_u5_cal_file),
+  timed(arrow::write_parquet(as.data.frame(output$u5_calendar_year),
+                             all_u5_cal_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
 
-  all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.qs",
+  all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.pq",
                                               modelling_group, disease))
-  timed(qs2::qs_save(as.data.frame(output$all_calendar_year),
-            file = all_cal_file),
+  timed(arrow::write_parquet(as.data.frame(output$all_calendar_year),
+                             all_cal_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
-  all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.qs",
+  all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.pq",
                                                  modelling_group, disease))
-  timed(qs2::qs_save(as.data.frame(output$u5_cohort),
-            file = all_u5_coh_file),
+  timed(arrow::write_parquet(as.data.frame(output$u5_cohort),
+                             all_u5_coh_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
-  all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.qs",
+  all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.pq",
                                               modelling_group, disease))
-  timed(qs2::qs_save(as.data.frame(output$all_cohort),
-            file = all_coh_file),
+  timed(arrow::write_parquet(as.data.frame(output$all_cohort),
+                             all_coh_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
   list(

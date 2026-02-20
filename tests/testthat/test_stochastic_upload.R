@@ -10,11 +10,11 @@ test_that("Bad arguments", {
   do_test(test)
 
   expect_error(stoner::stone_stochastic_upload(
-    file.path(tempfile(), "non_existent_file.qs")),
+    file.path(tempfile(), "non_existent_file.pq")),
       "file(.*)exists(.*)")
 
-  new_file <- tempfile(fileext = ".qs")
-  qs2::qs_save(mtcars, file = new_file)
+  new_file <- tempfile(fileext = ".pq")
+  arrow::save_parquet(mtcars, new_file)
 
   expect_error(stone_stochastic_upload(new_file, test$con, test$con,
     "Rudolph"), "Unknown modelling group: Rudolph")
@@ -27,7 +27,7 @@ test_that("Bad arguments", {
 
   expect_error(stone_stochastic_upload(new_file, test$con, test$con,
     "LAP-elf", "flu", "nevis-1", FALSE, FALSE, TRUE),
-     "Columns in qs file not as expected")
+     "Columns in pq file not as expected")
 })
 
 test_that("stochastic_upload with csv file returns useful error", {
@@ -45,7 +45,7 @@ test_that("stochastic_upload with csv file returns useful error", {
     "Columns in csv file not as expected")
 })
 
-test_that("stochastic_upload errors if file not csv or qs", {
+test_that("stochastic_upload errors if file not csv or pq", {
   test <- new_test()
   standard_disease_touchstones(test)
   standard_responsibility_support(test)
@@ -57,5 +57,5 @@ test_that("stochastic_upload errors if file not csv or qs", {
   expect_error(
     stone_stochastic_upload(new_file, test$con, test$con,
                             "LAP-elf", "flu", "nevis-1", FALSE, FALSE, TRUE),
-    "Can only read csv or qs format stochastic data, got rds")
+    "Can only read csv or pq format stochastic data, got rds")
 })

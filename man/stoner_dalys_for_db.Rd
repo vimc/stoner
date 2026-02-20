@@ -52,7 +52,7 @@ estimate set can be specified here, to extend that estimate set with
 DALYs. Otherwise, leave as NULL to look up by the other four
 fields.}
 
-\item{output_file}{If provided, then write the output CSV with the
+\item{output_file}{If provided, then write an output pq file with the
 additional DALYs field to this filename. The file will be ready to be
 uploaded to Montagu.}
 

@@ -21,7 +21,6 @@ Imports:
     data.table,
     jsonlite,
     lgr,
-    qs2,
     dplyr,
     magrittr,
     prettyunits,

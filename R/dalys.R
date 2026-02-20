@@ -8,7 +8,7 @@
 ##'
 ##' @export
 ##' @title Calculating DALYs for stochastic or central estimates
-##' @import qs2
+##' @importFrom arrow write_parquet
 ##' @param con DBI connection to a Montagu database. Used for retrieving
 ##' demographic data for life expectancy.
 ##' @param touchstone The touchstone (including version); the demographic
@@ -233,7 +233,7 @@ stoner_life_table <- function(con, touchstone, year_min, year_max,
 ##' estimate set can be specified here, to extend that estimate set with
 ##' DALYs. Otherwise, leave as NULL to look up by the other four
 ##' fields.
-##' @param output_file If provided, then write the output CSV with the
+##' @param output_file If provided, then write an output pq file with the
 ##' additional DALYs field to this filename. The file will be ready to be
 ##' uploaded to Montagu.
 ##' @param life_table If provided, then re-use the life table provided by a
@@ -358,10 +358,10 @@ stoner_dalys_for_db <- function(con, dalys_params, modelling_group = NULL,
   data_dalys$data <- data_dalys$data[, c("disease", "year", "age", "country",
                                          "country_name", "cohort_size", cols)]
 
-  # Optionally write a CSV file out.
+  # Optionally write a parquet file out.
 
   if (!is.null(output_file)) {
-    qs2::qs_save(as.data.frame(data_dalys$data), output_file)
+    arrow::write_parquet(as.data.frame(data_dalys$data), output_file)
   }
 
   data_dalys
