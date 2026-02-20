@@ -1,63 +1,25 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>/articles/stoner.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/news/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_dump.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_extract.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_load.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_stochastic_cert_verify.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_stochastic_process.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_stochastic_upload.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_test_extract.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_test_transform.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stone_transform.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stoner_calculate_dalys.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stoner_dalys_for_db.html</loc>
-  </url>
-  <url>
-    <loc>/reference/stoner_life_table.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/LICENSE-text.html</loc></url>
+<url><loc>/articles/index.html</loc></url>
+<url><loc>/articles/stoner.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/news/index.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/stone_dump.html</loc></url>
+<url><loc>/reference/stone_extract.html</loc></url>
+<url><loc>/reference/stone_load.html</loc></url>
+<url><loc>/reference/stone_stochastic_cert_verify.html</loc></url>
+<url><loc>/reference/stone_stochastic_graph.html</loc></url>
+<url><loc>/reference/stone_stochastic_process.html</loc></url>
+<url><loc>/reference/stone_stochastic_standardise.html</loc></url>
+<url><loc>/reference/stone_stochastic_upload.html</loc></url>
+<url><loc>/reference/stone_test_extract.html</loc></url>
+<url><loc>/reference/stone_test_transform.html</loc></url>
+<url><loc>/reference/stone_transform.html</loc></url>
+<url><loc>/reference/stoner_calculate_dalys.html</loc></url>
+<url><loc>/reference/stoner_dalys_for_db.html</loc></url>
+<url><loc>/reference/stoner_life_table.html</loc></url>
 </urlset>
+
