@@ -159,21 +159,18 @@ test_that("Bad arguments", {
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".", outcomes = list(deaths = c("deaths", "deaths")),
-    bypass_cert_check = TRUE),
+    "", 1, 1, ".", outcomes = list(deaths = c("deaths", "deaths")), bypass_cert_check = TRUE),
     "Duplicated outcome in deaths")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".",
-    outcomes = list(deaths = "deaths", cases = "cases", dalys = "piles_dalys"),
+    "", 1, 1, ".", outcomes = list(deaths = "deaths", cases = "cases", dalys = "piles_dalys"),
     bypass_cert_check = TRUE),
     "Outcomes not found, dalys \\('piles_dalys'\\)")
 
   expect_error(stone_stochastic_process(test$con,
     "LAP-elf", "flu", "nevis-1", "pies", test$path, "non_exist:index.xz",
-    "", 1, 1, ".",
-    outcomes = list(deaths = "deaths", cases = "cases", dalys = "dalys"),
+    "", 1, 1, ".", outcomes = list(deaths = "deaths", cases = "cases", dalys = "dalys"),
     runid_from_file = TRUE, bypass_cert_check = TRUE),
     "Must have index_start and index_end as 1..200 to imply run_id")
 
@@ -367,20 +364,19 @@ stochastic_runner <- function(same_countries = TRUE,
                               upload = FALSE,
                               allow_new_database = TRUE,
                               bypass_cert_check = TRUE,
-                              dalys_recipe = NULL,
+                              dalys_df = NULL,
                               cert = "",
                               pre_aggregation_path = NULL,
                               lines = Inf,
                               log_file = NULL,
                               silent = TRUE) {
-
   test <- new_test()
 
   res <- random_stoch_data(test, same_countries, simple_outcomes,
                            single_file_per_scenario, include_run_id,
-                           include_disease, !is.null(dalys_recipe))
+                           include_disease, !is.null(dalys_df))
 
-  if (is.data.frame(dalys_recipe)) {
+  if (is.data.frame(dalys_df)) {
     fake_lifetable_db(test$con)
   }
 
@@ -395,22 +391,19 @@ stochastic_runner <- function(same_countries = TRUE,
     index_start <- 1
     index_end <- 200
   }
-
+  deaths <- "deaths"
+  cases <- "cases"
+  dalys <- "dalys"
   if (!simple_outcomes) {
-    outcomes <- list(
-      deaths = c("deaths_acute", "deaths_chronic"),
-      cases = c("cases_acute", "cases_chronic"),
-      dalys = c("dalys_men", "dalys_pneumo"))
-  } else {
-    outcomes <- list(
-      deaths = "deaths",
-      cases = "cases",
-      dalys = "dalys")
-
+    deaths <- c("deaths_acute", "deaths_chronic")
+    cases <- c("cases_acute", "cases_chronic")
+    dalys <- c("dalys_men", "dalys_pneumo")
   }
 
-  if (!is.null(dalys_recipe)) {
-    outcomes$dalys <- NULL
+  if (is.data.frame(dalys_df)) {
+    outcomes <- list(deaths = deaths, cases = cases)
+  } else {
+    outcomes <- list(deaths = deaths, cases = cases, dalys = dalys)
   }
 
   stone_stochastic_process(test$con, "LAP-elf", "flu", "nevis-1",
@@ -418,8 +411,8 @@ stochastic_runner <- function(same_countries = TRUE,
                            cert = cert,
                            index_start, index_end, test$path,
                            pre_aggregation_path,
-                           outcomes,
-                           dalys_recipe,
+                           outcomes = outcomes,
+                           dalys_recipe = dalys_df,
                            runid_from_file = !include_run_id,
                            allow_missing_disease = !include_disease,
                            upload_to_annex = upload, annex = test$con,
@@ -433,10 +426,10 @@ stochastic_runner <- function(same_countries = TRUE,
     test = test,
     raw = res$raw,
     data = res$data,
-    cal = qs::qread(file.path(test$path, "LAP-elf_flu_calendar.qs")),
-    cal_u5 = qs::qread(file.path(test$path, "LAP-elf_flu_calendar_u5.qs")),
-    coh = qs::qread(file.path(test$path, "LAP-elf_flu_cohort.qs")),
-    coh_u5 = qs::qread(file.path(test$path, "LAP-elf_flu_cohort_u5.qs"))
+    cal = arrow::read_parquet(file.path(test$path, "LAP-elf_flu_calendar.pq")),
+    cal_u5 = arrow::read_parquet(file.path(test$path, "LAP-elf_flu_calendar_u5.pq")),
+    coh = arrow::read_parquet(file.path(test$path, "LAP-elf_flu_cohort.pq")),
+    coh_u5 = arrow::read_parquet(file.path(test$path, "LAP-elf_flu_cohort_u5.pq"))
   )
 }
 
@@ -551,10 +544,10 @@ test_that("Stochastic - with upload", {
 
   result$cal$deaths_pies <- round(result$cal$deaths_pies / 2)
 
-  new_qs_file <- tempfile(fileext = ".qs")
-  qs::qsave(x = result$cal, file = new_qs_file)
+  new_pq_file <- tempfile(fileext = ".pq")
+  arrow::write_parquet(result$cal, new_pq_file)
 
-  stone_stochastic_upload(new_qs_file, result$test$con, result$test$con,
+  stone_stochastic_upload(new_pq_file, result$test$con, result$test$con,
                           "LAP-elf", "flu", "nevis-1", is_cohort = FALSE,
                           is_under5 = FALSE, allow_new_database = FALSE,
                           testing = TRUE)
@@ -582,7 +575,7 @@ test_that("stochastic_upload can upload csv file", {
     "Overwriting table with id 1")
 
   data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_1")
-  expect_equal(data, result$cal_u5)
+  expect_equal(data, as.data.frame(result$cal_u5))
 
   cohort_csv <- tempfile(fileext = ".csv")
   write_csv(x = result$coh, file = cohort_csv)
@@ -594,7 +587,7 @@ test_that("stochastic_upload can upload csv file", {
     "Overwriting table with id 4")
 
   data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_4")
-  expect_equal(data, result$coh)
+  expect_equal(data, as.data.frame(result$coh))
 })
 
 ##############################################################################
@@ -656,13 +649,13 @@ fake_lifetable_db <- function(con) {
 }
 
 test_that("Stochastic - with DALYs", {
-  dalys_recipe <- data_frame(
+  dalys_df <- data_frame(
     outcome = c("cases_acute", "deaths_chronic"),
     proportion = c(0.1, 0.2),
     average_duration = c(20, 1000),
     disability_weight = c(0.4, 0.6))
 
-  result <- stochastic_runner(upload = FALSE, dalys_recipe = dalys_recipe,
+  result <- stochastic_runner(upload = FALSE, dalys_df = dalys_df,
                               simple_outcomes = FALSE)
 
   lt <- stoner_life_table(result$test$con, "nevis-1", 2000, 2100, TRUE)
@@ -828,15 +821,15 @@ test_that("Stochastic - with DALYs", {
 
   # Hurrah. We can *finally* test DALYs.
 
-  out <- tempfile(fileext = ".qs")
-  dat <- stoner_dalys_for_db(con, dalys_recipe,
+  out <- tempfile(fileext = ".pq")
+  dat <- stoner_dalys_for_db(con, dalys_df,
                               burden_estimate_set_id = new_bes,
                               output_file = out)
-  dat2 <- stoner_dalys_for_db(con, dalys_recipe,
+  dat2 <- stoner_dalys_for_db(con, dalys_df,
                                      "LAP-elf", "flu", "nevis-1", "pies",
                                      output_file = out)
 
-  df <- qs::qread(out)
+  df <- arrow::read_parquet(out)
 
   expect_identical(dat, dat2)
   expect_equal(dat$data$dalys, df$dalys)
@@ -858,10 +851,10 @@ test_that("preaggregated data can be saved to disk", {
 
   files <- list.files(t)
   expect_length(files, 2) ## 2 countries, 1 modelling group, 1 disease = 2 files
-  expect_setequal(files, c("LAP-elf_flu_4_pre_aggregation.qs",
-                           "LAP-elf_flu_716_pre_aggregation.qs"))
+  expect_setequal(files, c("LAP-elf_flu_4_pre_aggregation.pq",
+                           "LAP-elf_flu_716_pre_aggregation.pq"))
 
-  country_4 <- qs::qread(file.path(t, "LAP-elf_flu_4_pre_aggregation.qs"))
+  country_4 <- arrow::read_parquet(file.path(t, "LAP-elf_flu_4_pre_aggregation.pq"))
   expect_setequal(colnames(country_4),
                   c("country", "year", "run_id", "age", "deaths_pies",
                     "cases_pies", "dalys_pies", "deaths_hot_chocolate",
@@ -869,7 +862,7 @@ test_that("preaggregated data can be saved to disk", {
                     "deaths_holly", "cases_holly", "dalys_holly"))
   expect_true(all(country_4$country == 4))
 
-  country_716 <- qs::qread(file.path(t, "LAP-elf_flu_716_pre_aggregation.qs"))
+  country_716 <- arrow::read_parquet(file.path(t, "LAP-elf_flu_716_pre_aggregation.pq"))
   expect_setequal(colnames(country_716),
                   c("country", "year", "run_id", "age", "deaths_pies",
                     "cases_pies", "dalys_pies", "deaths_hot_chocolate",

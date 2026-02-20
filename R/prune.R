@@ -1,4 +1,5 @@
 ##' @importFrom utils capture.output
+##' @importFrom testthat expect_true expect_equal
 
 extract_prune <- function(e, path, con) {
 
@@ -142,10 +143,10 @@ test_extract_prune <- function(e) {
   #
 
   bes <- e$burden_estimate_set
-  expect_true("id" %in% names(bes))
-  expect_true("responsibility" %in% names(bes))#
-  expect_equal(0, sum(is.na(bes$id)))
-  expect_equal(0, sum(is.na(bes$responsibility)))
+  testthat::expect_true("id" %in% names(bes))
+  testthat::expect_true("responsibility" %in% names(bes))#
+  testthat::expect_equal(0, sum(is.na(bes$id)))
+  testthat::expect_equal(0, sum(is.na(bes$responsibility)))
 
 }
 

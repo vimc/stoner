@@ -69,7 +69,7 @@ in each case.}
 \item{pre_aggregation_path}{Path to dir to write out pre age-disaggregated
 data into. If NULL then this is skipped.}
 
-\item{outcomes}{A list of names vectors, where the name is the burden
+\item{outcomes}{A list of named vectors, where the name is the burden
 outcome, and the elements of the list are the column names in the
 stochastic files that should be summed to compute that outcome. The
 default is to expect outcomes \code{deaths}, \code{cases}, \code{dalys}, and \code{yll},
@@ -112,11 +112,6 @@ doing the full run.}
 If file exists it will be appended to, otherwise file will be created.}
 
 \item{silent}{TRUE to silence console logs.}
-
-\item{yll}{Added in 2023, the years of life lost indicator is more
-helpful especially for covid burden analysis. Usually leaving as "yll"
-is enough, but if it is the sum of other outcomes, provide these as a
-string vector.}
 }
 \description{
 Convert a modelling group's stochastic files into the summary format,

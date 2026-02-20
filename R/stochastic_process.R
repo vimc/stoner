@@ -5,7 +5,8 @@
 ##'
 ##' @export
 ##' @title Process stochastic data
-##' @import data.table
+##' @importFrom data.table as.data.table
+##' @importFrom arrow write_parquet
 ##' @import readr
 ##' @importFrom utils write.csv
 ##' @param con DBI connection to production. Used for verifying certificate
@@ -33,7 +34,7 @@
 ##' @param out_path Path to writing output files into
 ##' @param pre_aggregation_path Path to dir to write out pre age-disaggregated
 ##' data into. If NULL then this is skipped.
-##' @param outcomes A list of names vectors, where the name is the burden
+##' @param outcomes A list of named vectors, where the name is the burden
 ##' outcome, and the elements of the list are the column names in the
 ##' stochastic files that should be summed to compute that outcome. The
 ##' default is to expect outcomes `deaths`, `cases`, `dalys`, and `yll`,
@@ -316,9 +317,9 @@ aggregate_data <- function(scenario_data) {
   scen_coh <- agg_and_sort(scenario_data)
 
   scen_u5_coh <- scen_u5_coh %>%
-    dplyr::rename(cohort = year)
+    dplyr::rename(cohort = "year")
   scen_coh <- scen_coh %>%
-    dplyr::rename(cohort = year)
+    dplyr::rename(cohort = "year")
 
   list(
     u5_calendar_year = scen_u5_cal,
@@ -433,12 +434,12 @@ write_pre_aggregated_to_disk <- function(data, touchpoint,
   for (country in countries) {
     timed({
       path <- file.path(pre_aggregation_path,
-                        sprintf("%s_%s_%s_pre_aggregation.qs",
+                        sprintf("%s_%s_%s_pre_aggregation.pq",
                                 touchpoint$modelling_group,
                                 touchpoint$disease,
                                 country))
       data <- as.data.frame(data)
-      qs::qsave(data[data$country == country, ], path)
+      arrow::write_parquet(data[data$country == country, ], path)
     }, "Saved %s size %s", path, prettyunits::pretty_bytes(file.size(path)))
   }
   invisible(TRUE)
@@ -446,32 +447,32 @@ write_pre_aggregated_to_disk <- function(data, touchpoint,
 
 
 write_output_to_disk <- function(output, out_path, modelling_group, disease) {
-  all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.qs",
+  all_u5_cal_file <- file.path(out_path, sprintf("%s_%s_calendar_u5.pq",
                                                  modelling_group, disease))
-  timed(qs::qsave(x = as.data.frame(output$u5_calendar_year),
-            file = all_u5_cal_file),
+  timed(arrow::write_parquet(as.data.frame(output$u5_calendar_year),
+                             all_u5_cal_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
 
-  all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.qs",
+  all_cal_file <- file.path(out_path, sprintf("%s_%s_calendar.pq",
                                               modelling_group, disease))
-  timed(qs::qsave(x = as.data.frame(output$all_calendar_year),
-            file = all_cal_file),
+  timed(arrow::write_parquet(as.data.frame(output$all_calendar_year),
+                             all_cal_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
-  all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.qs",
+  all_u5_coh_file <- file.path(out_path, sprintf("%s_%s_cohort_u5.pq",
                                                  modelling_group, disease))
-  timed(qs::qsave(x = as.data.frame(output$u5_cohort),
-            file = all_u5_coh_file),
+  timed(arrow::write_parquet(as.data.frame(output$u5_cohort),
+                             all_u5_coh_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
 
-  all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.qs",
+  all_coh_file <- file.path(out_path, sprintf("%s_%s_cohort.pq",
                                               modelling_group, disease))
-  timed(qs::qsave(x = as.data.frame(output$all_cohort),
-            file = all_coh_file),
+  timed(arrow::write_parquet(as.data.frame(output$all_cohort),
+                             all_coh_file),
         "Saved %s size %s", all_u5_cal_file,
         prettyunits::pretty_bytes(file.size(all_u5_cal_file)))
   list(
