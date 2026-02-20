@@ -370,7 +370,6 @@ stochastic_runner <- function(same_countries = TRUE,
                               lines = Inf,
                               log_file = NULL,
                               silent = TRUE) {
-  browser()
   test <- new_test()
 
   res <- random_stoch_data(test, same_countries, simple_outcomes,
