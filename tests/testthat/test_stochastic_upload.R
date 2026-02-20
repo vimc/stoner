@@ -14,7 +14,7 @@ test_that("Bad arguments", {
       "file(.*)exists(.*)")
 
   new_file <- tempfile(fileext = ".pq")
-  arrow::save_parquet(mtcars, new_file)
+  arrow::write_parquet(mtcars, new_file)
 
   expect_error(stone_stochastic_upload(new_file, test$con, test$con,
     "Rudolph"), "Unknown modelling group: Rudolph")

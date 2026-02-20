@@ -370,7 +370,7 @@ stochastic_runner <- function(same_countries = TRUE,
                               lines = Inf,
                               log_file = NULL,
                               silent = TRUE) {
-
+  browser()
   test <- new_test()
 
   res <- random_stoch_data(test, same_countries, simple_outcomes,
@@ -576,7 +576,7 @@ test_that("stochastic_upload can upload csv file", {
     "Overwriting table with id 1")
 
   data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_1")
-  expect_equal(data, result$cal_u5)
+  expect_equal(data, as.data.frame(result$cal_u5))
 
   cohort_csv <- tempfile(fileext = ".csv")
   write_csv(x = result$coh, file = cohort_csv)
@@ -588,7 +588,7 @@ test_that("stochastic_upload can upload csv file", {
     "Overwriting table with id 4")
 
   data <- DBI::dbGetQuery(result$test$con, "SELECT * FROM stochastic_4")
-  expect_equal(data, result$coh)
+  expect_equal(data, as.data.frame(result$coh))
 })
 
 ##############################################################################
