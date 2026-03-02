@@ -6,7 +6,7 @@ Authors@R:
            email = "w.hinsley@imperial.ac.uk"),
       person("Rich", "Fitzjohn", role = c("aut", "csl", "sng")),
       person("Robert", "Ashton", role = c("aut", "cst", "wdc")))
-URL: https://github.com/vimc/stoner
+URL: https://github.com/vimc/stoner, https://vimc.github.io/stoner
 BugReports: https://github.com/vimc/stoner/issues
 Description: For montagu-imports that create touchstones, or augment existing
     touchstones, allow the import to be as minimal as possible, towards  single

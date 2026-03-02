@@ -1,4 +1,4 @@
-url: https://https://vimc.github.io/stoner/
+url: https://vimc.github.io/stoner/
 
 template:
   bootstrap: 5
@@ -7,4 +7,5 @@ articles:
   - title: General
     navbar: General
     contents:
-      - stoner
+      - Usage
+      - Stochastics
