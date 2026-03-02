@@ -3,6 +3,7 @@
 export(stone_dump)
 export(stone_extract)
 export(stone_load)
+export(stone_stochastic_central)
 export(stone_stochastic_cert_verify)
 export(stone_stochastic_graph)
 export(stone_stochastic_process)
