@@ -1,0 +1,11 @@
+url: https://vimc.github.io/stoner/
+
+template:
+  bootstrap: 5
+
+articles:
+  - title: General
+    navbar: General
+    contents:
+      - Usage
+      - Stochastics

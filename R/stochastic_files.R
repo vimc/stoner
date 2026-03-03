@@ -93,3 +93,71 @@ stone_stochastic_standardise <- function(
     cat("\r Completed\n\n")
   }
 }
+
+##' Create a central stochastic file from a set of standardised
+##' files created by stone_stochastic_standardise. This is for
+##' a single scenario, and we'll expect to find a file for each
+##' country containing all the runs. We'll produce one file with
+##' the mean (or median) of the stochastics, and all countries
+##' in one file.
+##'
+##' @export
+##' @title Produce central average from stochastic files.
+##' @importFrom data.table rbindlist
+##' @import arrow
+##' @import dplyr
+##' @param base The folder in which the standardised stochastic files are found.
+##' @param touchstone The touchstone name (for the graph title)
+##' @param disease The disease, used for building the filename and graph title.
+##' @param group The modelling group, used in the filename and graph title.
+##' @param scenario The scenario to plot.
+##' @param avg_method The function to use for averaging the outcomes, probably
+##' mean (the default) or median.
+
+stone_stochastic_central <- function(base, touchstone, disease, group,
+                                     scenario, avg_method = mean) {
+
+  # Get vector of standard files to work with
+
+  path <- file.path(base, touchstone, sprintf("%s_%s", disease, group))
+  if (!dir.exists(path)) {
+    cli::cli_abort("Path not found: {path}")
+  }
+  files <- list.files(path, pattern = "*.pq")
+
+  if (length(files) == 0) {
+    cli::cli_abort("No .pq files found in {path}")
+  }
+
+  files <- files[grepl(sprintf("%s_%s_[A-Z][A-Z][A-Z].pq", group, scenario), files)]
+  if (length(files) == 0) {
+    cli::cli_abort("No files matching scenario: {scenario}")
+  }
+
+  pb <- cli::cli_progress_bar("Loading countries", total = length(files))
+  central <- list()
+  for (fn in seq_along(files)) {
+    f <- files[fn]
+    cli::cli_progress_update(pb, fn)
+
+    d <- arrow::read_parquet(file.path(path, f))
+    orig_country <- unique(d$country)
+
+    d <- d %>% group_by(.data$year, .data$age) %>%
+               summarise(
+                   deaths = avg_method(.data$deaths),
+                   cases = avg_method(.data$cases),
+                   dalys = avg_method(.data$dalys),
+                   yll = avg_method(.data$yll),
+                   cohort_size = avg_method(.data$cohort_size),
+                   .groups = "drop"
+                   )
+    d$disease <- disease
+    d$country <- orig_country
+    central[[f]] <- d
+  }
+  cli::cli_progress_done()
+  central <- as.data.frame(data.table::rbindlist(central))
+  outfile <- sprintf("%s_%s_central.pq", group, scenario)
+  arrow::write_parquet(central, file.path(path, outfile))
+}
