@@ -1,0 +1,90 @@
+# stoner
+
+         .-'''-. ,---------.    ,-----.    ,---.   .--.    .-''-.  .-------.
+        / _     \\          \ .'  .-,  '.  |    \  |  |  .'_ _   \ |  _ _   \
+       (`' )/`--' `--.  ,---'/ ,-.|  \ _ \ |  ,  \ |  | / ( ` )   '| ( ' )  |
+      (_ o _).       |   \  ;  \  '_ /  | :|  |\_ \|  |. (_ o _)  ||(_ o _) /
+       (_,_). '.     :_ _:  |  _`,/ \ _/  ||  _( )_\  ||  (_,_)___|| (_,_).' __
+      .---.  \  :    (_I_)  : (  '\_/ \   ;| (_ o _)  |'  \   .---.|  |\ \  |  |
+      \    `-'  |   (_(=)_)  \ `"/  \  ) / |  (_,_)\  | \  `-'    /|  | \ `'   /
+       \       /     (_I_)    '. \_/``".'  |  |    |  |  \       / |  |  \    /
+        `-...-'      '---'      '-----'    '--'    '--'   `'-..-'  ''-'   `'-'
+
+Stoner is a helper package for writing montagu-imports concerning
+touchstones and associated responsibilities and expectations. It allows
+creation of or changes to a touchstone to be specified by CSV files.
+
+# Using stoner
+
+- `install.packages("stoner")`
+- Create a [montagu-import](https://github.com/vimc/montagu-imports).
+- Write CSV files in a folder called `meta` inside that import folder,
+  or use `stoner::stone_dump(con, touchstone, path)` to dump a set of
+  CSVs for an existing touchstone, which you could (carefully) modify.
+- For your *extract* call `stoner::stone_extract(path, con)`
+- For your *test-extract* call
+  `stoner::stone_test_extract(extracted_data)`
+- For your *transform* call `stoner::stone_transform(extracted_data)`
+- For your *test-transform* call
+  `stoner::stone_test_transform(transform_data)`
+- For your *load* call `stoner::stone_load(transformed_data, con)`
+
+The above is the simplest case. You should also write some load tests as
+usual, but these can now concentrate entirely on what rows the
+particular import is expected to add. See the vignette for more detail.
+
+# Testing
+
+Some unit tests require a database connection to be able to run. Use
+helper commands to start a docker container with a testing database \*
+`./inst/db/db_start` - to start the test database \*
+`./inst/db/db_stop` - stop the test database \* `./inst/db/db_clear` -
+remove all data from the test database
+
+Or from R
+
+    test_db_start()
+    test_db_stop()
+    test_db_clear()
+
+# Package index
+
+## All functions
+
+- [`stone_dump()`](https://vimc.github.io/stoner/reference/stone_dump.md)
+  : Dump touchstone from database to CSV.
+- [`stone_extract()`](https://vimc.github.io/stoner/reference/stone_extract.md)
+  : Extract touchstone-relevant data
+- [`stone_load()`](https://vimc.github.io/stoner/reference/stone_load.md)
+  : Load touchstone data to database
+- [`stone_stochastic_central()`](https://vimc.github.io/stoner/reference/stone_stochastic_central.md)
+  : Produce central average from stochastic files.
+- [`stone_stochastic_cert_verify()`](https://vimc.github.io/stoner/reference/stone_stochastic_cert_verify.md)
+  : Validate stochastic parameter certificate
+- [`stone_stochastic_graph()`](https://vimc.github.io/stoner/reference/stone_stochastic_graph.md)
+  : Stochastic plot
+- [`stone_stochastic_process()`](https://vimc.github.io/stoner/reference/stone_stochastic_process.md)
+  : Process stochastic data
+- [`stone_stochastic_standardise()`](https://vimc.github.io/stoner/reference/stone_stochastic_standardise.md)
+  : Standardise stochastic data files
+- [`stone_stochastic_upload()`](https://vimc.github.io/stoner/reference/stone_stochastic_upload.md)
+  : Upload stochastic data to annex
+- [`stone_test_extract()`](https://vimc.github.io/stoner/reference/stone_test_extract.md)
+  : Test the extracted data.
+- [`stone_test_transform()`](https://vimc.github.io/stoner/reference/stone_test_transform.md)
+  : Test the transformed data.
+- [`stone_transform()`](https://vimc.github.io/stoner/reference/stone_transform.md)
+  : Transform extracted_data into transformed_data
+- [`stoner_calculate_dalys()`](https://vimc.github.io/stoner/reference/stoner_calculate_dalys.md)
+  : Calculating DALYs for stochastic or central estimates
+- [`stoner_dalys_for_db()`](https://vimc.github.io/stoner/reference/stoner_dalys_for_db.md)
+  : Create CSV with DALYs for an uploaded burden estimate set
+- [`stoner_life_table()`](https://vimc.github.io/stoner/reference/stoner_life_table.md)
+  : Calculate life expectancy table
+
+# Articles
+
+### General
+
+- [Usage](https://vimc.github.io/stoner/articles/Usage.md):
+- [Stochastics](https://vimc.github.io/stoner/articles/Stochastics.md):

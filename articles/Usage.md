@@ -1,0 +1,1041 @@
+# Usage
+
+## Introduction
+
+`stoner` is a package to help with various tasks involving VIMC
+touchstones. Its purpose is evolving somewhat with the needs of the VIMC
+project; stoner is becoming an umbrella to keep these needs expressed in
+a tested package. As such, it can be used in a number of modes.
+
+## Touchstone creation as a dettl helper
+
+Creation of touchstones is quite a common process, although new
+touchstones will often be based on a previous one. However, creating the
+touchstone involves additions to various related tables, so the code to
+create touchstones is not always trivial to review.
+
+[Dettl](https://github.com/vimc/dettl) has somewhat helped here,
+encouraging separation of extract, transform and load stages of an
+import, with testing of each stage, forcing the code for touchstone
+creation to be written in a way that separates those concerns and makes
+reviewing easier. Furthermore, it has often been possible to review a
+new import as a diff to a previously reviewed import.
+
+Stoner takes this a step further by allowing the touchstone creation to
+be expressed in csv meta-data, providing function calls for the extract,
+transform and load stages.
+
+### The R code
+
+The code for a stoner touchstone import is very simple. Dettl requires
+that we write extract, transform, and load functions, and tests for the
+extract and load. So we create a dettl import as usual (see
+`dettl::dettl_new`), which begins a new import in our imports repo.
+
+Dettl requires us to write various functions, which we can satisfy with
+single line functions for a start.
+
+| Dettl.function                   | Stoner.call                                    |
+|:---------------------------------|:-----------------------------------------------|
+| extract(con)                     | stoner::stone_extract(‘.’, con)                |
+| test-extract(extracted_data)     | stoner::stone_test_extract(extracted_data)     |
+| transform(extracted_data)        | stoner::stone_transform(extracted_data)        |
+| test-transform(transformed_data) | stoner::stone_test_transform(transformed_data) |
+| load(transformed_data, con)      | stoner::stone_load(transformed_data, con)      |
+
+So for the minimal example, when writing the dettl import, delegate each
+of dettl’s functions to the stoner handlers, passing the same arguments.
+
+### The CSV files for the Import
+
+The minimal example on its own will do nothing and exit cleanly. To make
+stoner do some useful work, we write csv files in a folder called `meta`
+within the import folder. These csv files should be thought of a
+specification of “how you would like things to be” - rather than “what
+you want stoner to do”. If rows in your csv file identically exist in
+the database, stoner will use the existing ones and not add duplicates.
+If the rows in your csv are provably absent from the database, stoner
+will add new ones.
+
+If stoner detects in some way that the items already exist, but not all
+csv data matches with those items, then some other factors come into
+play that affect whether stoner can update the database content or not.
+Imports are *incremental* to the database, yet on some occasions, it is
+useful to be able to do in-place edits of touchstones that are still in
+preparation, for example.
+
+Following are the csv files that stoner will recognise, and their
+columns and formats, and notes on the requirements. Any failure to meet
+the requirements will cause an abort with an error message.
+
+You do not have to provide all of the csvs, only ones where you expect
+something to change, but you may find it good practice to
+“over-specify”, since the result is that Stoner will check the database
+tables are all as you expect. It also may be helpful to be able to
+compare complete touchstone definitions (ie, sets of stoner csv files)
+as a diff between two imports.
+
+#### touchstone_name.csv
+
+A `touchstone_name` refers to a broad ensemble of closely related runs;
+there will be at least one version for each touchstone_name, and it is
+the specific version that we colloquially refer to as ‘a touchstone’.
+
+| Column      | Example                   |
+|:------------|:--------------------------|
+| id          | `201910gavi`              |
+| description | `October 2019 touchstone` |
+| comment     | `Standard GAVI`           |
+
+- If the `id` is not found in the `touchstone_name` db table, then the
+  row is added.
+- If the `id` is found, and `description` and `comment` match, then the
+  row in the csv is ignored.
+- If, a `touchstone_name` with that `id` exists, but `description`
+  and/or `comment` differ from the original, then the fields in the
+  database are updated in-place if either:
+  - There are no versions of that touchstone yet, OR
+  - **All** existing versions of that touchstone have status
+    `in-preparation`.
+  - Otherwise: an error occurs and the import aborts.
+- `Description` and `Comment` must be non-empty. Conventionally,
+  `description` has been used to describe the date and basic purpose,
+  and `comment` for any further detail required.
+
+#### touchstone.csv
+
+A `touchstone` is a particular version of a `touchstone_name`, and is
+the basic unit of currency for touchstones in Montagu. Coverage,
+expectations and burden estimates are all attached to one of these
+versioned touchstones.
+
+| Column          | Example                                |
+|:----------------|:---------------------------------------|
+| id              | `201910gavi-1`                         |
+| touchstone_name | `201910gavi`                           |
+| version         | `1`                                    |
+| status          | `in-preparation`, `open` or `finished` |
+| description     | `201910gavi (version 1)`               |
+| comment         | `GAVI Version 1`                       |
+
+- `id` must be in the form `touchstone_name`-`version`.
+- `touchstone_name` must match a `touchstone_name.id`, either in the
+  database, or in the accompanying `touchstone_name.csv`
+- If touchstone `id` is not found, then stoner will add the new row.
+- If touchstone `id` is found and all other columns match, stoner
+  ignores it.
+- If touchstone `id` is found, but any other column differs, then stoner
+  will update the fields in the existing touchstone only if its status
+  is `in-preparation`. Otherwise, it will fail with an error.
+- `description` and `comment` must be non-empty. Typically,
+  `description` has been very minimal about the existence of the
+  touchstone, and `comments` to record more details about why the
+  touchstone version exists.
+
+#### touchstone_countries.csv
+
+The `touchstone_country` table in the database should really be called
+`touchstone_country_disease`. For a given touchstone, it records which
+countries should be returned when groups download their demographic
+data. This might differ from the countries a group is expected to model
+for a certain touchstone; see the responsibilities.csv section for that.
+
+| Column     | Example           |
+|:-----------|:------------------|
+| touchstone | `201910gavi-1`    |
+| disease    | `Measles;MenA`    |
+| country    | `AFG;BEN;IND;ZWE` |
+
+- This is an incremental update; if any row in the csv does not exactly
+  match one in the database table, a new row will be added. Exact
+  duplicates will be ignored.
+- It is not currently possible to remove rows in the database, or to
+  edit existing ones.
+- The touchstone `id` must exist in the database already, or in the
+  `touchstone.csv` file included in your import.
+- Semi-colon separated lists are acceptable for the disease and country,
+  since several diseases share the same list of relevant countries.
+- All diseases must be found in the `id` field of the `disease` table.
+  Stoner cannot currently add new diseases.
+- All countries must be found in the `id` column of the `country` table.
+  Stoner cannot currently add new countries, but the `country` table
+  should be complete.
+- TO-DO: It looks like we can do this to touchstones that are not
+  in-prep.
+
+#### touchstone_demographic_dataset.csv
+
+The touchstone_demographic_dataset table determines which
+demographic_statistic_types from which demographic_source will be used
+when providing demographic data for a particular touchstone. Generally,
+there will be a new demographic source each year, when either the IGME
+child mortality data, or the UNWPP population data, or both get updated.
+Because these updates happen at different times (UNWPP bi-yearly, and
+IGME yearly), sometimes a touchstone_demographic_dataset might
+incorporate fields from different sources, hence this table.
+
+| Column                     | Example        |
+|:---------------------------|:---------------|
+| demographic_source         | `dds-201910_2` |
+| demographic_statistic_type | `int_pop`      |
+| touchstone                 | `201910gavi-1` |
+
+- `demographic_statistic_type` and `demographic_source` are strings,
+  that must exist in the `code` column of the respective database
+  tables.
+- The touchstone `id` must exist in the database already, or in the
+  `touchstone.csv` file included in your import.
+- Updates here are incremental only; non-matching rows will be added,
+  and exact matches will be ignored. Stoner cannot remove or edit
+  existing entries.
+- TO-DO: It looks like we can do this to touchstones that are not
+  in-prep.
+
+#### scenario_type.csv
+
+| Column | Example              |
+|:-------|:---------------------|
+| id     | `stop`               |
+| name   | `VIMC stop scenario` |
+
+- If the scenario_type `id` is not found in the database table, then new
+  rows will be added.
+- If the scenario_type `id` is found in the database table, and the name
+  matches that in your csv file, then the row is ignored.
+- If the `id` exists, but the `name` differs then:-
+  - If there are no scenario_descriptions referring to this `id`, the
+    `name` in the database table for this id will be updated.
+
+  - If there are scenario_descriptions referring to this `id`, then
+    stoner looks up the status of any touchstones that refer to that
+    scenario_description, and will only perform the update if all are in
+    the `in-preparation` state.
+
+  - **However**, you can override this requirement by using this in your
+    load phase:-  
+
+     
+     `stoner::stone_load(transformed_data, con, allow_overwrite_scenario_type = TRUE)`
+
+#### scenario_description.csv
+
+| Column        | Example                       |
+|:--------------|:------------------------------|
+| id            | `mena-routine-no-vaccination` |
+| description   | `Description free text`       |
+| disease       | `MenA`                        |
+| scenario_type | `stop`                        |
+
+- `id` has conventionally been in lower-case, and in the form
+  `disease-coverage_type`.
+- If the scenario_description `id` does not exist in the database,
+  stoner will add the new scenario_description.
+- If the scenario_description `id` exists, and all other columns match
+  the existing values too, then the row is ignored. If the `id` exists,
+  but other columns differ, then:
+  - If any `scenario` exists that refers to this `scenario_description`,
+    and the touchstone associated with that scenario is not in the
+    `in-preparation` state, then the import fails with an error.
+
+  - **However**, on occasion it has been desirable to change the
+    description of a scenario while a touchstone referring to it is
+    open. To override the `in-preparation` requirement, in the load
+    phase of the import, use:  
+
+     
+     `stoner::stone_load(transformed_data, con, allow_overwrite_scenario_description = TRUE)`
+- `disease` must currently be one of `Cholera`, `HepB`, `Hib`, `HPV`,
+  `JE`, `Measles`, `MenA`, `PCV`, `Rota`, `Rubella`, `Typhoid` or `YF`.
+  These match the `id` column of the `disease` table. Stoner cannot
+  currently add new diseases; this is an admin task done separately.
+- `scenario_type` must be the `id` of a `scenario_type`, either in the
+  database table, or in a `scenario_type.csv` as part of your import.
+
+#### responsibilities.csv
+
+Most of the work for implementing a touchstone is done here, in which we
+add the scenario, responsibility and expectations (including countries
+and outcomes) that form the tasks different groups must perform.
+
+| Column               | Example                                        |
+|:---------------------|:-----------------------------------------------|
+| modelling_group      | `IC-Hallet`                                    |
+| disease              | `HepB`                                         |
+| touchstone           | `201910gavi-1`                                 |
+| scenario             | `hepb-no-vaccination;hepb-bd-routine-bestcase` |
+| scenario_type        | `standard`                                     |
+| age_min_inclusive    | `0`                                            |
+| age_max_inclusive    | `99`                                           |
+| cohort_min_inclusive | `1901`                                         |
+| cohort_max_inclusive | `2100`                                         |
+| year_min_inclusive   | `2000`                                         |
+| year_max_inclusive   | `2100`                                         |
+| countries            | `AFG;BEN;COD`                                  |
+| outcomes             | `dalys;deaths;cases`                           |
+
+- The `modelling_group` must match an `id` of the `modelling_group`
+  table. Stoner can’t add new modelling groups.
+
+- The `disease` must match an `id` of the `disease` table. Stoner can’t
+  add new diseases either.
+
+- The `touchstone` must exist either in the `touchstone` table, or in
+  the `touchstone.csv` as part of your import.
+
+- `scenario` here is a semi-colon separated list of scenarios - which
+  are actually `scenario_description` ids. The matching description must
+  exist in either the `scenario_description` table, or
+  `scenario_description.csv` in your import.
+
+- The minimum and maximum ages, cohorts and years above are implying
+  that this group should provide ages 0-99 inclusive, for calendar years
+  2000-2100. The 99 year olds in 2000 were born in 1901, so this is the
+  minimum cohort, whereas the maximum cohort will be the last year in
+  which people were born, which will be the 0-year olds in 2100.
+
+- All countries must be found in the `id` column of the `country` table.
+  Stoner cannot currently add new countries, but the `country` table
+  should be complete.
+
+- All outcomes must be found in the `code` column of the
+  burden_outcome\` table. Stoner cannot currently add new burden
+  outcomes.
+
+  The `responsibilities.csv` file may cause changes to the `scenario`,
+  `responsibility_set`, `responsibility`, `burden_estimate_expectation`,
+  `burden_estimate_country_expectation` and
+  `burden_estimate_outcome_expectation` tables. Where possible, existing
+  rows are re-used, rather than creating duplicates.
+
+- **scenario table**
+
+  - A `scenario` is defined by `scenario_description` and `touchstone`.
+    If combinations of those exist in `responsibilities_csv` that aren’t
+    in the `scenario` database table, then new rows get added.
+  - scenarios can only be added currently when the touchstone has status
+    `in-prep`.
+
+- **responsibility_set table**
+
+  - `responsibility_set` is defined by `modelling_group` and
+    `touchstone`. If combinations exist in `responsibilities_csv` that
+    aren’t in the database, they get created.
+  - responsibility_sets can only be added currently when the touchstone
+    has status `in-prep`.
+
+- **burden_estimate_expectations table**
+
+  - This table contains the minimum and maximum ages, cohorts and years,
+    for a given version (which is a `touchstone_name` - no version
+    number), and a description, conventionally in the form
+    `disease:group:scenario_type`, where the `scenario_type` might be a
+    particular scenario (if expectations need to be specific to that
+    scenario), or in many cases, then scenario_type has been defined as
+    `standard`, allowing the same expectation definition to be shared
+    for different scenarios (for a particular group and disease).
+  - Stoner treats rows as already existing, if they match all of those
+    fields exactly. If a matching row can be found, then that
+    burden_estimate_expectation is reused, and its id is noted for the
+    other tables below. Otherwise a new one is created, which will have
+    a newly create id. Hence, it is possible for multiple
+    responsibilities to have the same expectations - see below.
+  - Stoner cannot remove or edit existing burden_estimate_expectations.
+  - Expectations can only be added currently when the touchstone has
+    status `in-prep`.
+
+- **burden_estimate_country_expectation table**
+
+  - For a particular `burden_estimate_expectation`, the rows in the
+    `burden_estimate_country_expectation` table list the countries for
+    which we are expecting estimates to be uploaded by a particular
+    group, for a particular disease, and a particular scenario.
+  - The `burden_estimate_expectation` in this table is a numerical id,
+    referring to either a newly created expectation as a result of your
+    import, or an expectation that previous existed and matched the
+    details exactly.
+  - The table is increment-only; Stoner will add any (expectation,
+    country) pairs from your responsibilities.csv file that aren’t in
+    the table, and ignore those that are. Stoner cannot remove countries
+    from the expectations.
+
+- **burden_estimate_outcome_expectation table**
+
+  - Similar to the country expectations, the rows in the
+    `burden_estimate_outcome_expectation` table list the expected
+    outcomes that a group will upload for a particular scenario and
+    disease.
+  - The burden outcomes are listed in the `burden_outcome` table - but
+    Stoner cannot change the contents of that table at present.
+  - Again, this table is increment-only; Stoner will add any
+    (expectation, country) pairs from your responsibilities.csv file
+    that aren’t in the table, and ignore those that are. Stoner cannot
+    remove countries from the expectations.
+
+- **responsibility table**
+
+  - Finally, having created all the necessary rows, the responsibility
+    table then links the following together:-
+    - The responsibility_set it belongs to
+    - The scenario it refers to
+    - The burden_estimate_expectation (which in turn is linked to by the
+      burden_estimate_outcome_expectation and
+      burden_estimate_country_expectation tables)
+  - Responsibility rows can only be added when the touchstone has status
+    `in-prep`.
+  - The responsibility table also records `current_burden_estimate_set`
+    and `current_stochastic_burden_estimate_set` - both of which are
+    nullable, and are left at `NA` by default.
+  - Finally, the responsibility_table has a flag `is_open`, which Stoner
+    will set to TRUE as default.
+
+### The test functions
+
+Firstly, have your `test-extract` call
+`stoner::stone_test_extract(extracted_data)`, and `test-transform` call
+`stoner::stone_test_transform(transformed_data)` for the built-in tests
+to be called. Most likely, there is nothing else useful you can write
+for these tests, if your extract and transform functions are simply
+calling Stoner’s.
+
+Possibly the best approach to tests is to write the `test-queries`
+function for dettl in the following form:-
+
+    test_queries <- function(con) { list(
+      tn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone")[1,1],
+      tddn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_demographic_dataset")[1,1],
+      tcn = DBI::dbGetQuery(con, "SELECT count(*) FROM touchstone_country")[1,1],
+      sdn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario_description")[1,1],
+      sn = DBI::dbGetQuery(con, "SELECT count(*) FROM scenario")[1,1],
+      been = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_expectation")[1,1],
+      beoen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_outcome_expectation")[1,1],
+      becen = DBI::dbGetQuery(con, "SELECT count(*) FROM burden_estimate_country_expectation")[1,1],
+      rsn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility_set")[1,1],
+      rn = DBI::dbGetQuery(con, "SELECT count(*) FROM responsibility")[1,1]
+    )}
+
+and a `test_load.R` that tests how many rows have been added, for
+example…
+
+    context("load")
+
+    testthat::test_that("Expected rows added", {
+      expect_equal(after$tn, before$tn + 1)
+      expect_equal(after$tddn, before$tddn + 23)
+      expect_equal(after$tcn, before$tcn + 946)
+      expect_equal(after$sdn, before$sdn)
+      expect_equal(after$sn, before$sn + 67)
+      expect_equal(after$been, before$been + 26)
+      expect_equal(after$beoen, before$beoen + 128)
+      expect_equal(after$becen, before$becen + 2137)
+      expect_equal(after$rsn, before$rsn + 17)
+      expect_equal(after$rn, before$rn + 127)
+    })
+
+For this though, you will have to have prior knowledge about how many of
+the rows in your various CSV files exist already in the database, and
+how many you are expecting will need to be created.
+
+## Advanced usage
+
+### Fast-forwarding
+
+The need for fast-forwarding arises when the following events happen.
+
+- Modelling groups upload burden estimates to a certain touchstone
+  version.
+- A coverage issue is discovered that affects some groups.
+- A new touchstone version is created which fixes the coverage issue.
+- For unaffected groups (ie, coverage did not change for them), we may
+  want their burden estimates to appear in the same touchstone version
+  as the newer groups.
+
+Therefore, fast-forwarding is a process where burden estimates are moved
+from one touchstone to another - or more specifically, one
+responsibility_set to another (since responsibility_set is defined by
+modelling_group and touchstone).
+
+#### What fast-forwarding does…
+
+Suppose then, that we the new touchstone ready, and we have,
+potentially, some burden estimate sets to migrate. Fast-forwarding would
+do the following. Let’s consider it first for a single scenario, and a
+single modelling_group.
+
+- We specify that we want to fast-forward an existing burden estimate
+  set for a certain modelling_group and scenario, from one touchstone to
+  another. We’ll see how to specify that in a simple CSV file shortly. A
+  stoner import running on that CSV file then does essentially the
+  following:-
+
+- If necessary, create a new `responsibility_set` for the
+  modelling_group, in the destination touchstone.
+
+  - If, on the other hand, a `responsibility_set` already exists, that’s
+    fine, we’ll use the existing one.
+
+- If necessary, create a new `responsibility` within the new
+  `responsibility_set`, for the specified scenario.
+
+  - If a suitable `responsibility` already exists, but there is no
+    burden estimate set associated with it, then we can continue using
+    the existing `responsibility`.
+  - If, though, a burden estimate does exist in that target
+    `responsibility`, we abort and don’t fast forward.
+
+- Fast-forwarding a burden_estimate_set then means copying the
+  `current_burden_estimate_set` value from one responsibility to
+  another; from the older into the newer, and setting the older to `NA`.
+
+- Additionally, when a new `responsibility_set` is created by stoner, it
+  will copy the most recent `responsibility_set_comment` from the old,
+  to the new `responsibility_set`, noting that the new one was created
+  by fast-forwding.
+
+- For `responsibility_comment`s - if any work is done (either creating a
+  new responsibility, or setting `current_burden_estimate_set` on the
+  new responsibility for the first time, then the most recent
+  `responsibility_comment` (if there is one) will be copied to the new
+  responsibility, with a note about fast-forwarding.
+
+#### How to write a fast-forwarding import
+
+Write a `fast_forward.csv` file in the following form.
+
+| Column          | Example             |
+|:----------------|:--------------------|
+| modelling_group | IC-Hallett;Li       |
+| scenario        | hepb-no-vaccination |
+| touchstone_from | 202110gavi-2        |
+| touchstone_to   | 202110gavi-3        |
+
+- Note that fast-forwarding must be the only thing in the import, and
+  the only .csv file in use. Combining fast-forwarding with other
+  touchstone creation or management functions is too stressful to
+  contemplate. Do them separate, and test them separately.
+
+- Also, while you can do fastforwarding for different touchstones in the
+  same CSV, be careful with it as it gets confusing. Stoner will not let
+  you fastforward into, and out of, the same touchstone (ie, from
+  version 1 to 2, and 2 to 3) in the same CSV file.
+
+- The `modelling_group` and `scenario` columns can either be single
+  items, with multiple rows in the csv file. Or, they can be semi-colon
+  separated, to give multiple combinations of groups and scenarios.
+  Finally, they can be wildcard `*` to match anything.
+
+- Include all the standard stoner one-lines, for the extract,
+  test-extract, transform, test-transform, and load stages, as above,
+  and ensure that in `dettl.yml` for the report, automatic loading is
+  not enabled.
+
+### Pruning burden estimate sets
+
+When modelling groups upload more than one burden estimate set for the
+same responsibility (that is, the same touchstone, scenario, disease),
+only the most recent is regarded as interesting, and is marked as the
+`current_burden_estimate_set` for the responsibility. To save space (for
+some groups, a considerable amount of space), the old orphaned burden
+estimate sets can be deleted.
+
+Note that this should be considered a “final” delete; rows will be
+dropped from the `burden_estimate_set` table, and especially the
+`burden_estimate` table. While rolling the database back via backups is
+possible, it’s not desirable. That said, there should be no reason to
+keep previous versions of a burden estimate set. If both the old and new
+versions are important, they should both be “current” burden estimate
+sets, in different touchstones or reponsibilities perhaps.
+
+#### How to write a prune import
+
+Write a `prune.csv` file in the following form.
+
+| Column          | Example                   |
+|:----------------|:--------------------------|
+| modelling_group | IC-Hallett;Li             |
+| disease         | \*                        |
+| scenario        | hepb-no-vaccination       |
+| touchstone      | 202110gavi-2;202110gavi-3 |
+
+- Each field can be semi-colon-separated, and the result is that all
+  possibilities are multipled out. (So in the above example, both
+  touchstones, for both modelling groups will be examined for pruning
+  opportunities).
+
+- You can also include multiple lines in the CSV file, which will be
+  considered one at a time, thus allowing flexibility to look at a
+  number of specific combinations for pruning.
+
+- The `*` is a wildcard, and in the simplest case, all the fields can be
+  left as `*`, to look for pruning opportunities in the entire history
+  of burden estimate sets.
+
+- Note that if `prune.csv` exists, no other `csv` file should be
+  included - that is: a pruning import should just do pruning, and not
+  any other functionality. This keeps things simple, which is a good
+  thing since here we are (somewhat uniquely) performing a deletion of
+  data.
+
+- Include all the standard stoner one-lines, for the extract,
+  test-extract, transform, test-transform, and load stages, as above,
+  and ensure that in `dettl.yml` for the report, automatic loading is
+  not enabled.
+
+## Using stoner as a standalone package (without Dettl)
+
+### Dumping touchstones
+
+`stoner::stone_dump(con, touchstone, path)`, called with a database
+connection, a touchstone, and an output path, will produce csv files of
+everything connected with that touchstone, in the form stoner would use
+to import, as described above. This might be useful if you want to
+download an existing touchstone, edit some details (including the
+touchstone id), and upload a modified version.
+
+### Stochastic processing
+
+Modelling groups submit stochastic data to VIMC by responding to a
+Dropbox File Request. A stochastic set consists of 200 runs for each
+scenario for that group, using a range of different parameters that are
+intended to capture the uncertainty in the model.
+
+After some initial sanity checks (which are manual at present), the
+incoming csvs are compressed with `xz` with maximum settings, which
+provides the best compression for csvs, but fast decompression, and
+seamless decompression in R. (Windows command-line
+`xz -z -k -9 -e *.csv`)
+
+The incoming stochastics are separated certainly by scenario, and may be
+further separated for convenience; some groups have provided a file per
+country, others a file per stochastic run. From these, we create four
+intermediate files for each group, which eliminate age by summing over a
+calendar year, summing over a birth cohort (year - age), and for each
+option, either including all ages, or filtering just ages 0 to 4. They
+include just the `cases`, `deaths` and `dalys` outcomes (which might be
+calculated by summing more detailed outcomes a group provides) for each
+scenario in columns. The idea is so that calculating impact between
+scenarios can then be calculated simply by doing maths on values from
+the same row of the file.
+
+These four files are later uploaded to four separate tables on the annex
+database.
+
+Note that the production of the intermediate files can take a few hours
+per group, whereas the upload to annex takes only a few minutes. Storing
+the intermediate files can be useful should we need to redeploy annex at
+any point.
+
+Also note the examples below assume you have a connection to the
+production database (`con`), and later, a connection to the annex
+database (`annex`). See the end for notes on getting those connections
+in different ways.
+
+#### Simple Use
+
+In the simplest case, a group uploads a single csv file per scenario as
+follows:-
+
+| disease | run_id | year | age | country | country_name | cohort_size | cases | deaths | dalys |
+|:--------|-------:|-----:|----:|:--------|:-------------|------------:|------:|-------:|------:|
+| YF      |      1 | 2000 |   0 | AGO     | Angola       |      677439 |    59 |     22 |  1233 |
+| YF      |      1 | 2001 |   0 | AGO     | Angola       |      700540 |    61 |     23 |  1390 |
+| YF      |      1 | 2002 |   0 | AGO     | Angola       |      725742 |    66 |     24 |  1330 |
+| YF      |      1 | 2003 |   0 | AGO     | Angola       |      753178 |    69 |     25 |  1196 |
+| YF      |      1 | 2004 |   0 | AGO     | Angola       |      782967 |    71 |     26 |  1490 |
+
+which would continue for all the countries, years and ages, for 200 runs
+of a particular scenario. A separate file would exist for each scenario.
+To transform this into the four intermediate files, we might write
+below - where the argument names are included just for clarity, and are
+not needed.
+
+      stone_stochastic_process(
+        con = con,
+        modelling_group = "IC-Garske",
+        disease = "YF",
+        touchstone = "201910gavi-4",
+        scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                      "yf-preventive-default", "yf-routine-bestcase",
+                      "yf-routine-default", "yf-stop"),
+        in_path = "E:/Dropbox/File Requests/IC-Garske",
+        file = ":scenario.csv.xz",
+        cert = "certfile",
+        index_start = NA, index_end = NA,
+        out_path = "E:/Stochastic_Outputs")
+
+This assumes that in the `in_path` folder, 6 .csv files are present. The
+`file` argument indicates the template for those files. In this case we
+are assuming all the files follow the same template, where `:scenario`
+will be replaced by each of the 6 specified scenarios in turn. If the
+files do not obey such a simple templating, then you can supply a vector
+of strings for `file`, to indicate which files; just note there should
+be either a one-to-one mapping, or a many-to-one mapping between the
+different scenarios, and the different files indicated.
+
+In this example, there is only one file per scenario; the `index_start`
+and `index_end` arguments are set to `NA`, and there is no reference to
+`:index` in the `file` template. We will see later multi-file examples
+where these three fields are changed to describe the sequence of files
+we are expecting.
+
+The result is that four files are written - below is an abbreviated
+section of each.
+
+##### IC-Garske_YF_calendar.csv
+
+| run_id | year | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
+|-------:|-----:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
+|      1 | 2000 |      24 |        1219 |       21388 |          452 |           1165 |          20219 |             432 |
+|      1 | 2001 |      24 |        1269 |       22884 |          471 |           1199 |          21353 |             444 |
+|      1 | 2002 |      24 |        1319 |       24129 |          494 |           1235 |          22207 |             461 |
+
+So here, we have in each row, the cases, deaths and dalys summed over
+age for a country and calendar year, for each scenario.
+
+##### IC-Garske_YF_calendar_u5.csv
+
+| run_id | year | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
+|-------:|-----:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
+|      1 | 2000 |      24 |         269 |        5710 |          100 |            215 |           4541 |              80 |
+|      1 | 2001 |      24 |         280 |        6220 |          105 |            210 |           4689 |              78 |
+|      1 | 2002 |      24 |         290 |        6564 |          110 |            213 |           4849 |              80 |
+
+This is similar to the calendar year, but ages five and above are
+ignored, when summing over age, so the numbers are all smaller.
+
+##### IC-Garske_YF_cohort.csv
+
+| run_id | cohort | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
+|-------:|-------:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
+|      1 |   1900 |      24 |           0 |           0 |            0 |              0 |              0 |               0 |
+|      1 |   1901 |      24 |           0 |           0 |            0 |              0 |              0 |               0 |
+|      1 |   1902 |      24 |           0 |           0 |            0 |              0 |              0 |               0 |
+|      1 |   2000 |      24 |        3149 |       44542 |         1184 |            774 |          15763 |             280 |
+|      1 |   2001 |      24 |        3261 |       47051 |         1222 |            809 |          16902 |             284 |
+|      1 |   2002 |      24 |        3384 |       51399 |         1269 |            799 |          17573 |             283 |
+
+The `cohort` is calculated by subtracting `age` from `year`; it asks the
+question when were people of a certain age in a certain calendar year
+born. Notice the `cohort` column instead of `year`. This model includes
+100-year-olds alive in calendar year 2000, so these were born in the
+year 1900, but no yellow fever cases or deaths for these scenarios are
+recorded for that birth cohort.
+
+##### IC-Garske_YF_cohort_u5.csv
+
+| run_id | cohort | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
+|-------:|-------:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
+|      1 |   1996 |      24 |          49 |        1010 |           18 |             49 |           1010 |              18 |
+|      1 |   1997 |      24 |         102 |        2196 |           38 |             86 |           1854 |              32 |
+|      1 |   1998 |      24 |         160 |        3626 |           60 |            122 |           2778 |              45 |
+|      1 |   1999 |      24 |         221 |        4483 |           83 |            152 |           3086 |              57 |
+|      1 |   2000 |      24 |         289 |        6057 |          108 |            207 |           4346 |              78 |
+|      1 |   2001 |      24 |         297 |        6915 |          112 |            225 |           5232 |              84 |
+|      1 |   2002 |     234 |         310 |        7223 |          116 |            234 |           5464 |              87 |
+
+This is similar to birth cohort, but only considering those age 4 or
+less. Hence, the oldest age group in the year 2000 (where calendar years
+begin for this model) will be 4, and they were born in 1996, which is
+the first birth cohort.
+
+#### Multiple files per scenario
+
+Some groups submit a file per stochastic run, or a file per country.
+Some have even arbitrarily started a new file when one file has become,
+say, 10Mb in size. Stoner doesn’t mind at what point the files are
+split, except that data for two scenarios cannot exist in the same file,
+and the files that make up a set must be numbered with contiguous
+integers.
+
+The example below will expect runs numbered from 1 to 200, as indicated
+with `index_start` and `index_end`. Also notice the presence of the
+`:index` placeholder in the `file` stub, which will be replaced with the
+sequence number when the files are parsed.
+
+      stone_stochastic_process(
+        con = con,
+        modelling_group = "IC-Garske",
+        disease = "YF",
+        touchstone = "201910gavi-4",
+        scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                      "yf-preventive-default", "yf-routine-bestcase",
+                      "yf-routine-default", "yf-stop"),
+        in_path = "E:/Dropbox/File Requests/IC-Garske",
+        file = ":scenario_:index.csv.xz",
+        cert = "certfile",
+        index_start = 1, index_end = 200,
+        out_path = "E:/Stochastic_Outputs")
+
+Some groups might also submit different numbers of files for each
+scenario. For example, HepB for some groups requires different numbers
+of countries to be modelled for different scenarios, dependingn on what
+campaigns were made in those countries. If a group wishes to split their
+results by country, they will then have different numbers of files per
+scenario. In this case, `index_start` and `index_end` can be vectors, of
+the same length as the `scenarios` vector, giving the start and end ids
+for each scenario.
+
+Stoner can also support a mixture of single and multi-files for
+different scenarios. For that case, you’ll need vectors for both the
+`file` stub, and the `index_start` and `index_end` - Stoner will test
+that whenever the file stub contains `:index`, the `index_start` and
+`index_end` are specified, otherwise not.
+
+#### Summing different outcomes
+
+Some groups provide multiple deaths or cases categories which need to be
+summed to give the total deaths or cases. The example below uses the
+optional `outcomes` argument, where we can give a vector of column names
+to be summed for each named burden outcome. All the columns mentioned
+must exist in the incoming data, and in the responsibilities for that
+group and disease too), to be summed to give the final outcome.
+
+      stone_stochastic_process(
+        con = con,
+        modelling_group = "IC-Garske",
+        disease = "YF",
+        touchstone = "201910gavi-4",
+        scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                      "yf-preventive-default", "yf-routine-bestcase",
+                      "yf-routine-default", "yf-stop"),
+        in_path = "E:/Dropbox/File Requests/IC-Garske",
+        file = ":scenario_:index.csv.xz",
+        cert = "certfile",
+        index_start = 1, index_end = 200,
+        out_path = "E:/Stochastic_Outputs"),
+        outcomes = list(
+          deaths = c("deaths_cat1", "deaths_cat2"),
+          cases = c("cases_cat1", "cases_cat2"),
+          dalys = "dalys")
+        )
+
+#### Where run_id is not specified in the CSV
+
+Occasionally, a group omit the `run_id` column in their input data. In
+practice this only happens when the `run_id` is specified as part of the
+filename. To handle this, set the optional `runid_from_file` argument to
+`TRUE` - and in that case, `index_start` and `index_end` must be `1` and
+`200` respectively, and `:index` must be included in the file template
+for all scenarios (either specified as a vector, or a singleton).
+
+      stone_stochastic_process(
+        con = con,
+        modelling_group = "IC-Garske",
+        disease = "YF",
+        touchstone = "201910gavi-4",
+        scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                      "yf-preventive-default", "yf-routine-bestcase",
+                      "yf-routine-default", "yf-stop"),
+        in_path = "E:/Dropbox/File Requests/IC-Garske",
+        file = ":scenario_:index.csv.xz",
+        cert = "certfile",
+        index_start = 1, index_end = 200,
+        out_path = "E:/Stochastic_Outputs"),
+        runid_from_file = TRUE)
+
+#### Where disease is not specified
+
+Some groups have also omitted the constant `disease` from their
+stochastic results. This would normally generate a warning but work
+correctly in any case; to silence the warning, set the optional
+`allow_missing_disease` to be `TRUE`.
+
+      stone_stochastic_process(
+        con = con,
+        modelling_group = "IC-Garske",
+        disease = "YF",
+        touchstone = "201910gavi-4",
+        scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                      "yf-preventive-default", "yf-routine-bestcase",
+                      "yf-routine-default", "yf-stop"),
+        in_path = "E:/Dropbox/File Requests/IC-Garske",
+        file = ":scenario_:index.csv.xz",
+        cert = "certfile",
+        index_start = 1, index_end = 200,
+        out_path = "E:/Stochastic_Outputs"),
+        allow_missing_disease = TRUE)
+
+#### Different countries in different scenarios
+
+As we said, this can occur, with HepB being an example. If this is the
+case, besides dealing with a different number of files per scenario (if
+the group split their files by country), there is nothing you need to do
+for Stoner to process this properly. In the output CSV files, any
+country for which there is no data for a particular scenario will have
+`NA` for those scenarios. Care might be needed in analysis later on in
+ensuring comparisons or impact calculations only occur where all the
+values are not `NA`.
+
+#### Certificate validation
+
+When groups upload the parameters for their stochastic runs into
+Montagu, they are provided with a certificate - a small JSON file
+providing metadata, and confirmation of the upload information. The
+certificate should be provided by the group along with the stochastic
+data files that were produced using the parameters they uploaded.
+
+By default, stoner will verify that the certificate file exists, and
+checks that the metadata (modelling group, touchstone, disease) on
+production that match the certificate also match with the arguments you
+provide when you call stoner_stochastic_process.
+
+Should you be lacking a group’s certificate, but still want to attempt
+to process the stochastic data, then set the option `bypass_cert_check`
+to be TRUE:-
+
+      stone_stochastic_process(
+        con = con,
+        modelling_group = "IC-Garske",
+        disease = "YF",
+        touchstone = "201910gavi-4",
+        scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                      "yf-preventive-default", "yf-routine-bestcase",
+                      "yf-routine-default", "yf-stop"),
+        in_path = "E:/Dropbox/File Requests/IC-Garske",
+        file = ":scenario_:index.csv.xz",
+        cert = "",
+        index_start = 1, index_end = 200,
+        out_path = "E:/Stochastic_Outputs"),
+        bypass_cert_check = TRUE)
+
+You can also manually perform validation of a certificate file without
+processing stochastic data, with the call:-
+
+      stone_stochastic_cert_verify(con, "certfile", "IC-Garske", "201910gavi-5", "YF")
+
+This call will stop with an error if either the modelling group, or the
+touchstone do not match with the details used to submit the parameter
+set, and retrieve the `certfile` provided here.
+
+### Uploading to the annex database
+
+#### Uploading after processing
+
+The processed CSV files can be uploaded to annex automatically, if an
+additional database connection `annex` is provided, and the
+`upload_to_annex` is set to TRUE. The files will be uploaded after
+processing.
+
+      stone_stochastic_process(
+        con = con,
+        modelling_group = "IC-Garske",
+        disease = "YF",
+        touchstone = "201910gavi-4",
+        scenarios = c("yf-no-vaccination", "yf-preventive-bestcase",
+                      "yf-preventive-default", "yf-routine-bestcase",
+                      "yf-routine-default", "yf-stop"),
+        in_path = "E:/Dropbox/File Requests/IC-Garske",
+        file = ":scenario_:index.csv.xz",
+        cert = "certfile",
+        index_start = 1, index_end = 200,
+        out_path = "E:/Stochastic_Outputs"),
+        upload_to_annex = TRUE,
+        annex = annex,
+        allow_new_database = FALSE)
+
+If `allow_new_database` is set to `TRUE`, then Stoner will try to create
+the `stochastic_file` index table on `annex`; this will only be wanted
+on the first time of uploading data to a new empty database, so
+typically, this will be left as `FALSE`.
+
+The result of uploading is that four new rows will be added to the
+`stochastic_file` table, for <example:->
+
+|  id | touchstone   | modelling_group | disease | is_cohort | is_under5 | version | creation_date |
+|----:|:-------------|:----------------|:--------|:----------|:----------|--------:|:--------------|
+|   1 | 201910gavi-4 | IC-Garske       | YF      | FALSE     | TRUE      |       1 | 2020-08-06    |
+|   2 | 201910gavi-4 | IC-Garske       | YF      | TRUE      | TRUE      |       1 | 2020-08-06    |
+|   3 | 201910gavi-4 | IC-Garske       | YF      | FALSE     | FALSE     |       1 | 2020-08-06    |
+|   4 | 201910gavi-4 | IC-Garske       | YF      | TRUE      | FALSE     |       1 | 2020-08-06    |
+
+Four new tables named in the form `stochastic_` followed by the `id`
+field listed in the table above will also have been made, which are
+uploaded copies of the final CSV files. If further uploads are made that
+match the `touchstone`, `modelling_group`, `disease`, `is_cohort` and
+`is_under5`, then the new data will overwrite the existing data, and the
+`version` and `creation_date` in the table above will be updated.
+
+#### Uploading separately from processing
+
+You can also call the `stone_stochastic_upload` directly, if you have
+CSV files ready to upload. Call the function as below, to upload a
+single CSV file. (Vectors for multiple scenarios in one go are not
+currently supported in the function).
+
+``` stone_stochastic_upload(
+     file = 'IC-Garske_YF_calendar_u5.csv',
+     con = con,
+     annex = annex,
+     modelling_group = 'IC-Garske',
+     disease = 'YF',
+     touchstone = '201910gavi-4',
+     is_cohort = FALSE,
+     is_under5 = TRUE
+  )
+```
+
+The filename is treated as arbitrary; `is_cohort` and `is_under5` need
+specifying to describe the data being uploaded. If this is the first
+ever upload to a new database, then the optional `allow_new_database`
+will enable creation of the `stochastic_file` table.
+
+#### The testing argument
+
+`stone_stochastic_process` and `stone_stochastic_upload` both take a
+`testing` logical argument; ignore this, as it is only used to as part
+of the tests, in which a fake annex database is set up.
+
+#### Database connections (and where to find them).
+
+We use the `vaultr` package, and assume that the `VAULT_ADDR` and
+`VAULT_AUTH_GITHUB_TOKEN` environment variables are set up - we won’t go
+into doing that here.
+
+A read-only connection to the production database is used to validate
+the outcomes and countries against those in a group’s expectations. To
+get the connection to production:-
+
+``` r
+  vault <- vaultr::vault_client(login = "github")
+  password <- vault$read("/secret/vimc/database/production/users/readonly")$password
+  con <- DBI::dbConnect(RPostgres::Postgres(),
+                          dbname = "montagu",
+                          host = "production.montagu.dide.ic.ac.uk",
+                          port = 5432, password = password,
+                          user = "readonly")
+```
+
+To get a connection to annex:-
+
+``` r
+  password <- vault$read("/secret/vimc/annex/users/vimc")$password
+  annex <- DBI::dbConnect(RPostgres::Postgres(),
+                          dbname = "montagu",
+                          host = "annex.montagu.dide.ic.ac.uk",
+                          port = 15432,
+                          password = password,
+                          user = "vimc")
+```
+
+#### Use from within dettl (future work)
+
+However, rather than acquiring connections as above and manually running
+ad hoc database queries on annex, it will be better to express imports
+to annex using `dettl`. The imports are made a little more complex than
+usual by the length of time taken to do the data reduction, the RAM they
+require can be very large, and the possibility that data will be
+replaced on annex with subsequent versions. Never-the-less, it would be
+good to have a formal process for uploading data to annex, and `dettl`
+would be a good way.
+
+For example:
+
+- `Extract stage:` read meta data, which would contain a list of groups
+  and locations for different stochastic datasets to be processed. Also
+  look up the necessary metadata for those files - responsibilities and
+  outcomes.
+- `Transform stage:` Perform the reduction, producing csv files. We
+  would need `dettl` to not try to validate the output against specific
+  database tables, since we often need to create those tables on `annex`
+  as part of the upload.
+- `Load stage:` Perform the uploads on the created csv files, updating
+  the `stochastic_file` and adding new tables on `annex`.

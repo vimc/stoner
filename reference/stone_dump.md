@@ -1,0 +1,43 @@
+# Dump touchstone from database to CSV.
+
+Query a database for all information relevant to a particular touchstone
+(including version), and write to CSV files, which would then be fit for
+stoner to use as its input to re-populate the database with the same
+touchstone data. This would be useful in a workflow where you wanted to
+clone a touchstone, alter a few things, and upload as a new version.
+
+## Usage
+
+``` r
+stone_dump(con, touchstone, path, include_deps = FALSE)
+```
+
+## Arguments
+
+- con:
+
+  Active connection to the DB which the data will be dumped from.
+
+- touchstone:
+
+  the touchstone, including version
+
+- path:
+
+  the path where output CSVs should be created.
+
+- include_deps:
+
+  also dump db dependencies that Stoner can't currently add -
+  db_disease.csv, db_modelling_group.csv,
+  db_demographic_statistic_type.csv and db_demographic_source.csv.
+
+## Details
+
+Note that this is not "lossless"; only things that Stoner has the
+capability of adding, will be stored in the CSVs. For example (at
+present), Stoner does nothing with coverage sets, so while the
+scenario_descriptions will be saved (since they can be re-added),
+scenario_description.focal_coverage_set will not be dumped, because
+Stoner cannot put it back. Coverage sets will need to be wired up
+separately after a Stoner import, as before.
