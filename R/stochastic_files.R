@@ -31,14 +31,19 @@
 ##' these to the simpler names. Processing Rubella stochastic files without
 ##' this set to TRUE will fail - so while we should always do this, keeping
 ##' the parameter makes it more clear in the code what we're doing and why.
+##' @param hepb2019_fix In 2019, HepB deaths and cases were subdivided into a
+##' number of different causes. This flag combines those into the single
+##' appropriate burden outcome.
 ##' @param missing_run_id_fix Some groups in the past have omitted run_id
 ##' from the files, but included them in the filenames. This fix inserts
 ##' that into the files if the index parameter indicates we have 200 runs to
 ##' process.
-
+##' @param allow_missing_yll yll was introduced in 2023? This flag allows
+##' it to be missing for processing older stochastics.
 stone_stochastic_standardise <- function(
     group, in_path, out_path, scenarios, files, index = 1,
-    rubella_fix = TRUE, missing_run_id_fix = TRUE) {
+    rubella_fix = TRUE, hepb2019_fix = TRUE, missing_run_id_fix = TRUE,
+    allow_missing_yll = TRUE) {
 
   dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
   if ((length(files) == 1) && (grepl(":scenario", files))) {
@@ -56,18 +61,55 @@ stone_stochastic_standardise <- function(
       d <- read.csv(file.path(in_path, file))
       d$country_name <- NULL
 
-      # Fixes needed to standardise Rubella
+      # Various accumulated fixes for old/non-standard stochastics
+      # The flags are all true by default - Stoner will break untidily
+      # if the flags are turned off, but the problem occurs.
+
       if (rubella_fix) {
         names(d)[names(d) == "rubella_deaths_congenital"] <- "deaths"
         names(d)[names(d) == "rubella_cases_congenital"] <- "cases"
         d$rubella_infections <- NULL
       }
 
-      # Detect where run_id is missing, but in filenames
+      if (hepb2019_fix) {
+        if (!"cases" %in% names(d)) {
+          d$cases <- 0
+          cda_cases <- c("hepb_cases_acute_severe", "hepb_cases_dec_cirrh" ,
+                         "hepb_cases_hcc")
+          li_cases <- c("hepb_cases_acute_symp", "hepb_cases_fulminant",
+                        "hepb_cases_chronic",
+                        "hepb_chronic_symptomatic_in_acute_phase")
+          ic_cases <- c("hepb_cases_acute_severe", "hepb_cases_comp_cirrh",
+                        "hepb_cases_hcc_no_cirrh")
+          for (i in unique(c(cda_cases, li_cases, ic_cases))) {
+            if (i %in% names(d)) {
+              d$cases <- d$cases + d[[i]]
+              d[[i]] <- NULL
+            }
+          }
+        }
+
+        if (!"deaths" %in% names(d)) {
+          d$deaths <- 0
+          cda_deaths <- c("hepb_deaths_acute", "hepb_deaths_dec_cirrh",
+                          "hepb_deaths_hcc")
+          li_deaths <- c("hepb_deaths_acute", "hepb_deaths_total_cirrh",
+                         "hepb_deaths_hcc")
+          # IC just submitted deaths
+
+          for (i in unique(c(cda_deaths, li_deaths))) {
+            if (i %in% names(d)) {
+              d$deaths <- d$deaths + d[[i]]
+              d[[i]] <- NULL
+            }
+          }
+        }
+      }
 
       if (missing_run_id_fix) {
         if ((!"run_id" %in% names(d)) && (length(index) == 200)) d$run_id <- j
       }
+
 
       # Round to integer, as per guidance. (Not using as.integer, as that
       # has limits on how large numbers can be, so we are just truncating
@@ -76,7 +118,9 @@ stone_stochastic_standardise <- function(
       d$dalys <- round(d$dalys)
       d$deaths <- round(d$deaths)
       d$cases <- round(d$cases)
-      d$yll <- round(d$yll)
+      if (("yll" %in% names(d)) || (!allow_missing_yll)) {
+        d$yll <- round(d$yll)
+      }
       d$cohort_size <- round(d$cohort_size)
 
       d
