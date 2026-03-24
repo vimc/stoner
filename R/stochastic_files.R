@@ -34,16 +34,25 @@
 ##' @param hepb2019_fix In 2019, HepB deaths and cases were subdivided into a
 ##' number of different causes. This flag combines those into the single
 ##' appropriate burden outcome.
+##' @param hib2019_fix In 2019, HepB deaths and cases were subdivided into a
+##' number of different causes. This flag combines those into the single
+##' appropriate burden outcome.
 ##' @param missing_run_id_fix Some groups in the past have omitted run_id
 ##' from the files, but included them in the filenames. This fix inserts
 ##' that into the files if the index parameter indicates we have 200 runs to
 ##' process.
 ##' @param allow_missing_yll yll was introduced in 2023? This flag allows
 ##' it to be missing for processing older stochastics.
+##' @param allow_missing_indexes In some early runs, different groups
+##' provided different numbers of files for each scenario, because some
+##' countries did not implement particular coverage campaigns. This
+##' flag needs to be TRUE for those groups, but the default is FALSE,
+##' since it's rare, and we generally want errors for missing files.
 stone_stochastic_standardise <- function(
     group, in_path, out_path, scenarios, files, index = 1,
-    rubella_fix = TRUE, hepb2019_fix = TRUE, missing_run_id_fix = TRUE,
-    allow_missing_yll = TRUE) {
+    rubella_fix = TRUE, hepb2019_fix = TRUE, hib2019_fix = TRUE,
+    missing_run_id_fix = TRUE, allow_missing_yll = TRUE,
+    allow_missing_dalys = TRUE, allow_missing_indexes = FALSE) {
 
   dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
   if ((length(files) == 1) && (grepl(":scenario", files))) {
@@ -52,23 +61,35 @@ stone_stochastic_standardise <- function(
       files[j] <- gsub(":scenario", scenarios[j], files[j])
     }
   }
-
   for (i in seq_along(scenarios)) {
     message(scenarios[i])
     all_data <- as.data.frame(data.table::rbindlist(lapply(index, function(j) {
       cat("\r", j)
       file <- gsub(":index", j, files[i])
-      d <- read.csv(file.path(in_path, file))
+      filepath <- file.path(in_path, file)
+      if (!file.exists(filepath) && (allow_missing_indexes)) {
+        return(NULL)
+      }
+      d <- read.csv(filepath)
       d$country_name <- NULL
 
-      # Various accumulated fixes for old/non-standard stochastics
+      # Various accumulated fixes for e/non-standard stochastics
       # The flags are all true by default - Stoner will break untidily
       # if the flags are turned off, but the problem occurs.
 
       if (rubella_fix) {
-        names(d)[names(d) == "rubella_deaths_congenital"] <- "deaths"
-        names(d)[names(d) == "rubella_cases_congenital"] <- "cases"
-        d$rubella_infections <- NULL
+        if ("rubella_deaths_congenital" %in% names(d)) {
+          message("Converting rubella_deaths_congenital to deaths")
+          names(d)[names(d) == "rubella_deaths_congenital"] <- "deaths"
+        }
+        if ("rubella_cases_congenital" %in% names(d)) {
+          message("Converting rubella_cases_congenital to cases")
+          names(d)[names(d) == "rubella_cases_congenital"] <- "cases"
+        }
+        if ("rubella_infections" %in% names(d)) {
+          message("Ignoring rubella_infections")
+          d$rubella_infections <- NULL
+        }
       }
 
       if (hepb2019_fix) {
@@ -83,6 +104,7 @@ stone_stochastic_standardise <- function(
                         "hepb_cases_hcc_no_cirrh")
           for (i in unique(c(cda_cases, li_cases, ic_cases))) {
             if (i %in% names(d)) {
+              message(sprintf("Including %s in cases", i))
               d$cases <- d$cases + d[[i]]
               d[[i]] <- NULL
             }
@@ -95,14 +117,35 @@ stone_stochastic_standardise <- function(
                           "hepb_deaths_hcc")
           li_deaths <- c("hepb_deaths_acute", "hepb_deaths_total_cirrh",
                          "hepb_deaths_hcc")
-          # IC just submitted deaths
+          ic_deaths <- c("hepb_deaths_acute", "hepb_deaths_comp_cirrh",
+                         "hepb_deaths_dec_cirrh", "hepb_deaths_hcc")
 
           for (i in unique(c(cda_deaths, li_deaths))) {
             if (i %in% names(d)) {
+              message(sprintf("Including %s in deaths", i))
               d$deaths <- d$deaths + d[[i]]
               d[[i]] <- NULL
             }
           }
+        }
+      }
+
+      if (hib2019_fix) {
+        if (("cases_pneumo" %in% names(d)) &&
+            ("cases_men" %in% names(d)) &&
+            (!"cases" %in% names(d))) {
+          message("cases = cases_men + cases_pneumo")
+          d$cases <- d$cases_pneumo + d$cases_men
+          d$cases_pneumo <- NULL
+          d$cases_men <- NULL
+        }
+        if (("deaths_pneumo" %in% names(d)) &&
+            ("deaths_men" %in% names(d)) &&
+            (!"deaths" %in% names(d))) {
+          message("deaths = deaths_men + deaths_pneumo")
+          d$deaths <- d$deaths_pneumo + d$deaths_men
+          d$deaths_pneumo <- NULL
+          d$deaths_men <- NULL
         }
       }
 
@@ -115,11 +158,18 @@ stone_stochastic_standardise <- function(
       # has limits on how large numbers can be, so we are just truncating
       # digits here)
 
-      d$dalys <- round(d$dalys)
+      if (("dalys" %in% names(d)) || (!allow_missing_dalys)) {
+        d$dalys <- round(d$dalys)
+      } else {
+        message("Dalys missing. (Ignored)")
+      }
+
       d$deaths <- round(d$deaths)
       d$cases <- round(d$cases)
       if (("yll" %in% names(d)) || (!allow_missing_yll)) {
         d$yll <- round(d$yll)
+      } else {
+        message("yll missing. (Ignored)")
       }
       d$cohort_size <- round(d$cohort_size)
 
