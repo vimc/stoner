@@ -12,7 +12,12 @@ stone_stochastic_standardise(
   files,
   index = 1,
   rubella_fix = TRUE,
-  missing_run_id_fix = TRUE
+  hepb2019_fix = TRUE,
+  hib2019_fix = TRUE,
+  missing_run_id_fix = TRUE,
+  allow_missing_yll = TRUE,
+  allow_missing_dalys = TRUE,
+  allow_missing_indexes = FALSE
 )
 }
 \arguments{
@@ -47,10 +52,27 @@ these to the simpler names. Processing Rubella stochastic files without
 this set to TRUE will fail - so while we should always do this, keeping
 the parameter makes it more clear in the code what we're doing and why.}
 
+\item{hepb2019_fix}{In 2019, HepB deaths and cases were subdivided into a
+number of different causes. This flag combines those into the single
+appropriate burden outcome.}
+
+\item{hib2019_fix}{In 2019, HepB deaths and cases were subdivided into a
+number of different causes. This flag combines those into the single
+appropriate burden outcome.}
+
 \item{missing_run_id_fix}{Some groups in the past have omitted run_id
 from the files, but included them in the filenames. This fix inserts
 that into the files if the index parameter indicates we have 200 runs to
 process.}
+
+\item{allow_missing_yll}{yll was introduced in 2023? This flag allows
+it to be missing for processing older stochastics.}
+
+\item{allow_missing_indexes}{In some early runs, different groups
+provided different numbers of files for each scenario, because some
+countries did not implement particular coverage campaigns. This
+flag needs to be TRUE for those groups, but the default is FALSE,
+since it's rare, and we generally want errors for missing files.}
 }
 \description{
 Convert a modelling group's stochastic files into an intermediate
