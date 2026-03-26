@@ -4,7 +4,7 @@
 \alias{stochastic_explorer}
 \title{Stochastic plot}
 \usage{
-stochastic_explorer()
+stochastic_explorer(data_dir = "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics")
 }
 \description{
 Launch a Shiny app to allow interactive plotting of

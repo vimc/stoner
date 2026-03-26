@@ -7,8 +7,6 @@
 # Functions ending in _mg will find things common
 # between to modelling groups, for comparisons.
 
-data_dir <- "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics"
-
 get_touchstones <- function() {
   sort(unique(basename(list.dirs(data_dir, recursive = FALSE))))
 }

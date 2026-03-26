@@ -160,6 +160,9 @@ prepare_central_data <- function(packit_id, packit_file,
 ##'
 ##' @export
 ##' @title Stochastic plot
-stochastic_explorer <- function() {
+##'
+stochastic_explorer <- function(
+  data_dir = "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics") {
+  assign("data_dir", data_dir, envir = .GlobalEnv)
   shiny::runApp(system.file("app", package = "stoner"))
 }

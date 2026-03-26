@@ -2,8 +2,6 @@ library(shiny)
 library(shinyjs)
 library(arrow)
 
-data_dir <- "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics"
-
 source("utils.R")
 
 app_ui <- function() {
