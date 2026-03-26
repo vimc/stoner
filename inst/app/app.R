@@ -286,7 +286,16 @@ app_server <- function(input, output, session) {
 
       list(
         ages = ages,
-        opts = input[[sprintf("%s_options", prefix)]]
+        opts = input[[sprintf("%s_options", prefix)]],
+
+        touchstone = c(input[[it1]], if (!is.null(it2)) input[[it2]] else NULL),
+        group      = c(input[[ig1]], if (!is.null(ig2)) input[[ig2]] else NULL),
+        scenario   = c(input[[is1]], if (!is.null(is2)) input[[is2]] else NULL),
+
+        disease = input[[id]],
+        country = input[[ic]],
+        outcome = input[[sprintf("%s_outcome", prefix)]],
+        year    = input[[sprintf("%s_year", prefix)]]
       )
     })
 
@@ -298,19 +307,19 @@ app_server <- function(input, output, session) {
           pr <- plot_reactive()
           req(pr)
 
-          it <- if (n_touchstone == 1) it1 else if (gg == 1) it1 else it2
-          ig <- if (n_group == 1) ig1 else if (gg == 1) ig1 else ig2
+          it <- pr$touchstone[min(gg, length(pr$touchstone))]
+          ig <- pr$group[min(gg, length(pr$group))]
 
           stone_stochastic_graph(
             base = data_dir,
-            touchstone = input[[it]],
-            disease = input[[id]],
-            group = input[[ig]],
-            country = input[[ic]],
-            scenario = input[[is1]],
-            scenario2 = if (is.null(is2)) NULL else input[[is2]],
-            outcome = input[[sprintf("%s_outcome", prefix)]],
-            by_cohort = input[[sprintf("%s_year", prefix)]] == "Cohort",
+            touchstone = it,
+            disease = pr$disease,
+            group = ig,
+            country = pr$country,
+            scenario = pr$scenario[1],
+            scenario2 = if (length(pr$scenario) > 1) pr$scenario[2] else NULL,
+            outcome = pr$outcome,
+            by_cohort = pr$year == "Cohort",
             ages = pr$ages,
             log = "Log-Y" %in% pr$opts,
             include_median = "Median" %in% pr$opts,
