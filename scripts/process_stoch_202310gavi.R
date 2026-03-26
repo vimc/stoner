@@ -20,7 +20,7 @@ stoner::stone_stochastic_standardise(
 stoner::stone_stochastic_standardise(
   group = "JHU-Lee",
   in_path = file.path(base_in_path, "Cholera-JHU-Lee"),
-  out_path = file.path(base_out_path, "Cholera-JHU-Lee"),
+  out_path = file.path(base_out_path, "Cholera_JHU-Lee"),
   scenarios = scenarios,
   files = c("stochastic-burden-template.202310gavi-4.Cholera_standard_template.529.no-vaccination Christina Alam.csv.xz",
             "stochastic-burden-template.202310gavi-4.Cholera_standard_template.529.ocv1-default_one Christina Alam.csv.xz",
