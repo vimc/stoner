@@ -132,16 +132,15 @@ stone_stochastic_standardise <- function(
 
       if (hib2019_fix) {
         if (("cases_pneumo" %in% names(d)) &&
-            ("cases_men" %in% names(d)) &&
-            (!"cases" %in% names(d))) {
+            ("cases_men" %in% names(d))) {
+
           message("cases = cases_men + cases_pneumo")
           d$cases <- d$cases_pneumo + d$cases_men
           d$cases_pneumo <- NULL
           d$cases_men <- NULL
         }
         if (("deaths_pneumo" %in% names(d)) &&
-            ("deaths_men" %in% names(d)) &&
-            (!"deaths" %in% names(d))) {
+            ("deaths_men" %in% names(d))) {
           message("deaths = deaths_men + deaths_pneumo")
           d$deaths <- d$deaths_pneumo + d$deaths_men
           d$deaths_pneumo <- NULL
