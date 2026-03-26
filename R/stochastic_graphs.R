@@ -153,6 +153,13 @@ prepare_central_data <- function(packit_id, packit_file,
   central
 }
 
-run_app <- function() {
+##' Launch a Shiny app to allow interactive plotting of
+##' standardised stochastic data, burden estimates,
+##' impacts, comparisons between touchstones, and
+##' comparisons between modelling groups.
+##'
+##' @export
+##' @title Stochastic plot
+stochastic_explorer <- function() {
   shiny::runApp(system.file("app", package = "stoner"))
 }
