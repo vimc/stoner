@@ -4,7 +4,7 @@ author: "Wes Hinsley"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{stoner}
+  %\VignetteIndexEntry{Stochastics}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
