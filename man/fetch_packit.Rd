@@ -2,7 +2,7 @@
 % Please edit documentation in R/packit.R
 \name{fetch_packit}
 \alias{fetch_packit}
-\title{Fetch packit}
+\title{Fetch packet from a packit server}
 \usage{
 fetch_packit(
   packet_id,
@@ -11,12 +11,12 @@ fetch_packit(
 )
 }
 \arguments{
-\item{filename}{The filename of the file within the packit.}
+\item{packet_id}{The id of the packet containing the artefact.}
+
+\item{filename}{The filename of the file within the packet.}
 
 \item{server}{By default, the URL to the packit API on Montagu,
 but this can be set to other packit API's if we want.}
-
-\item{packit_id}{The id of the packit containing the artefact.}
 }
 \value{
 The filename of the temporary file which has been downloaded.

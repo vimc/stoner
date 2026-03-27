@@ -4,11 +4,11 @@
 ##' file from packet (ie, from the Montagu Reporting Portal).
 ##'
 ##' @export
-##' @title Fetch packit
+##' @title Fetch packet from a packit server
 ##' @import httr2
 ##' @importFrom tools file_ext
-##' @param packit_id The id of the packit containing the artefact.
-##' @param filename The filename of the file within the packit.
+##' @param packet_id The id of the packet containing the artefact.
+##' @param filename The filename of the file within the packet.
 ##' @param server By default, the URL to the packit API on Montagu,
 ##' but this can be set to other packit API's if we want.
 ##' @returns The filename of the temporary file which has been downloaded.
