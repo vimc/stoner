@@ -307,8 +307,9 @@ app_server <- function(input, output, session) {
 
           it <- pr$touchstone[min(gg, length(pr$touchstone))]
           ig <- pr$group[min(gg, length(pr$group))]
+          browser()
 
-          stone_stochastic_graph(
+          stoner::stone_stochastic_graph(
             base = data_dir,
             touchstone = it,
             disease = pr$disease,
