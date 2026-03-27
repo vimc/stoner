@@ -52,11 +52,11 @@ these to the simpler names. Processing Rubella stochastic files without
 this set to TRUE will fail - so while we should always do this, keeping
 the parameter makes it more clear in the code what we're doing and why.}
 
-\item{hepb2019_fix}{In 2019, HepB deaths and cases were subdivided into a
+\item{hepb2019_fix}{In 2019 (and 2017), HepB deaths and cases were subdivided into
 number of different causes. This flag combines those into the single
 appropriate burden outcome.}
 
-\item{hib2019_fix}{In 2019, HepB deaths and cases were subdivided into a
+\item{hib2019_fix}{In 2019 (and 2017), Hib deaths and cases were subdivided into
 number of different causes. This flag combines those into the single
 appropriate burden outcome.}
 

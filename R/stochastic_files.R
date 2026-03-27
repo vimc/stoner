@@ -31,10 +31,10 @@
 ##' these to the simpler names. Processing Rubella stochastic files without
 ##' this set to TRUE will fail - so while we should always do this, keeping
 ##' the parameter makes it more clear in the code what we're doing and why.
-##' @param hepb2019_fix In 2019, HepB deaths and cases were subdivided into a
+##' @param hepb2019_fix In 2019 (and 2017), HepB deaths and cases were subdivided into
 ##' number of different causes. This flag combines those into the single
 ##' appropriate burden outcome.
-##' @param hib2019_fix In 2019, HepB deaths and cases were subdivided into a
+##' @param hib2019_fix In 2019 (and 2017), Hib deaths and cases were subdivided into
 ##' number of different causes. This flag combines those into the single
 ##' appropriate burden outcome.
 ##' @param missing_run_id_fix Some groups in the past have omitted run_id
