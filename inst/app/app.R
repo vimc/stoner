@@ -65,6 +65,9 @@ app_ui <- function() {
 
   fluidPage(
     tags$style(HTML("
+      .shiny-busy {
+        cursor: wait !important;
+      }
       .selectize-input {
         white-space: nowrap;
         overflow: hidden;
@@ -307,7 +310,6 @@ app_server <- function(input, output, session) {
 
           it <- pr$touchstone[min(gg, length(pr$touchstone))]
           ig <- pr$group[min(gg, length(pr$group))]
-          browser()
 
           stoner::stone_stochastic_graph(
             base = data_dir,
