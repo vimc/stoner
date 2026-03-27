@@ -43,6 +43,8 @@
 ##' process.
 ##' @param allow_missing_yll yll was introduced in 2023? This flag allows
 ##' it to be missing for processing older stochastics.
+##' @param allow_missing_dalys Some early groups did not provide dalys; this
+##' flag allows dalys to be skipped.
 ##' @param allow_missing_indexes In some early runs, different groups
 ##' provided different numbers of files for each scenario, because some
 ##' countries did not implement particular coverage campaigns. This

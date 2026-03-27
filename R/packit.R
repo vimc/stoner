@@ -12,7 +12,6 @@
 ##' @param server By default, the URL to the packit API on Montagu,
 ##' but this can be set to other packit API's if we want.
 ##' @returns The filename of the temporary file which has been downloaded.
-
 fetch_packit <- function(packet_id, filename,
   server = "https://montagu.vaccineimpact.org/packit/api/") {
 

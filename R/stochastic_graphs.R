@@ -140,10 +140,10 @@ prepare_central_data <- function(packit_id, packit_file,
   central <- central[central$scenario == scenario, ]
   central <- central[central$burden_outcome == outcome, ]
   if (!is.null(ages)) {
-    central <- central[d$age %in% ages, ]
+    central <- central[central$age %in% ages, ]
   }
   if (by_cohort) {
-    central$year <- central$year - d$age
+    central$year <- central$year - central$age
   }
   names(central)[names(central) == "value"] <- outcome
   central <- central %>% group_by(.data$year) %>%
@@ -160,8 +160,11 @@ prepare_central_data <- function(packit_id, packit_file,
 ##' comparisons between modelling groups.
 ##'
 ##' @export
+##' @importFrom shiny runApp
 ##' @title Stochastic plot
-##'
+##' @param data_dir The location of the standardised stochastic folder
+##' hierarchy; this can be a local path, a fully-qualified network path on
+##' windows, or a mount point on linux or Mac.
 stochastic_explorer <- function(
   data_dir = "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics") {
   assign("data_dir", data_dir, envir = .GlobalEnv)

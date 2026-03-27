@@ -6,6 +6,11 @@
 \usage{
 stochastic_explorer(data_dir = "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics")
 }
+\arguments{
+\item{data_dir}{The location of the standardised stochastic folder
+hierarchy; this can be a local path, a fully-qualified network path on
+windows, or a mount point on linux or Mac.}
+}
 \description{
 Launch a Shiny app to allow interactive plotting of
 standardised stochastic data, burden estimates,
