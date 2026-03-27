@@ -28,6 +28,8 @@ Imports:
     prettyunits,
     readr,
     rlang,
+    shiny,
+    shinyjs,
     testthat,
     utils,
     withr
