@@ -14,7 +14,13 @@ stone_stochastic_graph(
   outcome,
   ages = NULL,
   by_cohort = FALSE,
-  log = FALSE
+  log = FALSE,
+  packit_id = NULL,
+  packit_file = NULL,
+  include_quantiles = TRUE,
+  include_mean = TRUE,
+  include_median = TRUE,
+  scenario2 = NULL
 )
 }
 \arguments{
@@ -40,6 +46,26 @@ if left as NULL, then all ages are used and aggregated.}
 year of birth before aggregating.}
 
 \item{log}{If TRUE, then use a logged y-axis.}
+
+\item{packit_id}{If set, then read central burden estimates from a file
+within a packit on the Montagu packit server.}
+
+\item{packit_file}{Used with packit_id to specify the filename of an RDS
+file providing burden estimates. We expect to find scenario, year, age,
+country, burden_outcome and value fields in the table.}
+
+\item{include_quantiles}{Default TRUE, select whether to plot the
+5\% and 95\% quantile lines.}
+
+\item{include_mean}{Default TRUE, select whether to plot the mean.}
+
+\item{include_median}{Default TRUE, select whether to plot the median.}
+
+\item{scenario2}{Default NULL; if set, then the burdens from this
+scenario will be subtracted from those in \code{scenario} - ie, this plots
+an impact graph of applying the second scenario. For many graphs that
+use this, the result will be positive numbers, representing cases
+or deaths averted.}
 }
 \description{
 Draw a stochastic plot showing all the different runs, with the mean,

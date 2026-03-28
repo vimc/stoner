@@ -31,14 +31,30 @@
 ##' these to the simpler names. Processing Rubella stochastic files without
 ##' this set to TRUE will fail - so while we should always do this, keeping
 ##' the parameter makes it more clear in the code what we're doing and why.
+##' @param hepb2019_fix In 2019 (and 2017), HepB deaths and cases were subdivided into
+##' number of different causes. This flag combines those into the single
+##' appropriate burden outcome.
+##' @param hib2019_fix In 2019 (and 2017), Hib deaths and cases were subdivided into
+##' number of different causes. This flag combines those into the single
+##' appropriate burden outcome.
 ##' @param missing_run_id_fix Some groups in the past have omitted run_id
 ##' from the files, but included them in the filenames. This fix inserts
 ##' that into the files if the index parameter indicates we have 200 runs to
 ##' process.
-
+##' @param allow_missing_yll yll was introduced in 2023? This flag allows
+##' it to be missing for processing older stochastics.
+##' @param allow_missing_dalys Some early groups did not provide dalys; this
+##' flag allows dalys to be skipped.
+##' @param allow_missing_indexes In some early runs, different groups
+##' provided different numbers of files for each scenario, because some
+##' countries did not implement particular coverage campaigns. This
+##' flag needs to be TRUE for those groups, but the default is FALSE,
+##' since it's rare, and we generally want errors for missing files.
 stone_stochastic_standardise <- function(
     group, in_path, out_path, scenarios, files, index = 1,
-    rubella_fix = TRUE, missing_run_id_fix = TRUE) {
+    rubella_fix = TRUE, hepb2019_fix = TRUE, hib2019_fix = TRUE,
+    missing_run_id_fix = TRUE, allow_missing_yll = TRUE,
+    allow_missing_dalys = TRUE, allow_missing_indexes = FALSE) {
 
   dir.create(out_path, showWarnings = FALSE, recursive = TRUE)
   if ((length(files) == 1) && (grepl(":scenario", files))) {
@@ -47,36 +63,115 @@ stone_stochastic_standardise <- function(
       files[j] <- gsub(":scenario", scenarios[j], files[j])
     }
   }
-
   for (i in seq_along(scenarios)) {
     message(scenarios[i])
     all_data <- as.data.frame(data.table::rbindlist(lapply(index, function(j) {
       cat("\r", j)
       file <- gsub(":index", j, files[i])
-      d <- read.csv(file.path(in_path, file))
+      filepath <- file.path(in_path, file)
+      if (!file.exists(filepath) && (allow_missing_indexes)) {
+        return(NULL)
+      }
+      d <- read.csv(filepath)
       d$country_name <- NULL
 
-      # Fixes needed to standardise Rubella
+      # Various accumulated fixes for e/non-standard stochastics
+      # The flags are all true by default - Stoner will break untidily
+      # if the flags are turned off, but the problem occurs.
+
       if (rubella_fix) {
-        names(d)[names(d) == "rubella_deaths_congenital"] <- "deaths"
-        names(d)[names(d) == "rubella_cases_congenital"] <- "cases"
-        d$rubella_infections <- NULL
+        if ("rubella_deaths_congenital" %in% names(d)) {
+          message("Converting rubella_deaths_congenital to deaths")
+          names(d)[names(d) == "rubella_deaths_congenital"] <- "deaths"
+        }
+        if ("rubella_cases_congenital" %in% names(d)) {
+          message("Converting rubella_cases_congenital to cases")
+          names(d)[names(d) == "rubella_cases_congenital"] <- "cases"
+        }
+        if ("rubella_infections" %in% names(d)) {
+          message("Ignoring rubella_infections")
+          d$rubella_infections <- NULL
+        }
       }
 
-      # Detect where run_id is missing, but in filenames
+      if (hepb2019_fix) {
+        if (!"cases" %in% names(d)) {
+          d$cases <- 0
+          cda_cases <- c("hepb_cases_acute_severe", "hepb_cases_dec_cirrh" ,
+                         "hepb_cases_hcc")
+          li_cases <- c("hepb_cases_acute_symp", "hepb_cases_fulminant",
+                        "hepb_cases_chronic",
+                        "hepb_chronic_symptomatic_in_acute_phase")
+          ic_cases <- c("hepb_cases_acute_severe", "hepb_cases_comp_cirrh",
+                        "hepb_cases_hcc_no_cirrh")
+          for (i in unique(c(cda_cases, li_cases, ic_cases))) {
+            if (i %in% names(d)) {
+              message(sprintf("Including %s in cases", i))
+              d$cases <- d$cases + d[[i]]
+              d[[i]] <- NULL
+            }
+          }
+        }
+
+        if (!"deaths" %in% names(d)) {
+          d$deaths <- 0
+          cda_deaths <- c("hepb_deaths_acute", "hepb_deaths_dec_cirrh",
+                          "hepb_deaths_hcc")
+          li_deaths <- c("hepb_deaths_acute", "hepb_deaths_total_cirrh",
+                         "hepb_deaths_hcc")
+          ic_deaths <- c("hepb_deaths_acute", "hepb_deaths_comp_cirrh",
+                         "hepb_deaths_dec_cirrh", "hepb_deaths_hcc")
+
+          for (i in unique(c(cda_deaths, li_deaths))) {
+            if (i %in% names(d)) {
+              message(sprintf("Including %s in deaths", i))
+              d$deaths <- d$deaths + d[[i]]
+              d[[i]] <- NULL
+            }
+          }
+        }
+      }
+
+      if (hib2019_fix) {
+        if (("cases_pneumo" %in% names(d)) &&
+            ("cases_men" %in% names(d))) {
+
+          message("cases = cases_men + cases_pneumo")
+          d$cases <- d$cases_pneumo + d$cases_men
+          d$cases_pneumo <- NULL
+          d$cases_men <- NULL
+        }
+        if (("deaths_pneumo" %in% names(d)) &&
+            ("deaths_men" %in% names(d))) {
+          message("deaths = deaths_men + deaths_pneumo")
+          d$deaths <- d$deaths_pneumo + d$deaths_men
+          d$deaths_pneumo <- NULL
+          d$deaths_men <- NULL
+        }
+      }
 
       if (missing_run_id_fix) {
         if ((!"run_id" %in% names(d)) && (length(index) == 200)) d$run_id <- j
       }
 
+
       # Round to integer, as per guidance. (Not using as.integer, as that
       # has limits on how large numbers can be, so we are just truncating
       # digits here)
 
-      d$dalys <- round(d$dalys)
+      if (("dalys" %in% names(d)) || (!allow_missing_dalys)) {
+        d$dalys <- round(d$dalys)
+      } else {
+        message("Dalys missing. (Ignored)")
+      }
+
       d$deaths <- round(d$deaths)
       d$cases <- round(d$cases)
-      d$yll <- round(d$yll)
+      if (("yll" %in% names(d)) || (!allow_missing_yll)) {
+        d$yll <- round(d$yll)
+      } else {
+        message("yll missing. (Ignored)")
+      }
       d$cohort_size <- round(d$cohort_size)
 
       d
