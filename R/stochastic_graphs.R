@@ -167,6 +167,18 @@ prepare_central_data <- function(packit_id, packit_file,
 ##' windows, or a mount point on linux or Mac.
 stochastic_explorer <- function(
   data_dir = "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics") {
+  if (!dir.exists(file.path(data_dir))) {
+    cli::cli_abort(c(
+      "x" = "Cannot access the path/mount: {.path {data_dir}}",
+      "i" = "Please check you can see this path normally. If not:",
+      "*" = "You need ZScaler on and connected if you're not within DIDE",
+      "*" = "(But strongly advise remote desktop into DIDE - large files)",
+      "*" = "On linux, ensure the mount is correctly set up.",
+      "*" = "Check with DIDE IT that you have access to VIMC files",
+      "*" = "Check your general internet access."
+    ))
+  }
+
   assign("data_dir", data_dir, envir = .GlobalEnv)
   shiny::runApp(system.file("app", package = "stoner"))
 }
