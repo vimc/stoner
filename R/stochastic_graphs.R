@@ -180,5 +180,5 @@ stochastic_explorer <- function(
   }
 
   assign("data_dir", data_dir, envir = .GlobalEnv)
-  shiny::runApp(system.file("app", package = "stoner"))
+  runApp(system.file("app", package = "stoner"))
 }

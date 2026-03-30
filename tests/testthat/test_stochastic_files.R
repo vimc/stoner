@@ -164,7 +164,7 @@ test_that("Rubella fix works", {
   stone_stochastic_standardise(
     group = "north_pole_rub", in_path = tmpin, out_path = tmpout,
     scenarios = "opt",
-    files = paste0(basename(tmpfile), "_opt"),
+    files = paste0(basename(tmpfile), "_opt")
   )
 
   files <- list.files(path = tmpout)
@@ -196,7 +196,7 @@ test_that("Hib/PCV fix works", {
   stone_stochastic_standardise(
     group = "north_pole_hib", in_path = tmpin, out_path = tmpout,
     scenarios = "opt",
-    files = paste0(basename(tmpfile), "_opt"),
+    files = paste0(basename(tmpfile), "_opt")
   )
 
   files <- list.files(path = tmpout)
@@ -241,7 +241,7 @@ test_that("HepB fix works", {
   stone_stochastic_standardise(
     group = "north_pole_hepb", in_path = tmpin, out_path = tmpout,
     scenarios = "opt",
-    files = paste0(basename(tmpfile), "_opt"),
+    files = paste0(basename(tmpfile), "_opt")
   )
 
   files <- list.files(path = tmpout)
@@ -275,5 +275,58 @@ test_that("HepB fix works", {
   expect_true(all(pq$deaths == df$hepb_deaths_acute + df$hepb_deaths_dec_cirrh +
                            df$hep_deaths_hcc + df$hepb_deaths_total_cirrh +
                            df$hepb_deaths_comp_cirrh))
+})
 
+test_that("Missing yll/dalys works", {
+  df <- fake_data()
+  df$dalys <- NULL
+  df$yll <- NULL
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+  write.csv(df, paste0(tmpfile, "_opt"), row.names = FALSE)
+
+  stone_stochastic_standardise(
+    group = "north_pole_flu", in_path = tmpin, out_path = tmpout,
+    scenarios = "opt",
+    files = paste0(basename(tmpfile), "_opt")
+  )
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_flu_opt_LAP.pq" %in% files)
+  pq <- arrow::read_parquet(file.path(tmpout, "north_pole_flu_opt_LAP.pq"))
+  expect_false("dalys" %in% names(pq))
+  expect_false("yll" %in% names(pq))
+})
+
+test_that("Different file count per scenario is handled", {
+  fake <- fake_data()
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+
+  fake$country <- "POL"
+  write.csv(fake, paste0(tmpfile, "_optimistic_1"), row.names = FALSE)
+  write.csv(fake, paste0(tmpfile, "_fatalistic_1"), row.names = FALSE)
+  fake$country <- "NOR"
+  write.csv(fake, paste0(tmpfile, "_optimistic_2"), row.names = FALSE)
+  write.csv(fake, paste0(tmpfile, "_fatalistic_2"), row.names = FALSE)
+  fake$country <- "LAP"
+  write.csv(fake, paste0(tmpfile, "_fatalistic_3"), row.names = FALSE)
+
+  stone_stochastic_standardise(
+    group = "north_pole_lurgy",
+    in_path = tmpin,
+    out_path = tmpout,
+    scenarios = c("optimistic", "fatalistic"),
+    files = paste0(basename(tmpfile), "_:scenario_:index"),
+    index = 1:3,
+    allow_missing_indexes = TRUE
+  )
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_lurgy_optimistic_POL.pq" %in% files)
+  expect_true("north_pole_lurgy_optimistic_NOR.pq" %in% files)
+  expect_false("north_pole_lurgy_optimistic_LAP.pq" %in% files)
+  expect_true("north_pole_lurgy_fatalistic_POL.pq" %in% files)
+  expect_true("north_pole_lurgy_fatalistic_NOR.pq" %in% files)
+  expect_true("north_pole_lurgy_fatalistic_LAP.pq" %in% files)
 })

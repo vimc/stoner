@@ -65,5 +65,34 @@ test_that("stochastic_graph data transforms", {
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
     scenario, "deaths", log = TRUE))
+})
 
+test_that("stochastic_explorer data_dir handling", {
+  expect_error(stochastic_explorer("//localhost/potato",
+                      "Cannot access the path/mount"))
+})
+
+test_that("Can launch shiny app", {
+  fake_path <- tempdir()
+  runApp_called <- FALSE
+  runApp_arg <- NULL
+
+  local_mocked_bindings(
+    runApp = function(app_dir) {
+      runApp_called <<- TRUE
+      runApp_arg <<- app_dir
+      invisible(NULL)
+    },
+    .env = environment(stochastic_explorer)
+  )
+
+  withr::with_envvar(c(), {
+    if (exists("data_dir", envir = .GlobalEnv)) {
+      rm(data_dir, envir = .GlobalEnv)
+    }
+    stochastic_explorer(data_dir = fake_path)
+    expect_true(exists("data_dir", envir = .GlobalEnv))
+    expect_equal(get("data_dir", envir = .GlobalEnv), fake_path)
+    expect_true(runApp_called)
+  })
 })
