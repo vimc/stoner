@@ -1,3 +1,11 @@
+age_string <- function(ages) {
+  if (is.null(ages)) {
+    "all ages"
+  } else if (identical(unique(sort(ages)), as.numeric(min(ages):max(ages)))) {
+    sprintf("age %d..%d", min(ages), max(ages))
+  } else "selected ages"
+}
+
 ##' Draw a stochastic plot showing all the different runs, with the mean,
 ##' median, 5% and 95% quantiles shown.
 ##'
@@ -48,11 +56,7 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
 
   d <- prepare_graph_data(base, touchstone, disease, group, country,
                          scenario, outcome, ages, by_cohort)
-  if (is.null(ages)) {
-    age <- "all ages"
-  } else if (all(sort(ages) == min(ages):max(ages))) {
-    age <- sprintf("age %d..%d", min(ages), max(ages))
-  } else age <- "selected ages"
+  age <- age_string(ages)
 
   title <- sprintf("%s, %s, %s, %s\n%s, %s\n", touchstone, disease, group, age,
                    scenario, country)
@@ -167,7 +171,7 @@ prepare_central_data <- function(packit_id, packit_file,
 ##' windows, or a mount point on linux or Mac.
 stochastic_explorer <- function(
   data_dir = "//wpia-hn2.hpc.dide.ic.ac.uk/vimc_stochastics") {
-  if (!dir.exists(file.path(data_dir))) {
+  if (!dir.exists(data_dir)) {
     cli::cli_abort(c(
       "x" = "Cannot access the path/mount: {.path {data_dir}}",
       "i" = "Please check you can see this path normally. If not:",

@@ -65,11 +65,15 @@ test_that("stochastic_graph data transforms", {
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
     scenario, "deaths", log = TRUE))
+
+  expect_no_error(stone_stochastic_graph(
+    base, touchstone, disease, group, country,
+    scenario, "deaths", scenario2 = scenario))
 })
 
 test_that("stochastic_explorer data_dir handling", {
-  expect_error(stochastic_explorer("//localhost/potato",
-                      "Cannot access the path/mount"))
+  expect_error(stochastic_explorer(file.path(tempdir(), "potato", "salad")),
+                      "Cannot access the path/mount")
 })
 
 test_that("Can launch shiny app", {
@@ -95,4 +99,10 @@ test_that("Can launch shiny app", {
     expect_equal(get("data_dir", envir = .GlobalEnv), fake_path)
     expect_true(runApp_called)
   })
+})
+
+test_that("Age formats are reasonable", {
+  expect_equal(age_string(NULL), "all ages")
+  expect_equal(age_string(c(5,4,3,2,1,5,4,3,2,1)), "age 1..5")
+  expect_equal(age_string(c(2,4,6,8)), "selected ages")
 })
