@@ -1,0 +1,4 @@
+# This does the API call to packit - not 
+# easy to test without mocking all the network.
+
+R/fetch_packit.R
