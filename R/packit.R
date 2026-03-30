@@ -61,7 +61,7 @@ fetch_packit <- function(packet_id, filename,
 
   # And finally, we download the file in chunks.
 
-  out <- tempfile(fileext = tools::file_ext(filename))
+  out <- tempfile(fileext = paste0(".", tools::file_ext(filename)))
   outfile <- file(out, open = "wb")
   con <- httr2::req_perform_connection(req, blocking = TRUE)
   while (!httr2::resp_stream_is_complete(con)) {

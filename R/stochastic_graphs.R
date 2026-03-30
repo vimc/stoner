@@ -79,9 +79,9 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
   log <- if (log) "y" else ""
 
   if (!is.null(packit_id)) {
-    central <- prepare_central_data(packit_id, packit_file)
-
-
+    central <- prepare_central_data(packit_id, packit_file,
+                                    country, scenario, outcome, ages, by_cohort)
+    # To be continued...
   }
   par(mar = c(5, 4, 5, 2))
   plot(ylab = outcome_ylab, xlab = if (by_cohort) "Birth Cohort" else "year",

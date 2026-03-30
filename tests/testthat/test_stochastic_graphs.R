@@ -69,6 +69,29 @@ test_that("stochastic_graph data transforms", {
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
     scenario, "deaths", scenario2 = scenario))
+
+  # Packit gets called if needed
+
+  called <- FALSE
+  called_args <- NULL
+
+  local_mocked_bindings(
+    prepare_central_data = function(id, file) {
+      called <<- TRUE
+      called_args <<- list(id = id, file = file)
+      "fake_result"
+    },
+    .env = environment(stone_stochastic_graph)
+  )
+
+  expect_no_error(stone_stochastic_graph(
+    base, touchstone, disease, group, country,
+    scenario, "deaths", packit_id = "123",
+    packit_file = "file.csv"))
+
+  expect_true(called)
+  expect_equal(called_args$id, "123")
+  expect_equal(called_args$file, "file.csv")
 })
 
 test_that("stochastic_explorer data_dir handling", {
@@ -105,4 +128,42 @@ test_that("Age formats are reasonable", {
   expect_equal(age_string(NULL), "all ages")
   expect_equal(age_string(c(5,4,3,2,1,5,4,3,2,1)), "age 1..5")
   expect_equal(age_string(c(2,4,6,8)), "selected ages")
+})
+
+test_that("Parsing central from packit works", {
+  # Packit gets called if needed
+
+  fake <- data.frame(
+    scenario_type = "RSV-rout", scenario = "RSV-rout",
+    year = c(rep(2000, 4), rep(2001, 4), rep(2000, 4), rep(2001, 4)),
+    age = c(rep(0, 8), rep(1, 8)),
+    country = "RFP",
+    burden_outcome = rep(c("cases", "dalys", "deaths", "yll"), 2),
+    value = 1:16)
+
+  rds <- tempfile(fileext = ".rds")
+  saveRDS(fake, rds)
+
+  local_mocked_bindings(
+    fetch_packit = function(id, file) {
+      rds
+    },
+    .env = environment(prepare_central_data)
+  )
+
+  res <- prepare_central_data("123", "file.csv",
+    "RFP", "RSV-rout", "deaths", 0:5, TRUE)
+
+  # Data in for death is: (year, age, deaths)
+  # 2000, 0, 3
+  # 2000, 1, 11
+  # 2001, 0, 7
+  # 2001, 1, 15
+  # For cohort - this should become...
+  # 1999, 11   (2000 year 1, were born in 1999)
+  # 2000, 18   (2000 year 0, and 2001 year 1 born in 2000)
+  # 2001, 7    (2001 year 0)
+
+  expect_true(all.equal(res$year, c(1999, 2000, 2001)))
+  expect_true(all.equal(res$deaths, c(11, 18, 7)))
 })
