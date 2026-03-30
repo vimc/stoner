@@ -72,26 +72,18 @@ test_that("stochastic_graph data transforms", {
 
   # Packit gets called if needed
 
-  called <- FALSE
-  called_args <- NULL
-
-  local_mocked_bindings(
-    prepare_central_data = function(id, file) {
-      called <<- TRUE
-      called_args <<- list(id = id, file = file)
-      "fake_result"
-    },
-    .env = environment(stone_stochastic_graph)
-  )
+  fake_result <- mockery::mock("fake_result")
+  mockery::stub(stone_stochastic_graph, "prepare_central_data", fake_result)
 
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
     scenario, "deaths", packit_id = "123",
     packit_file = "file.csv"))
 
-  expect_true(called)
-  expect_equal(called_args$id, "123")
-  expect_equal(called_args$file, "file.csv")
+  mockery::expect_called(fake_result, 1)
+  mockery::expect_args(fake_result, 1, "123", "file.csv", country,
+                       scenario, "deaths", NULL, FALSE)
+
 })
 
 test_that("stochastic_explorer data_dir handling", {
@@ -144,12 +136,8 @@ test_that("Parsing central from packit works", {
   rds <- tempfile(fileext = ".rds")
   saveRDS(fake, rds)
 
-  local_mocked_bindings(
-    fetch_packit = function(id, file) {
-      rds
-    },
-    .env = environment(prepare_central_data)
-  )
+  fetch_fake <- function(id, file) rds
+  mockery::stub(prepare_central_data, "fetch_packit", fetch_fake)
 
   res <- prepare_central_data("123", "file.csv",
     "RFP", "RSV-rout", "deaths", 0:5, TRUE)
