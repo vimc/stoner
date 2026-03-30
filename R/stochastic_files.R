@@ -122,7 +122,7 @@ stone_stochastic_standardise <- function(
           ic_deaths <- c("hepb_deaths_acute", "hepb_deaths_comp_cirrh",
                          "hepb_deaths_dec_cirrh", "hepb_deaths_hcc")
 
-          for (i in unique(c(cda_deaths, li_deaths))) {
+          for (i in unique(c(cda_deaths, li_deaths, ic_deaths))) {
             if (i %in% names(d)) {
               message(sprintf("Including %s in deaths", i))
               d$deaths <- d$deaths + d[[i]]
