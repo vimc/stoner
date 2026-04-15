@@ -1,8 +1,12 @@
 # Changelog
 
-## Stoner 0.1.19
+## Stoner 0.1.20
 
-- add stoner_stochastic_central to create central parquet from
+- Allow missing yll for processing older stochastics
+
+## Changes in 0.1.19
+
+- Add stoner_stochastic_central to create central parquet from
   standardised stochastics.
 
 ## Changes in 0.1.18

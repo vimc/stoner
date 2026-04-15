@@ -2,6 +2,10 @@
 
 ## All functions
 
+- [`fetch_packit()`](https://vimc.github.io/stoner/reference/fetch_packit.md)
+  : Fetch packet from a packit server
+- [`stochastic_explorer()`](https://vimc.github.io/stoner/reference/stochastic_explorer.md)
+  : Stochastic plot
 - [`stone_dump()`](https://vimc.github.io/stoner/reference/stone_dump.md)
   : Dump touchstone from database to CSV.
 - [`stone_extract()`](https://vimc.github.io/stoner/reference/stone_extract.md)

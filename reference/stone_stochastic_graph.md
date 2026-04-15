@@ -16,7 +16,13 @@ stone_stochastic_graph(
   outcome,
   ages = NULL,
   by_cohort = FALSE,
-  log = FALSE
+  log = FALSE,
+  packit_id = NULL,
+  packit_file = NULL,
+  include_quantiles = TRUE,
+  include_mean = TRUE,
+  include_median = TRUE,
+  scenario2 = NULL
 )
 ```
 
@@ -64,3 +70,33 @@ stone_stochastic_graph(
 - log:
 
   If TRUE, then use a logged y-axis.
+
+- packit_id:
+
+  If set, then read central burden estimates from a file within a packit
+  on the Montagu packit server.
+
+- packit_file:
+
+  Used with packit_id to specify the filename of an RDS file providing
+  burden estimates. We expect to find scenario, year, age, country,
+  burden_outcome and value fields in the table.
+
+- include_quantiles:
+
+  Default TRUE, select whether to plot the 5% and 95% quantile lines.
+
+- include_mean:
+
+  Default TRUE, select whether to plot the mean.
+
+- include_median:
+
+  Default TRUE, select whether to plot the median.
+
+- scenario2:
+
+  Default NULL; if set, then the burdens from this scenario will be
+  subtracted from those in `scenario` - ie, this plots an impact graph
+  of applying the second scenario. For many graphs that use this, the
+  result will be positive numbers, representing cases or deaths averted.

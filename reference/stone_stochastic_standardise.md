@@ -16,7 +16,12 @@ stone_stochastic_standardise(
   files,
   index = 1,
   rubella_fix = TRUE,
-  missing_run_id_fix = TRUE
+  hepb2019_fix = TRUE,
+  hib2019_fix = TRUE,
+  missing_run_id_fix = TRUE,
+  allow_missing_yll = TRUE,
+  allow_missing_dalys = TRUE,
+  allow_missing_indexes = FALSE
 )
 ```
 
@@ -69,8 +74,38 @@ stone_stochastic_standardise(
   do this, keeping the parameter makes it more clear in the code what
   we're doing and why.
 
+- hepb2019_fix:
+
+  In 2019 (and 2017), HepB deaths and cases were subdivided into number
+  of different causes. This flag combines those into the single
+  appropriate burden outcome.
+
+- hib2019_fix:
+
+  In 2019 (and 2017), Hib deaths and cases were subdivided into number
+  of different causes. This flag combines those into the single
+  appropriate burden outcome.
+
 - missing_run_id_fix:
 
   Some groups in the past have omitted run_id from the files, but
   included them in the filenames. This fix inserts that into the files
   if the index parameter indicates we have 200 runs to process.
+
+- allow_missing_yll:
+
+  yll was introduced in 2023? This flag allows it to be missing for
+  processing older stochastics.
+
+- allow_missing_dalys:
+
+  Some early groups did not provide dalys; this flag allows dalys to be
+  skipped.
+
+- allow_missing_indexes:
+
+  In some early runs, different groups provided different numbers of
+  files for each scenario, because some countries did not implement
+  particular coverage campaigns. This flag needs to be TRUE for those
+  groups, but the default is FALSE, since it's rare, and we generally
+  want errors for missing files.

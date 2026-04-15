@@ -9,7 +9,7 @@ median, 5% and 95% quantiles shown."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">stoner</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.21</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,13 @@ median, 5% and 95% quantiles shown.</p>
 <span>  <span class="va">outcome</span>,</span>
 <span>  ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  by_cohort <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  log <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  log <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  packit_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  packit_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  include_quantiles <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  include_mean <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  include_median <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  scenario2 <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,6 +114,38 @@ year of birth before aggregating.</p></dd>
 
 <dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
 <dd><p>If TRUE, then use a logged y-axis.</p></dd>
+
+
+<dt id="arg-packit-id">packit_id<a class="anchor" aria-label="anchor" href="#arg-packit-id"></a></dt>
+<dd><p>If set, then read central burden estimates from a file
+within a packit on the Montagu packit server.</p></dd>
+
+
+<dt id="arg-packit-file">packit_file<a class="anchor" aria-label="anchor" href="#arg-packit-file"></a></dt>
+<dd><p>Used with packit_id to specify the filename of an RDS
+file providing burden estimates. We expect to find scenario, year, age,
+country, burden_outcome and value fields in the table.</p></dd>
+
+
+<dt id="arg-include-quantiles">include_quantiles<a class="anchor" aria-label="anchor" href="#arg-include-quantiles"></a></dt>
+<dd><p>Default TRUE, select whether to plot the
+5% and 95% quantile lines.</p></dd>
+
+
+<dt id="arg-include-mean">include_mean<a class="anchor" aria-label="anchor" href="#arg-include-mean"></a></dt>
+<dd><p>Default TRUE, select whether to plot the mean.</p></dd>
+
+
+<dt id="arg-include-median">include_median<a class="anchor" aria-label="anchor" href="#arg-include-median"></a></dt>
+<dd><p>Default TRUE, select whether to plot the median.</p></dd>
+
+
+<dt id="arg-scenario-">scenario2<a class="anchor" aria-label="anchor" href="#arg-scenario-"></a></dt>
+<dd><p>Default NULL; if set, then the burdens from this
+scenario will be subtracted from those in <code>scenario</code> - ie, this plots
+an impact graph of applying the second scenario. For many graphs that
+use this, the result will be positive numbers, representing cases
+or deaths averted.</p></dd>
 
 </dl></div>
 

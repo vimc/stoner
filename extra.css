@@ -1,3 +1,7 @@
 .row > main {
   hyphens: none;
 }
+
+pre {
+  line-height: 1;
+}

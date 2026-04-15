@@ -1,14 +1,16 @@
 # stoner
 
-         .-'''-. ,---------.    ,-----.    ,---.   .--.    .-''-.  .-------.
-        / _     \\          \ .'  .-,  '.  |    \  |  |  .'_ _   \ |  _ _   \
-       (`' )/`--' `--.  ,---'/ ,-.|  \ _ \ |  ,  \ |  | / ( ` )   '| ( ' )  |
-      (_ o _).       |   \  ;  \  '_ /  | :|  |\_ \|  |. (_ o _)  ||(_ o _) /
-       (_,_). '.     :_ _:  |  _`,/ \ _/  ||  _( )_\  ||  (_,_)___|| (_,_).' __
-      .---.  \  :    (_I_)  : (  '\_/ \   ;| (_ o _)  |'  \   .---.|  |\ \  |  |
-      \    `-'  |   (_(=)_)  \ `"/  \  ) / |  (_,_)\  | \  `-'    /|  | \ `'   /
-       \       /     (_I_)    '. \_/``".'  |  |    |  |  \       / |  |  \    /
-        `-...-'      '---'      '-----'    '--'    '--'   `'-..-'  ''-'   `'-'
+```
+     .-'''-. ,---------.    ,-----.    ,---.   .--.    .-''-.  .-------.
+    / _     \\          \ .'  .-,  '.  |    \  |  |  .'_ _   \ |  _ _   \
+   (`' )/`--' `--.  ,---'/ ,-.|  \ _ \ |  ,  \ |  | / ( ` )   '| ( ' )  |
+  (_ o _).       |   \  ;  \  '_ /  | :|  |\_ \|  |. (_ o _)  ||(_ o _) /
+   (_,_). '.     :_ _:  |  _`,/ \ _/  ||  _( )_\  ||  (_,_)___|| (_,_).' __
+  .---.  \  :    (_I_)  : (  '\_/ \   ;| (_ o _)  |'  \   .---.|  |\ \  |  |
+  \    `-'  |   (_(=)_)  \ `"/  \  ) / |  (_,_)\  | \  `-'    /|  | \ `'   /
+   \       /     (_I_)    '. \_/``".'  |  |    |  |  \       / |  |  \    /
+    `-...-'      '---'      '-----'    '--'    '--'   `'-..-'  ''-'   `'-'
+```
 
 Stoner is a helper package for writing montagu-imports concerning
 touchstones and associated responsibilities and expectations. It allows
@@ -51,6 +53,10 @@ Or from R
 
 ## All functions
 
+- [`fetch_packit()`](https://vimc.github.io/stoner/reference/fetch_packit.md)
+  : Fetch packet from a packit server
+- [`stochastic_explorer()`](https://vimc.github.io/stoner/reference/stochastic_explorer.md)
+  : Stochastic plot
 - [`stone_dump()`](https://vimc.github.io/stoner/reference/stone_dump.md)
   : Dump touchstone from database to CSV.
 - [`stone_extract()`](https://vimc.github.io/stoner/reference/stone_extract.md)
