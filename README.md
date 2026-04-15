@@ -4,7 +4,7 @@
 [![R build status](https://github.com/vimc/stoner/workflows/R-CMD-check/badge.svg)](https://github.com/vimc/stoner/actions)
 <!-- badges: end -->
 
-<pre>
+<pre style="line-height: 1;">
      .-'''-. ,---------.    ,-----.    ,---.   .--.    .-''-.  .-------.
     / _     \\          \ .'  .-,  '.  |    \  |  |  .'_ _   \ |  _ _   \
    (`' )/`--' `--.  ,---'/ ,-.|  \ _ \ |  ,  \ |  | / ( ` )   '| ( ' )  |

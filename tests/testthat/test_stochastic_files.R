@@ -147,3 +147,186 @@ test_that("Create central works", {
 
   expect_true(p1$cases[p1$country == "NPL"] == 2 * p1$cases[p1$country == "LAP"])
 })
+
+test_that("Rubella fix works", {
+  df <- fake_data()
+  df$rubella_deaths_congenital <- df$deaths
+  df$rubella_cases_congenital <- df$cases
+  df$deaths <- NULL
+  df$cases <- NULL
+  df$rubella_infections <- sample(nrow(df))
+
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+  write.csv(df, paste0(tmpfile, "_opt"), row.names = FALSE)
+
+  stone_stochastic_standardise(
+    group = "north_pole_rub", in_path = tmpin, out_path = tmpout,
+    scenarios = "opt",
+    files = paste0(basename(tmpfile), "_opt")
+  )
+
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_rub_opt_LAP.pq" %in% files)
+  pq <- arrow::read_parquet(file.path(tmpout, "north_pole_rub_opt_LAP.pq"))
+  expect_true("cases" %in% names(pq))
+  expect_true("deaths" %in% names(pq))
+  expect_false("rubella_deaths_congenital" %in% names(pq))
+  expect_false("rubella_cases_congenital" %in% names(pq))
+  expect_false("rubella_infections" %in% names(pq))
+  expect_true(all(pq$cases == df$rubella_cases_congenital))
+  expect_true(all(pq$deaths == df$rubella_deaths_congenital))
+})
+
+test_that("Hib/PCV fix works", {
+  df <- fake_data()
+  df$cases_pneumo <- df$cases + 1
+  df$cases_men <- df$cases + 2
+  df$cases <- NULL
+  df$deaths_pneumo <- df$deaths + 3
+  df$deaths_men <- df$deaths + 4
+  df$deaths <- NULL
+
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+  write.csv(df, paste0(tmpfile, "_opt"), row.names = FALSE)
+
+  stone_stochastic_standardise(
+    group = "north_pole_hib", in_path = tmpin, out_path = tmpout,
+    scenarios = "opt",
+    files = paste0(basename(tmpfile), "_opt")
+  )
+
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_hib_opt_LAP.pq" %in% files)
+  pq <- arrow::read_parquet(file.path(tmpout, "north_pole_hib_opt_LAP.pq"))
+  expect_true("cases" %in% names(pq))
+  expect_true("deaths" %in% names(pq))
+  expect_false("cases_men" %in% names(pq))
+  expect_false("cases_pneumo" %in% names(pq))
+  expect_false("deaths_men" %in% names(pq))
+  expect_false("deaths_pneumo" %in% names(pq))
+
+  expect_true(all(pq$cases == df$cases_pneumo + df$cases_men))
+  expect_true(all(pq$deaths == df$deaths_pneumo + df$deaths_men))
+
+})
+
+test_that("HepB fix works", {
+  df <- fake_data()
+  df$hepb_cases_acute_severe <- df$cases + 1
+  df$hepb_cases_dec_cirrh <- df$cases + 2
+  df$hepb_cases_hcc <- df$cases + 3
+  df$hepb_cases_acute_symp <- df$cases + 4
+  df$hepb_cases_fulminant <- df$cases + 5
+  df$hepb_cases_chronic <- df$cases + 6
+  df$hepb_chronic_symptomatic_in_acute_phase <- df$cases + 7
+  df$hepb_cases_comp_cirrh <- df$cases + 8
+  df$hepb_cases_hcc_no_cirrh <- df$cases + 9
+  df$cases <- NULL
+  df$hepb_deaths_acute <- df$deaths + 1
+  df$hepb_deaths_dec_cirrh <- df$deaths + 2
+  df$hepb_deaths_hcc <- df$deaths + 3
+  df$hepb_deaths_total_cirrh <- df$deaths + 4
+  df$hepb_deaths_comp_cirrh <- df$deaths + 5
+  df$deaths <- NULL
+
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+  write.csv(df, paste0(tmpfile, "_opt"), row.names = FALSE)
+
+  stone_stochastic_standardise(
+    group = "north_pole_hepb", in_path = tmpin, out_path = tmpout,
+    scenarios = "opt",
+    files = paste0(basename(tmpfile), "_opt")
+  )
+
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_hepb_opt_LAP.pq" %in% files)
+  pq <- arrow::read_parquet(file.path(tmpout, "north_pole_hepb_opt_LAP.pq"))
+
+  expect_true("cases" %in% names(pq))
+  expect_true("deaths" %in% names(pq))
+  expect_false("hepb_cases_acute_severe" %in% names(pq))
+  expect_false("hepb_cases_dec_cirrh" %in% names(pq))
+  expect_false("hepb_cases_hcc" %in% names(pq))
+  expect_false("hepb_cases_acute_symp" %in% names(pq))
+  expect_false("hepb_cases_fulminant" %in% names(pq))
+  expect_false("hepb_cases_chronic" %in% names(pq))
+  expect_false("hepb_chronic_symptomatic_in_acute_phase" %in% names(pq))
+  expect_false("hepb_cases_comp_cirrh" %in% names(pq))
+  expect_false("hepb_cases_comp_hcc_no_cirrh" %in% names(pq))
+
+  expect_false("hepb_deaths_acute" %in% names(pq))
+  expect_false("hepb_deaths_dec_cirrh" %in% names(pq))
+  expect_false("hepb_deaths_hcc" %in% names(pq))
+  expect_false("hepb_deaths_total_cirrh" %in% names(pq))
+  expect_false("hepb_deaths_comp_cirrh" %in% names(pq))
+
+  expect_true(all(pq$cases == df$hepb_cases_acute_severe + df$hepb_cases_dec_cirrh +
+                          df$hepb_Cases_hcc + df$hepb_cases_acute_symp +
+                          df$hepb_cases_fulminant + df$hepb_cases_chronic +
+                          df$hepb_chronic_symptomatic_in_acute_phase +
+                          df$hepb_cases_comp_cirrh + df$hepb_cases_comp_hcc_no_cirrh))
+
+  expect_true(all(pq$deaths == df$hepb_deaths_acute + df$hepb_deaths_dec_cirrh +
+                           df$hep_deaths_hcc + df$hepb_deaths_total_cirrh +
+                           df$hepb_deaths_comp_cirrh))
+})
+
+test_that("Missing yll/dalys works", {
+  df <- fake_data()
+  df$dalys <- NULL
+  df$yll <- NULL
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+  write.csv(df, paste0(tmpfile, "_opt"), row.names = FALSE)
+
+  stone_stochastic_standardise(
+    group = "north_pole_flu", in_path = tmpin, out_path = tmpout,
+    scenarios = "opt",
+    files = paste0(basename(tmpfile), "_opt")
+  )
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_flu_opt_LAP.pq" %in% files)
+  pq <- arrow::read_parquet(file.path(tmpout, "north_pole_flu_opt_LAP.pq"))
+  expect_false("dalys" %in% names(pq))
+  expect_false("yll" %in% names(pq))
+})
+
+test_that("Different file count per scenario is handled", {
+  fake <- fake_data()
+  tmpin <- tempdir()
+  tmpout <- tempdir()
+  tmpfile <- tempfile(tmpdir = tmpin)
+
+  fake$country <- "POL"
+  write.csv(fake, paste0(tmpfile, "_optimistic_1"), row.names = FALSE)
+  write.csv(fake, paste0(tmpfile, "_fatalistic_1"), row.names = FALSE)
+  fake$country <- "NOR"
+  write.csv(fake, paste0(tmpfile, "_optimistic_2"), row.names = FALSE)
+  write.csv(fake, paste0(tmpfile, "_fatalistic_2"), row.names = FALSE)
+  fake$country <- "LAP"
+  write.csv(fake, paste0(tmpfile, "_fatalistic_3"), row.names = FALSE)
+
+  stone_stochastic_standardise(
+    group = "north_pole_lurgy",
+    in_path = tmpin,
+    out_path = tmpout,
+    scenarios = c("optimistic", "fatalistic"),
+    files = paste0(basename(tmpfile), "_:scenario_:index"),
+    index = 1:3,
+    allow_missing_indexes = TRUE
+  )
+  files <- list.files(path = tmpout)
+  expect_true("north_pole_lurgy_optimistic_POL.pq" %in% files)
+  expect_true("north_pole_lurgy_optimistic_NOR.pq" %in% files)
+  expect_false("north_pole_lurgy_optimistic_LAP.pq" %in% files)
+  expect_true("north_pole_lurgy_fatalistic_POL.pq" %in% files)
+  expect_true("north_pole_lurgy_fatalistic_NOR.pq" %in% files)
+  expect_true("north_pole_lurgy_fatalistic_LAP.pq" %in% files)
+})
