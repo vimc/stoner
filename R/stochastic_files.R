@@ -167,6 +167,7 @@ stone_stochastic_standardise <- function(
 
       d$deaths <- round(d$deaths)
       d$cases <- round(d$cases)
+      names(d)[names(d) == "YLL"] <- "yll"
       if (("yll" %in% names(d)) || (!allow_missing_yll)) {
         d$yll <- round(d$yll)
       } else {
