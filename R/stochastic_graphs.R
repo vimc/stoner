@@ -78,11 +78,15 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
   maxy <- max(d[[outcome]])
   log <- if (log) "y" else ""
 
+  central <- NULL
   if (!is.null(packit_id)) {
     central <- prepare_central_data(packit_id, packit_file,
                                     country, scenario, outcome, ages, by_cohort)
-    # To be continued...
+    central <- central[, c("year", outcome)]
+    miny <- min(miny, min(central[[outcome]]))
+    maxy <- max(maxy, max(central[[outcome]]))
   }
+
   par(mar = c(5, 4, 5, 2))
   plot(ylab = outcome_ylab, xlab = if (by_cohort) "Birth Cohort" else "year",
        x = d$year[d$run_id == 1], y = d[[outcome]][d$run_id == 1], type="l",
@@ -110,6 +114,9 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
   if (include_quantiles) {
     lines(x = avgs$year, y = avgs$q05, col = "#202020", lwd = 2)
     lines(x = avgs$year, y = avgs$q95, col = "#202020", lwd = 2)
+  }
+  if (!is.null(central)) {
+    lines(x = central$year, y = central[[outcome]], col = "#4040ff", lwd = 2)
   }
   recordPlot()
 }
