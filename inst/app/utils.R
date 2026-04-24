@@ -8,7 +8,8 @@
 # between to modelling groups, for comparisons.
 
 get_touchstones <- function() {
-  sort(unique(basename(list.dirs(data_dir, recursive = FALSE))))
+  sort(unique(basename(list.dirs(data_dir, recursive = FALSE))),
+       decreasing = TRUE)
 }
 
 get_diseases <- function(touchstone1, touchstone2) {
