@@ -76,8 +76,24 @@ get_countries <- function(touchstone1, touchstone2, disease, group1, group2,
   sort(unique(res[res %in% lookup(touchstone2, disease, group2, scenario2, res)]))
 }
 
+memo_outcomes <- new.env(parent = emptyenv())
+
 get_outcomes <- function(touchstone1, touchstone2, disease, group1, group2,
                          scenario1, scenario2, country) {
+
+  # This is a temporary fix - not sure why get_outcomes is called so many
+  # times. But here I at least memoise the answers.
+
+  nn <- function(x) {
+    if (is.null(x)) "" else x
+  }
+  key <- paste(c(nn(touchstone1), nn(touchstone2), nn(disease), nn(group1),
+                 nn(group2), nn(scenario1), nn(scenario2), nn(country)),
+               collapse = "$")
+  if (exists(key, envir = memo_outcomes)) {
+    return(get(key, envir = memo_outcomes))
+  }
+
   lookup <- function(touchstone, disease, group, scenario, country, res = NULL) {
     if ((is.null(touchstone)) || (is.null(group)) || (is.null(scenario))) {
       return(res)
@@ -96,7 +112,9 @@ get_outcomes <- function(touchstone1, touchstone2, disease, group1, group2,
   res <- res[res %in% lookup(touchstone1, disease, group1, scenario2, country, res)]
   res <- res[res %in% lookup(touchstone2, disease, group1, scenario2, country, res)]
   res <- res[res %in% lookup(touchstone1, disease, group2, scenario2, country, res)]
-  sort(unique(res[res %in% lookup(touchstone2, disease, group2, scenario2, country, res)]))
+  res <- sort(unique(res[res %in% lookup(touchstone2, disease, group2, scenario2, country, res)]))
+  assign(key, res, envir = memo_outcomes)
+  res
 }
 
 # GUI helpers.
