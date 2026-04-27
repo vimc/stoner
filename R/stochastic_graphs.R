@@ -35,6 +35,8 @@ age_string <- function(ages) {
 ##' @param packit_file Used with packit_id to specify the filename of an RDS
 ##' file providing burden estimates. We expect to find scenario, year, age,
 ##' country, burden_outcome and value fields in the table.
+##' @param include_stochastics Default TRUE, select whether to draw the
+##' individual stochastic lines.
 ##' @param include_quantiles Default TRUE, select whether to plot the
 ##' 5% and 95% quantile lines.
 ##' @param include_mean Default TRUE, select whether to plot the mean.
@@ -49,6 +51,7 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
                                    scenario, outcome, ages = NULL,
                                    by_cohort = FALSE, log = FALSE,
                                    packit_id = NULL, packit_file = NULL,
+                                   include_stochastics = TRUE,
                                    include_quantiles = TRUE,
                                    include_mean = TRUE,
                                    include_median = TRUE,
@@ -76,6 +79,8 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
   runs <- max(d$run_id)
   miny <- max(1, min(d[[outcome]]))
   maxy <- max(d[[outcome]])
+  minx <- min(d$year)
+  maxx <- max(d$year)
   log <- if (log) "y" else ""
 
   if (!is.null(packit_id)) {
@@ -85,12 +90,15 @@ stone_stochastic_graph <- function(base, touchstone, disease, group, country,
   }
   par(mar = c(5, 4, 5, 2))
   plot(ylab = outcome_ylab, xlab = if (by_cohort) "Birth Cohort" else "year",
-       x = d$year[d$run_id == 1], y = d[[outcome]][d$run_id == 1], type="l",
-       col = "#b0b0b0", ylim = c(miny, maxy), main = title, log = log)
+       x = NULL, y = NULL,
+       col = "#b0b0b0", xlim = c(minx, maxx), ylim = c(miny, maxy), main = title,
+       log = log)
 
-  for (i in 2:runs) {
-    lines(x = d$year[d$run_id == i], y = d[[outcome]][d$run_id == i],
-          col = "#b0b0b0")
+  if (include_stochastics) {
+    for (i in seq_len(runs)) {
+      lines(x = d$year[d$run_id == i], y = d[[outcome]][d$run_id == i],
+            col = "#b0b0b0")
+    }
   }
 
   avgs <- d %>% group_by(.data$year) %>%

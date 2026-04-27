@@ -54,8 +54,8 @@ app_ui <- function() {
                    choices = c("All", "Under 5")),
       checkboxGroupInput(
         sprintf("%s_options", prefix), "Plot Options:",
-        choices = c("Quantiles", "Median", "Mean", "Log-Y"),
-        selected = c("Quantiles", "Median", "Mean", "Log-Y"),
+        choices = c("Stochastics", "Quantiles", "Median", "Mean", "Log-Y"),
+        selected = c("Stochastics", "Quantiles", "Median", "Mean", "Log-Y"),
         inline = TRUE),
       actionButton(sprintf("%s_plot_btn", prefix), "Plot")
     ))
@@ -325,7 +325,8 @@ app_server <- function(input, output, session) {
             log = "Log-Y" %in% pr$opts,
             include_median = "Median" %in% pr$opts,
             include_quantiles = "Quantiles" %in% pr$opts,
-            include_mean = "Mean" %in% pr$opts
+            include_mean = "Mean" %in% pr$opts,
+            include_stochastics = "Stochastics" %in% pr$opts
           )
         })
       })
