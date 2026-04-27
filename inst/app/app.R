@@ -112,9 +112,9 @@ app_ui <- function() {
       make_panel("Burden", "b", 1, 1, 1),
       make_panel("Burden/TS", "bts", 2, 1, 1),
       make_panel("Burden/MG", "bmg", 1, 1, 2),
-      make_panel("Impact", "i", 1, 2, 1),
-      make_panel("Impact/TS", "its", 2, 2, 1),
-      make_panel("Impact/MG", "img", 1, 2, 2)
+      make_panel("Burden Diff", "i", 1, 2, 1),
+      make_panel("Burden Diff/TS", "its", 2, 2, 1),
+      make_panel("Burden Diff/MG", "img", 1, 2, 2)
     )
   )
 }
