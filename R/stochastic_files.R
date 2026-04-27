@@ -257,3 +257,49 @@ stone_stochastic_central <- function(base, touchstone, disease, group,
   outfile <- sprintf("%s_%s_central.pq", group, scenario)
   arrow::write_parquet(central, file.path(path, outfile))
 }
+
+
+
+stone_stochastic_make_meta <- function(path) {
+
+  explore_files <- function(touchstone, folder, disease, group) {
+    files <- list.files(file.path(path, touchstone, folder))
+    first <- file.path(path, touchstone, folder, files[1])
+    ds <- arrow::open_dataset(first)
+    outcomes <- ds$schema$names
+    outcomes <- outcomes[tolower(outcomes) %in%
+                           c("cases", "deaths", "dalys", "yll")]
+
+    files <- strsplit(list.files(file.path(path, touchstone, folder)), "_")
+
+    scenarios <- unique(unlist(lapply(files, `[[`, 2)))
+    df <- data.frame()
+    for (scenario in scenarios) {
+      matches <- files[unlist(lapply(files, `[[`, 2)) == scenario]
+      countries <- unique(unlist(lapply(matches, `[[`, 3)))
+      countries <- gsub(".pq", "", countries)
+      df <- rbind(df, data.frame(
+        touchstone = touchstone,
+        disease = disease,
+        group = group,
+        scenario = scenario,
+        countries = paste0(countries, collapse = ";"),
+        outcomes = paste0(outcomes, collapse = ";")
+      ))
+    }
+    df
+  }
+
+  touchstone_meta <- function(touchstone) {
+    entries <- list.files(file.path(path, touchstone))
+    data.table::rbindlist(lapply(entries, function(x) {
+      xs <- strsplit(x, "_")[[1]]
+      explore_files(touchstone, x, xs[1], xs[2])
+    }))
+  }
+
+  touchstones <- basename(list.dirs(paste0(path, "/"), recursive = FALSE))
+  res <- data.table::rbindlist(lapply(touchstones, touchstone_meta))
+  write.csv(res, file.path(path, "meta.csv"),
+            row.names = FALSE, quote = FALSE)
+}
