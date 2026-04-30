@@ -170,3 +170,19 @@ update_country <- function(session, ts1, ts2, disease, g1, g2, s1, s2, country,
   outcomes <- get_outcomes(ts1, ts2, disease, g1, g2, s1, s2, country)
   update_dropdown_keep(session, o, outcomes, input[[o]])
 }
+
+parse_filter <- function(s) {
+  if (tolower(s) == "all") return(NULL)
+  s <- gsub(" ", "", s)
+  s <- strsplit(s, ",")[[1]]
+  sel <- integer(0)
+  for (bit in s) {
+    if (!grepl("-", bit)) {
+      sel <- c(sel, as.integer(bit))
+    } else {
+      from_to <- strsplit(bit, "-")[[1]]
+      sel <- c(sel, from_to[1]:from_to[2])
+    }
+  }
+  sort(unique(sel))
+}

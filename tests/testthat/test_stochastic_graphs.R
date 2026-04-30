@@ -29,32 +29,39 @@ test_that("stochastic_graph data transforms", {
   if (file.exists(f)) file.remove(f)
   arrow::write_parquet(data, file.path(folder, filename))
 
-  # Aggregate all ages, not by cohort. Should have 1 point per year.
+  # Expecting unaggregated data
 
-  res <- prepare_graph_data(base, touchstone, disease, group, country,
-                            scenario, "deaths", NULL, FALSE)
+  res <- get_graph_data(base, touchstone, disease, group, country,
+                        scenario, "deaths", FALSE)
 
-  expect_equal(nrow(res), 25)    # 5 runs, 5 years
-  expect_equal(res$deaths[res$run_id == 1 & res$year == 2002],
+  expect_equal(nrow(res), 125)    # 5 runs, 5 years, 5 ages
+
+  # Aggregate by year
+
+  res2 <- aggregate_by_year(res, "deaths")
+  expect_equal(nrow(res2), 25)    # 5 runs, 5 years, all age
+
+  expect_equal(res2$deaths[res2$run_id == 1 & res2$year == 2002],
                sum(data$deaths[data$year == 2002 & data$run_id == 1]))
 
   # Select ages
 
-  res <- prepare_graph_data(base, touchstone, disease, group, country,
-                            scenario, "deaths", c(10, 12, 14), FALSE)
+  res2 <- aggregate_by_year(res, "deaths", c(10, 12, 14))
 
-  expect_equal(nrow(res), 25)    # 5 runs, 5 years
-  expect_equal(res$deaths[res$run_id == 1 & res$year == 2003],
+  expect_equal(nrow(res2), 25)    # 5 runs, 5 years
+  expect_equal(res2$deaths[res2$run_id == 1 & res2$year == 2003],
                sum(data$deaths[data$year == 2003 & data$run_id == 1 &
                                  data$age %in% c(10, 12, 14)]))
 
   # By cohort
 
-  res <- prepare_graph_data(base, touchstone, disease, group, country,
-                            scenario, "deaths", c(10, 12, 14), TRUE)
+  res <- get_graph_data(base, touchstone, disease, group, country,
+                        scenario, "deaths", TRUE)
 
-  expect_equal(min(res$year), min(data$year) - max(data$age))
-  expect_equal(max(res$year), max(data$year) - min(data$age))
+  res2 <- aggregate_by_year(res, "deaths", c(10, 12, 14))
+
+  expect_equal(min(res2$year), min(data$year) - max(data$age))
+  expect_equal(max(res2$year), max(data$year) - min(data$age))
 
   # Test graph - we can't really, but just check it doesn't crash.
 
@@ -68,12 +75,12 @@ test_that("stochastic_graph data transforms", {
 
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
-    scenario, "deaths", scenario2 = scenario))
+    c(scenario, scenario), "deaths"))
 
   # Packit gets called if needed
 
   fake_result <- mockery::mock("fake_result")
-  mockery::stub(stone_stochastic_graph, "prepare_central_data", fake_result)
+  mockery::stub(stone_stochastic_graph, "get_packit_data", fake_result)
 
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
