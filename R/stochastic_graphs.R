@@ -6,7 +6,7 @@ filter_string <- function(s, units) {
   } else sprintf("selected %s", units)
 }
 
-##' A feature-rich graph plotting function, which can show the stochastic
+##' A feature-rich-ish graph plotting function, which can show the stochastic
 ##' line for an outcome for different runs, the mean, median and quantiles.
 ##' If two scenarios are specified, then the burden difference between
 ##' scenarios is plotted. Additionally, if multiple groups or multiple
@@ -29,33 +29,29 @@ filter_string <- function(s, units) {
 ##' @importFrom graphics lines par
 ##' @importFrom stats quantile median
 ##' @importFrom grDevices recordPlot
-##' @param base The root older in which the standardised stochastic files are
-##' found. Within it should be folders by touchstone.
+##' @param base The root folder in which the standardised stochastic files are
+##' found. Within it should be folders with touchstone names.
 ##' @param touchstones A touchstone to plot, or a pair  of touchstones to
-##' compare. If a pair, then only one modelling group can be specified.
-##' @param disease The disease for the stochastics to display
-##' @param groups The modelling group to plot data for, or a pair of modelling
-##' groups to be compared, in which case, only touchstone can be specified.
+##' compare. If a pair, then only one modelling group can be specified below.
+##' @param disease The disease to display.
+##' @param groups The modelling group to plot, or a pair of modelling
+##' groups to be compared, in which case, only one touchstone can be specified.
 ##' @param country The country to plot.
-##' @param scenarios A scenario to plot data for, or a pair of scenarios, in
-##' which case the outcome for the first scenario, subtract the second, will be
-##' plotted.
+##' @param scenarios A scenario to plot data for, or a pair of scenarios in
+##' which case we plot the outcome for the first scenario, subtract the second.
 ##' @param outcome The outcome to plot, for example `deaths`, `cases`, `dalys`
-##' or  since 2023, `yll`.
+##' or since 2023, `yll`.
 ##' @param xaxis The default is "time", meaning the x-axis is either calendar
-##' year, or birth cohort, depending on the `by_cohort` parameter, and age is
-##' then aggregated according using the `aggregate_ages` parameter.
-##' Alternatively, set to "age", and aggregate by time using the
-##' `aggregate_years` parameter.
-##' @param filter Filter either ages, years, or birth cohort years to a range,
-##' depending on what `xaxis` is chosen. When `xaxis` is `time`, we are summing
-##' ages, so can filter to `0:4` for example, to only include under 5 burdens.
-##' When `xaxis` is `age` then we want to see burden by age for an aggregated
-##' time period; the filter here is for which years to include, or which
-##' birth cohorts to include, depending on whether `by_cohort` is set. `filter`
-##' can be left as `NULL` to include all ages or years.
+##' year, or birth cohort, depending on the `by_cohort` parameter. This means
+##' and age gets filtered by the `filter` parameter, and then aggregated.
+##' Alternatively, if set to "age", then age will be on the x-axis, and the
+##' `filter` parameter specifies either the years, or the birth cohorts to
+##' select (depending on the `by_cohort` parameter), before aggregation.
+##' @param filter Filter either ages, years, or birth cohort years to a range -
+##' see the comments above on the `xaxis` parametern. The filter is a vector
+##' of ages, or years, or can be NULL to do no filtering.
 ##' @param by_cohort If TRUE, then age is subtracted from year to convert it to
-##' year of birth before aggregating. This is only used when xaxis is "time".
+##' year of birth before aggregating. See the `xaxis` and `filter` parameters.
 ##' @param log If TRUE, then use a logged y-axis.
 ##' @param packit_id If set, then read central burden estimates from a file
 ##' within a packit on the Montagu packit server.

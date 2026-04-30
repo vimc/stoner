@@ -6,44 +6,57 @@
 \usage{
 stone_stochastic_graph(
   base,
-  touchstone,
+  touchstones,
   disease,
-  group,
+  groups,
   country,
-  scenario,
+  scenarios,
   outcome,
-  ages = NULL,
+  xaxis = "time",
+  filter = NULL,
   by_cohort = FALSE,
   log = FALSE,
   packit_id = NULL,
   packit_file = NULL,
+  include_stochastics = TRUE,
   include_quantiles = TRUE,
   include_mean = TRUE,
-  include_median = TRUE,
-  scenario2 = NULL
+  include_median = TRUE
 )
 }
 \arguments{
-\item{base}{The folder in which the standardised stochastic files are found.}
+\item{base}{The root folder in which the standardised stochastic files are
+found. Within it should be folders with touchstone names.}
 
-\item{touchstone}{The touchstone name (for the graph title)}
+\item{touchstones}{A touchstone to plot, or a pair  of touchstones to
+compare. If a pair, then only one modelling group can be specified below.}
 
-\item{disease}{The disease, used for building the filename and graph title.}
+\item{disease}{The disease to display.}
 
-\item{group}{The modelling group, used in the filename and graph title.}
+\item{groups}{The modelling group to plot, or a pair of modelling
+groups to be compared, in which case, only one touchstone can be specified.}
 
 \item{country}{The country to plot.}
 
-\item{scenario}{The scenario to plot.}
+\item{scenarios}{A scenario to plot data for, or a pair of scenarios in
+which case we plot the outcome for the first scenario, subtract the second.}
 
-\item{outcome}{The outcome to plot, for example \code{deaths}, \code{cases}, \code{dalys} or
-since 2023, \code{yll}.}
+\item{outcome}{The outcome to plot, for example \code{deaths}, \code{cases}, \code{dalys}
+or since 2023, \code{yll}.}
 
-\item{ages}{A vector of one or more ages to be selected and aggregated, or
-if left as NULL, then all ages are used and aggregated.}
+\item{xaxis}{The default is "time", meaning the x-axis is either calendar
+year, or birth cohort, depending on the \code{by_cohort} parameter. This means
+and age gets filtered by the \code{filter} parameter, and then aggregated.
+Alternatively, if set to "age", then age will be on the x-axis, and the
+\code{filter} parameter specifies either the years, or the birth cohorts to
+select (depending on the \code{by_cohort} parameter), before aggregation.}
+
+\item{filter}{Filter either ages, years, or birth cohort years to a range -
+see the comments above on the \code{xaxis} parametern. The filter is a vector
+of ages, or years, or can be NULL to do no filtering.}
 
 \item{by_cohort}{If TRUE, then age is subtracted from year to convert it to
-year of birth before aggregating.}
+year of birth before aggregating. See the \code{xaxis} and \code{filter} parameters.}
 
 \item{log}{If TRUE, then use a logged y-axis.}
 
@@ -54,20 +67,30 @@ within a packit on the Montagu packit server.}
 file providing burden estimates. We expect to find scenario, year, age,
 country, burden_outcome and value fields in the table.}
 
+\item{include_stochastics}{Default TRUE, select whether to draw the
+individual stochastic lines.}
+
 \item{include_quantiles}{Default TRUE, select whether to plot the
 5\% and 95\% quantile lines.}
 
 \item{include_mean}{Default TRUE, select whether to plot the mean.}
 
 \item{include_median}{Default TRUE, select whether to plot the median.}
-
-\item{scenario2}{Default NULL; if set, then the burdens from this
-scenario will be subtracted from those in \code{scenario} - ie, this plots
-an impact graph of applying the second scenario. For many graphs that
-use this, the result will be positive numbers, representing cases
-or deaths averted.}
 }
 \description{
-Draw a stochastic plot showing all the different runs, with the mean,
-median, 5\% and 95\% quantiles shown.
+A feature-rich-ish graph plotting function, which can show the stochastic
+line for an outcome for different runs, the mean, median and quantiles.
+If two scenarios are specified, then the burden difference between
+scenarios is plotted. Additionally, if multiple groups or multiple
+touchstones are specified, then separate graphs with the same scaling are
+plotted to allow comparison.
+}
+\details{
+Graphs can have calendar year or birth cohort on the y-axis for
+time-series plots, in which case age is aggregated and the ages to be
+included can be specified. Alternatively, the x-axis can be age aggregated
+over time, where the calendar years to be aggregated can be specified.
+
+Finally, it can also include a central estimate provided as a file within
+a packit, from the montagu reporting portal.
 }

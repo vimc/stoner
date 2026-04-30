@@ -123,10 +123,10 @@ test_that("Can launch shiny app", {
   })
 })
 
-test_that("Age formats are reasonable", {
-  expect_equal(age_string(NULL), "all ages")
-  expect_equal(age_string(c(5,4,3,2,1,5,4,3,2,1)), "age 1..5")
-  expect_equal(age_string(c(2,4,6,8)), "selected ages")
+test_that("Filter formats are reasonable", {
+  expect_equal(filter_string(NULL, "ages"), "all ages")
+  expect_equal(filter_string(c(5,4,3,2,1,5,4,3,2,1), "ages"), "ages 1..5")
+  expect_equal(filter_string(c(2,4,6,8), "potatoes"), "selected potatoes")
 })
 
 test_that("Parsing central from packit works", {
@@ -144,7 +144,7 @@ test_that("Parsing central from packit works", {
   saveRDS(fake, rds)
 
   fetch_fake <- function(id, file) rds
-  mockery::stub(prepare_central_data, "fetch_packit", fetch_fake)
+  mockery::stub(get_packit_data, "fetch_packit", fetch_fake)
 
   res <- prepare_central_data("123", "file.csv",
     "RFP", "RSV-rout", "deaths", 0:5, TRUE)
