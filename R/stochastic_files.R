@@ -150,9 +150,18 @@ stone_stochastic_standardise <- function(
         }
       }
 
+      # Note that for MenA, we want to keep the _cwyx outcomes.
+
       if (missing_run_id_fix) {
         if ((!"run_id" %in% names(d)) && (length(index) == 200)) d$run_id <- j
       }
+
+      # Remove columns "X" and "X.1" that have crept in with some of the
+      # inputs saved with row.names
+
+      d[["X"]] <- NULL
+      d[["X.1"]] <- NULL
+
 
 
       # Round to integer, as per guidance. (Not using as.integer, as that
