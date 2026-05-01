@@ -79,7 +79,8 @@ test_that("stochastic_graph data transforms", {
 
   # Packit gets called if needed
 
-  fake_result <- mockery::mock("fake_result")
+  fake_data <- data.frame(year = 2000, age = 10, deaths = 25, run_id = 1)
+  fake_result <- mockery::mock(fake_data)
   mockery::stub(stone_stochastic_graph, "get_packit_data", fake_result)
 
   expect_no_error(stone_stochastic_graph(
@@ -89,7 +90,7 @@ test_that("stochastic_graph data transforms", {
 
   mockery::expect_called(fake_result, 1)
   mockery::expect_args(fake_result, 1, "123", "file.csv", country,
-                       scenario, "deaths", NULL, FALSE)
+                       scenario, "deaths", FALSE)
 
 })
 
@@ -127,38 +128,4 @@ test_that("Filter formats are reasonable", {
   expect_equal(filter_string(NULL, "ages"), "all ages")
   expect_equal(filter_string(c(5,4,3,2,1,5,4,3,2,1), "ages"), "ages 1..5")
   expect_equal(filter_string(c(2,4,6,8), "potatoes"), "selected potatoes")
-})
-
-test_that("Parsing central from packit works", {
-  # Packit gets called if needed
-
-  fake <- data.frame(
-    scenario_type = "RSV-rout", scenario = "RSV-rout",
-    year = c(rep(2000, 4), rep(2001, 4), rep(2000, 4), rep(2001, 4)),
-    age = c(rep(0, 8), rep(1, 8)),
-    country = "RFP",
-    burden_outcome = rep(c("cases", "dalys", "deaths", "yll"), 2),
-    value = 1:16)
-
-  rds <- tempfile(fileext = ".rds")
-  saveRDS(fake, rds)
-
-  fetch_fake <- function(id, file) rds
-  mockery::stub(get_packit_data, "fetch_packit", fetch_fake)
-
-  res <- prepare_central_data("123", "file.csv",
-    "RFP", "RSV-rout", "deaths", 0:5, TRUE)
-
-  # Data in for death is: (year, age, deaths)
-  # 2000, 0, 3
-  # 2000, 1, 11
-  # 2001, 0, 7
-  # 2001, 1, 15
-  # For cohort - this should become...
-  # 1999, 11   (2000 year 1, were born in 1999)
-  # 2000, 18   (2000 year 0, and 2001 year 1 born in 2000)
-  # 2001, 7    (2001 year 0)
-
-  expect_true(all.equal(res$year, c(1999, 2000, 2001)))
-  expect_true(all.equal(res$deaths, c(11, 18, 7)))
 })

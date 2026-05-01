@@ -102,8 +102,12 @@ stone_stochastic_graph <- function(base,
   }
 
   xaxis <- tolower(xaxis)
-
   outcome <- tolower(outcome)
+
+  miny <- Inf
+  maxy <- -Inf
+  minx <- Inf
+  maxx <- -Inf
 
   # Fetch the packit data if wanted
 
@@ -112,8 +116,14 @@ stone_stochastic_graph <- function(base,
                                country, scenarios, outcome, by_cohort)
     if (xaxis == "age") {
       central <- aggregate_by_age(central, outcome, filter)
+      minx <- 0
+      maxx <- 100
     } else {
       central <- aggregate_by_year(central, outcome, filter)
+      miny <- min(central[[outcome]])
+      maxy <- max(central[[outcome]])
+      minx <- min(central$year)
+      maxx <- max(central$year)
     }
   }
 
@@ -130,11 +140,6 @@ stone_stochastic_graph <- function(base,
   }
 
   # Filter and aggregate the data, finding bounds
-
-  miny <- Inf
-  maxy <- -Inf
-  minx <- Inf
-  maxx <- -Inf
 
   for (i in 1:n_graphs) {
     if (xaxis == "age") {
@@ -164,7 +169,7 @@ stone_stochastic_graph <- function(base,
   }
 
   if (length(scenarios) == 2) {
-    outcome_ylab <- paste(outcome_ylab, "avered")
+    outcome_ylab <- paste(outcome_ylab, "averted")
     scenario_title <- sprintf("Difference of %s ->\n%s", scenarios[1],
                               scenarios[2])
   }
@@ -226,6 +231,12 @@ stone_stochastic_graph <- function(base,
         lines(x = avgs[[xfield]], y = avgs$q95, col = "#202020", lwd = 2)
       }
     }
+
+    if (!is.null(packit_id)) {
+      lines(x = central[[xfield]], y = central[[outcome]],
+            col = "#2020ff", lwd = 2)
+    }
+
     res[[i]] <- recordPlot()
   }
   res
@@ -300,7 +311,10 @@ get_packit_data <- function(packit_id, packit_file,
     d <- d[order(d$year, d$age), ]
     data[[s]] <- d
   }
-  get_burden_difference(data, outcome)
+  d <- get_burden_difference(data, outcome)
+  d <- as.data.frame(d[, c("year", "age", outcome)])
+  d$run_id <- 1
+  d
 }
 
 ##' Launch a Shiny app to allow interactive plotting of
