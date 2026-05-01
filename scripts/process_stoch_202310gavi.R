@@ -323,7 +323,7 @@ stoner::stone_stochastic_standardise(
 
 scenarios = c("malaria-no-vaccination",
               "malaria-rts3-default", "malaria-rts3-rts4-default",
-              "malaria-rts3-bluesky", "malaria-rts3-rts4-bluesky"),
+              "malaria-rts3-bluesky", "malaria-rts3-rts4-bluesky")
 
 stoner::stone_stochastic_standardise(
   group = "UAC-Kakai",
