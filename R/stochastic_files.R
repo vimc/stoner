@@ -276,8 +276,9 @@ stone_stochastic_make_meta <- function(path) {
     first <- file.path(path, touchstone, folder, files[1])
     ds <- arrow::open_dataset(first)
     outcomes <- ds$schema$names
-    outcomes <- outcomes[tolower(outcomes) %in%
-                           c("cases", "deaths", "dalys", "yll")]
+    outcomes <- outcomes[!outcomes %in% c("run_id", "disease", "year", "age",
+                                          "country", "cohort_size")]
+    outcomes <- sort(unique(tolower(outcomes)))
 
     files <- strsplit(list.files(file.path(path, touchstone, folder)), "_")
 
