@@ -103,10 +103,6 @@ stone_stochastic_graph <- function(base,
 
   xaxis <- tolower(xaxis)
 
-  if (!isTRUE(tolower(outcome) %in% c("cases", "dalys", "deaths", "yll"))) {
-    cli::cli_abort("`outcome` must be `cases`, `dalys`, `deaths` or `yll`")
-  }
-
   outcome <- tolower(outcome)
 
   # Fetch the packit data if wanted
