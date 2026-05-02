@@ -63,7 +63,23 @@ test_that("stochastic_graph data transforms", {
   expect_equal(min(res2$year), min(data$year) - max(data$age))
   expect_equal(max(res2$year), max(data$year) - min(data$age))
 
-  # Test graph - we can't really, but just check it doesn't crash.
+  # Aggregate by age, for all years
+
+  res2 <- aggregate_by_age(data, "deaths", NULL)
+  expect_equal(nrow(res2), 25)
+  expect_equal(res2$deaths[res2$run_id == 2 & res2$age == 10],
+               sum(data$deaths[data$age == 10 & data$run_id == 2]))
+
+  # Aggregate by age, for some years
+
+  res2 <- aggregate_by_age(data, "deaths", c(2002, 2003))
+  expect_equal(nrow(res2), 25)
+  expect_equal(res2$deaths[res2$run_id == 2 & res2$age == 10],
+               sum(data$deaths[data$age == 10 & data$run_id == 2 &
+                                 data$year %in% c(2002, 2003)]))
+
+  # Test graph - we can't really, but just check it doesn't crash; we've
+  # already tested the functions being called.
 
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
@@ -80,7 +96,7 @@ test_that("stochastic_graph data transforms", {
   # Packit gets called if needed
 
   fake_data <- data.frame(year = 2000, age = 10, deaths = 25, run_id = 1)
-  fake_result <- mockery::mock(fake_data)
+  fake_result <- mockery::mock(fake_data, cycle = TRUE)
   mockery::stub(stone_stochastic_graph, "get_packit_data", fake_result)
 
   expect_no_error(stone_stochastic_graph(
@@ -92,7 +108,19 @@ test_that("stochastic_graph data transforms", {
   mockery::expect_args(fake_result, 1, "123", "file.csv", country,
                        scenario, "deaths", FALSE)
 
+  expect_no_error(stone_stochastic_graph(
+    base, touchstone, disease, group, country,
+    scenario, "deaths", xaxis = "age"))
+
+  expect_no_error(stone_stochastic_graph(
+    base, touchstone, disease, group, country,
+    scenario, "deaths", xaxis = "age",
+    packit_id = "123",
+    packit_file = "file.csv"))
+
+
 })
+
 
 test_that("stochastic_explorer data_dir handling", {
   expect_error(stochastic_explorer(file.path(tempdir(), "potato", "salad")),
@@ -128,4 +156,81 @@ test_that("Filter formats are reasonable", {
   expect_equal(filter_string(NULL, "ages"), "all ages")
   expect_equal(filter_string(c(5,4,3,2,1,5,4,3,2,1), "ages"), "ages 1..5")
   expect_equal(filter_string(c(2,4,6,8), "potatoes"), "selected potatoes")
+})
+
+test_that("Arguments are tested", {
+
+  expect_error(stone_stochastic_graph(
+    "b", c("T1", "T2", "T3"), "d", "g", "c", "s", "o"),
+    "Only specify one or two touchstones")
+
+  expect_error(stone_stochastic_graph(
+    "b", NULL, "d", "g", "c", "s", "o"),
+    "Only specify one or two touchstones")
+
+  expect_error(stone_stochastic_graph(
+    "b", "t", "d", NULL, "c", "s", "o"),
+    "Only specify one or two modelling groups")
+
+  expect_error(stone_stochastic_graph(
+    "b", "t", "d", c("g1", "g2", "g3"), "c", "s", "o"),
+    "Only specify one or two modelling groups")
+
+  expect_error(stone_stochastic_graph(
+    "b", "t", "d", "g", "c", NULL, "o"),
+    "Only specify one or two scenarios")
+
+  expect_error(stone_stochastic_graph(
+    "b", "t", "d", "g", "c", c("s1", "s2", "s3"), "o"),
+    "Only specify one or two scenarios")
+
+  expect_error(stone_stochastic_graph(
+    "b", c("T1", "T2"), "d", c("g1", "g2"), "c", "s", "o"),
+    "Only one of `touchstones` or `groups` can be plural")
+
+  expect_error(stone_stochastic_graph(
+    "b", c("T1", "T2"), "d", c("g1", "g2"), "c", c("s1", "s2"), "o"),
+    "Only one of `touchstones` or `groups` can be plural")
+
+  expect_error(stone_stochastic_graph(
+    "b", c("T1", "T2"), "d", "g", "c", c("s1", "s2"), "o", xaxis = "potato"),
+    "`xaxis` must be either `time` or `age`")
+
+  expect_error(stone_stochastic_graph(
+    "b", c("T1", "T2"), "d", "g", "c", c("s1", "s2"), "o", xaxis = "age"),
+    "Couldn't find file")
+})
+
+
+test_that("Packit data is arranged correctly", {
+  fake <- data.frame(
+    scenario_type = "RSV-rout", scenario = "RSV-rout",
+    year = c(rep(2000, 4), rep(2001, 4), rep(2000, 4), rep(2001, 4)),
+    age = c(rep(6, 8), rep(7, 8)),
+    country = "RFP",
+    burden_outcome = rep(c("cases", "dalys", "deaths", "yll"), 2),
+    value = 1:16)
+  fake2 <- fake
+  fake2$country <- "POT"
+  fake2$scenario <- "XYZ-rout"
+  fake <- rbind(fake, fake2)
+
+  rds <- tempfile(fileext = ".rds")
+  saveRDS(fake, rds)
+
+  fetch_fake <- function(id, file) rds
+  mockery::stub(get_packit_data, "fetch_packit", fetch_fake)
+
+  res <- get_packit_data("", "", "RFP", "RSV-rout", "cases", TRUE)
+  expect_true(unique(res$run_id) == 1)
+  fake$year <- fake$year - fake$age
+  fake <- fake[fake$country == "RFP", ]
+  fake <- fake[fake$scenario == "RSV-rout", ]
+  fake <- fake[fake$burden_outcome == "cases", ]
+  fake <- fake[order(fake$year, fake$age), ]
+  res <- res[order(res$year, res$age), ]
+  expect_equal(nrow(fake), nrow(res))
+  expect_all_true(fake$year ==res$year)
+  expect_all_true(fake$age == res$age)
+  expect_all_true(fake$value == res$cases)
 })

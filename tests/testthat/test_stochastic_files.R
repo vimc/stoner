@@ -330,3 +330,35 @@ test_that("Different file count per scenario is handled", {
   expect_true("north_pole_lurgy_fatalistic_NOR.pq" %in% files)
   expect_true("north_pole_lurgy_fatalistic_LAP.pq" %in% files)
 })
+
+test_that("Can produce metadata", {
+  tmpout <- file.path(tempdir(), "base")
+  d <- fake_data()
+  dir.create(file.path(tmpout, "T1", "elf-piles_G1"), recursive = TRUE)
+  dir.create(file.path(tmpout, "T2", "elf-piles_G2"), recursive = TRUE)
+  arrow::write_parquet(d, file.path(tmpout, "T1", "elf-piles_G1", "G1_S1_LAP.pq"))
+  d$country <- "NPL"
+  arrow::write_parquet(d, file.path(tmpout, "T1", "elf-piles_G1", "G1_S1_NPL.pq"))
+  d$yll <- NULL
+  d$potatoes <- sample(nrow(d))
+  arrow::write_parquet(d, file.path(tmpout, "T2", "elf-piles_G2", "G1_S1_ZAP.pq"))
+  arrow::write_parquet(d, file.path(tmpout, "T2", "elf-piles_G2", "G1_S1_ZIP.pq"))
+  stone_stochastic_make_meta(tmpout)
+
+  expect_true(file.exists(file.path(tmpout, "meta.csv")))
+  meta <- read.csv(file.path(tmpout, "meta.csv"))
+  expect_equal(nrow(meta), 2)
+  expect_true("T1" %in% meta$touchstone)
+  t1 <- meta[meta$touchstone %in% "T1", ]
+  expect_equal(t1$group, "G1")
+  expect_equal(t1$scenario, "S1")
+  expect_equal(t1$countries, "LAP;NPL")
+  expect_equal(t1$outcomes, "cases;dalys;deaths;yll")
+  expect_true("T2" %in% meta$touchstone)
+  t2 <- meta[meta$touchstone %in% "T2", ]
+  expect_equal(t2$group, "G2")
+  expect_equal(t2$scenario, "S1")
+  expect_equal(t2$countries, "ZAP;ZIP")
+  expect_equal(t2$outcomes, "cases;dalys;deaths;potatoes")
+})
+
