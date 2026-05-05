@@ -269,6 +269,26 @@ stone_stochastic_central <- function(base, touchstone, disease, group,
 
 
 
+##' Create a `meta.csv` file in the root of the standardised
+##' stochastics. The columns contain scalars of `touchstone`,
+##' `disease`, `group`, `scenario` - and for each row, a
+##' semi-colon-separated lists for `countries` and `outcomes`.
+##' This is useful for making the stochastic explorer faster
+##' on startup (otherwise it has to sample all of the files
+##' each time you run it) - and also it is a good general
+##' record of all the stochastic data we have.
+##'
+##' This does mean that we should re-create the meta data
+##' each time we make changes to the standardised stochastic
+##' data though.
+##'
+##' @export
+##' @title Produce `meta.csv` summary of the structure and
+##' content of a standardised stochastic data folder.
+##' @importFrom data.table rbindlist
+##' @importFrom utils write.csv
+##' @param path The root folder of the stochastic data.
+
 stone_stochastic_make_meta <- function(path) {
 
   explore_files <- function(touchstone, folder, disease, group) {
