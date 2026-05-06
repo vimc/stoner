@@ -25,3 +25,4 @@ stoner::stone_stochastic_standardise(
   files = c("stochastic_burden_est_YF_UND-Perkins_yf-scenario-1-default-Routine_and_Campaign_:index.csv.xz"),
   index = 1:200)
 
+stoner::stone_stochastic_make_meta(base_out_path)

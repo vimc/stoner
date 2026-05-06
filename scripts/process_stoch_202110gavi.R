@@ -20,7 +20,7 @@ fetch_scenarios <- function(disease) {
 # Let's unleash the cow
 
 setwd("Q:/testcow")
-writeLines("vimc/stoner@VIMC-9230", "pkgdepends.txt")
+writeLines("vimc/stoner", "pkgdepends.txt")
 hipercow::hipercow_init(driver = "dide-windows")
 hipercow::hipercow_provision()
 # Network/memory might be too much for more than a job per node.
@@ -226,7 +226,6 @@ stoner::stone_stochastic_standardise(
             sprintf("%s_booster_:index.csv.xz", stub)),
   index = 1:26))
 
-hipercow::task_create_expr(resources = hres, expr =
 stoner::stone_stochastic_standardise(
   group = "KPW-Jackson",
   in_path = file.path(base_in_path, "KPW-Jackson-MenA"),
@@ -238,7 +237,7 @@ stoner::stone_stochastic_standardise(
             "stochastic_burden_est_MenA_KPWA_routine_default_:index.csv.xz",
             "stochastic_burden_est_MenA_KPWA_routine_ia2030_target_:index.csv.xz",
             "stochastic_burden_est_MenA_KPWA_booster_default_:index.csv.xz"),
-  index = 1:26))
+  index = 1:26)
 
 ###############
 # PCV
@@ -377,10 +376,13 @@ stoner::stone_stochastic_standardise(
   files = sprintf("%s_:scenario_:index.csv.xz", stub),
   index = 1:200)
 
-stoner::stone_stochastic_standardise(
+hipercow::task_create_expr(resources = hres, expr =
+  stoner::stone_stochastic_standardise(
   group = "UND-Perkins",
   in_path = file.path(base_in_path, "UND-Perkins-YF"),
   out_path = file.path(base_out_path, "YF_UND-Perkins"),
   scenarios = scenarios,
   files = "stochastic_burden_est_YF_UND-Perkins_:scenario_:index.csv.xz",
-  index = 1:200)
+  index = 1:200))
+
+stoner::stone_stochastic_make_meta(base_out_path)

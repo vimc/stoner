@@ -22,7 +22,7 @@ fetch_scenarios <- function(disease, touchstone='201710gavi-5') {
 # Let's unleash the cow
 
 setwd("Q:/testcow")
-writeLines("vimc/stoner@VIMC-9230", "pkgdepends.txt")
+writeLines("vimc/stoner", "pkgdepends.txt")
 hipercow::hipercow_init(driver = "dide-windows")
 hipercow::hipercow_provision()
 # Network/memory might be too much for more than a job per node.
@@ -296,3 +296,5 @@ stoner::stone_stochastic_standardise(
             "John Huber - stochastic_burden_est_YF_UND-Perkins_yf-preventive-gavi_:index.csv.xz",
             "John Huber - stochastic_burden_est_YF_UND-Perkins_yf-routine-gavi_:index.csv.xz"),
   index = 1:200))
+
+stoner::stone_stochastic_make_meta(base_out_path)
