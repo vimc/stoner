@@ -47,15 +47,15 @@ app_ui <- function() {
     sidebar <- append(sidebar, scenarios)
     sidebar <- append(sidebar, list(
       selectInput(sprintf("%s_country", prefix), "Country:", choices = c0),
+      selectInput(sprintf("%s_xaxis", prefix), "X-Axis:", choices =
+        c("Time (Calendar)", "Time (Birth Cohort)",
+          "Age (Calendar)", "Age (Birth Cohort)")),
       selectInput(sprintf("%s_outcome", prefix), "Y-Axis:", choices = c0),
-      radioButtons(sprintf("%s_year", prefix), "X-Axis:", inline = TRUE,
-                   choices = c("Calendar", "Cohort")),
-      radioButtons(sprintf("%s_ages", prefix), "Age:", inline = TRUE,
-                   choices = c("All", "Under 5")),
+      textInput(sprintf("%s_filter", prefix), "Filter Ages", value = "All"),
       checkboxGroupInput(
         sprintf("%s_options", prefix), "Plot Options:",
-        choices = c("Quantiles", "Median", "Mean", "Log-Y"),
-        selected = c("Quantiles", "Median", "Mean", "Log-Y"),
+        choices = c("Stochastics", "Quantiles", "Median", "Mean", "Log-Y"),
+        selected = c("Stochastics", "Quantiles", "Median", "Mean", "Log-Y"),
         inline = TRUE),
       actionButton(sprintf("%s_plot_btn", prefix), "Plot")
     ))
@@ -112,9 +112,9 @@ app_ui <- function() {
       make_panel("Burden", "b", 1, 1, 1),
       make_panel("Burden/TS", "bts", 2, 1, 1),
       make_panel("Burden/MG", "bmg", 1, 1, 2),
-      make_panel("Impact", "i", 1, 2, 1),
-      make_panel("Impact/TS", "its", 2, 2, 1),
-      make_panel("Impact/MG", "img", 1, 2, 2)
+      make_panel("Burden Diff", "i", 1, 2, 1),
+      make_panel("Burden Diff/TS", "its", 2, 2, 1),
+      make_panel("Burden Diff/MG", "img", 1, 2, 2)
     )
   )
 }
@@ -253,6 +253,17 @@ app_server <- function(input, output, session) {
                                 input,
                                 prefix)})
 
+    filter <- sprintf("%s_filter", prefix)
+    xaxis <- sprintf("%s_xaxis", prefix)
+
+    observeEvent(input[[xaxis]], {
+      xaxis_val <- input[[xaxis]]
+      if (grepl("Time", xaxis_val)) lab <- "Filter age: (eg. All, or 0-4)"
+      else if (grepl("Calendar", xaxis_val)) lab <- "Filter years: (eg. All, or 2000-2010)"
+      else lab <- "Filter cohorts: (eg. All, or 2000-2010)"
+      updateTextInput(session, filter, label = lab)
+    })
+
     n_graphs <- 1 + ((n_touchstone * n_group) > 1)
     if (n_graphs == 1) {
       graphs <- sprintf("%s_main_plot", prefix)
@@ -262,11 +273,6 @@ app_server <- function(input, output, session) {
     button <- sprintf("%s_plot_btn", prefix)
 
     plot_reactive <- eventReactive(input[[button]], {
-      ages <- NULL
-      if (input[[sprintf("%s_ages", prefix)]] == "Under 5") {
-        ages <- 0:4
-      }
-
       check <- function(pre, x1, x2, type) {
         if (is.null(x2)) return(TRUE)
         if ((grepl(pre, prefix)) && (input[[x1]] == input[[x2]])) {
@@ -286,7 +292,7 @@ app_server <- function(input, output, session) {
       if (!check("i", is1, is2, "scenario")) return(NULL)
 
       list(
-        ages = ages,
+        filter = input[[sprintf("%s_filter", prefix)]],
         opts = input[[sprintf("%s_options", prefix)]],
 
         touchstone = c(input[[it1]], if (!is.null(it2)) input[[it2]] else NULL),
@@ -296,37 +302,41 @@ app_server <- function(input, output, session) {
         disease = input[[id]],
         country = input[[ic]],
         outcome = input[[sprintf("%s_outcome", prefix)]],
-        year    = input[[sprintf("%s_year", prefix)]]
+        xaxis   = input[[sprintf("%s_xaxis", prefix)]]
+      )
+    })
+
+    res_reactive <- reactive({
+      pr <- plot_reactive()
+      req(pr)
+      filter_vec <- parse_filter(pr$filter)
+
+      stoner::stone_stochastic_graph(
+        base = data_dir,
+        touchstones = pr$touchstone,
+        disease = pr$disease,
+        groups = pr$group,
+        country = pr$country,
+        scenarios = pr$scenario,
+        outcome = pr$outcome,
+        xaxis = if (grepl("Time", pr$xaxis)) "time" else "age",
+        filter = filter_vec,
+        by_cohort = grepl("Birth Cohort", pr$xaxis),
+        log = "Log-Y" %in% pr$opts,
+        include_median = "Median" %in% pr$opts,
+        include_quantiles = "Quantiles" %in% pr$opts,
+        include_mean = "Mean" %in% pr$opts,
+        include_stochastics = "Stochastics" %in% pr$opts
       )
     })
 
     for (g in seq_along(graphs)) {
       local({
         gg <- g
-
         output[[graphs[gg]]] <- renderPlot({
-          pr <- plot_reactive()
-          req(pr)
-
-          it <- pr$touchstone[min(gg, length(pr$touchstone))]
-          ig <- pr$group[min(gg, length(pr$group))]
-
-          stoner::stone_stochastic_graph(
-            base = data_dir,
-            touchstone = it,
-            disease = pr$disease,
-            group = ig,
-            country = pr$country,
-            scenario = pr$scenario[1],
-            scenario2 = if (length(pr$scenario) > 1) pr$scenario[2] else NULL,
-            outcome = pr$outcome,
-            by_cohort = pr$year == "Cohort",
-            ages = pr$ages,
-            log = "Log-Y" %in% pr$opts,
-            include_median = "Median" %in% pr$opts,
-            include_quantiles = "Quantiles" %in% pr$opts,
-            include_mean = "Mean" %in% pr$opts
-          )
+          res <- res_reactive()
+          req(res)
+          replayPlot(res[[gg]])
         })
       })
     }

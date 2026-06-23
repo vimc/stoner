@@ -7,42 +7,35 @@
 # Functions ending in _mg will find things common
 # between to modelling groups, for comparisons.
 
+meta <- read.csv(file.path(data_dir, "meta.csv"))
+
 get_touchstones <- function() {
-  sort(unique(basename(list.dirs(data_dir, recursive = FALSE))))
+  sort(unique(meta$touchstone), decreasing = TRUE)
 }
 
-get_diseases <- function(touchstone1, touchstone2) {
-  lookup <- function(touchstone, res = NULL) {
-    if (is.null(touchstone)) return(res)
-    path <- file.path(data_dir, touchstone)
-    dirs <- basename(list.dirs(path, recursive = FALSE))
-    unique(unlist(lapply(strsplit(dirs, "_"), `[[`, 1)))
+get_diseases <- function(touchstone1, touchstone2 = NULL) {
+  res <- meta$disease[meta$touchstone %in% touchstone1]
+  if (!is.null(touchstone2)) {
+    res <- intersect(res, meta$disease[meta$touchstone %in% touchstone2])
   }
-  res <- lookup(touchstone1)
-  sort(unique(res[res %in% lookup(touchstone2, res)]))
+  sort(unique(res))
 }
 
 get_groups <- function(touchstone1, touchstone2, disease) {
-  lookup <- function(touchstone, disease, res = NULL) {
-    if (is.null(touchstone)) return(res)
-    path <- file.path(data_dir, touchstone)
-    dirs <- basename(list.dirs(path, recursive = FALSE))
-    dirs <- dirs[substr(dirs, 1, nchar(disease) + 1) == paste0(disease, "_")]
-    unique(substring(dirs, nchar(disease) + 2))
+  m <- meta[meta$disease %in% disease, ]
+  res <- m$group[m$touchstone %in% touchstone1]
+  if (!is.null(touchstone2)) {
+    res <- intersect(res, m$group[m$touchstone %in% touchstone2])
   }
-  res <- lookup(touchstone1, disease)
-  sort(unique(res[res %in% lookup(touchstone2, disease, res)]))
+  sort(unique(res))
 }
 
 get_scenarios <- function(touchstone1, touchstone2, disease, group1, group2) {
   lookup <- function(touchstone, disease, group, res = NULL) {
     if ((is.null(touchstone)) || (is.null(group))) return(res)
-    path <- file.path(data_dir, touchstone, paste(disease, group, sep = "_"))
-    files <- basename(list.files(path, recursive = FALSE))
-    files <- gsub(".pq", "", files)
-    files <- substring(files, nchar(group) + 2)
-    ends <- unlist(lapply(gregexpr("_", files), `[[`, 1)) - 1
-    unique(substring(files, 1, ends))
+    sort(unique(meta$scenario[(meta$touchstone %in% touchstone) &
+                              (meta$disease %in% disease) &
+                              (meta$group %in% group)]))
   }
 
   res <- lookup(touchstone1, disease, group1)
@@ -57,14 +50,11 @@ get_countries <- function(touchstone1, touchstone2, disease, group1, group2,
     if ((is.null(touchstone)) || (is.null(group)) || (is.null(scenario))) {
       return(res)
     }
-
-    path <- file.path(data_dir, touchstone, paste(disease, group, sep = "_"))
-    files <- basename(list.files(path, recursive = FALSE))
-    files <- gsub(".pq", "", files)
-    files <- substring(files, nchar(group) + 2)
-    files <- files[substring(files, 1, nchar(scenario) + 1) == paste0(scenario, "_")]
-    ends <- unlist(lapply(gregexpr("_", files), `[[`, 1)) + 1
-    unique(substring(files, ends))
+    cts <- meta$countries[(meta$touchstone %in% touchstone) &
+                          (meta$disease %in% disease) &
+                          (meta$group %in% group) &
+                          (meta$scenario %in% scenario)]
+    sort(unique(strsplit(cts, ";")[[1]]))
   }
   res <- lookup(touchstone1, disease, group1, scenario1)
   res <- res[res %in% lookup(touchstone2, disease, group1, scenario1, res)]
@@ -78,17 +68,18 @@ get_countries <- function(touchstone1, touchstone2, disease, group1, group2,
 
 get_outcomes <- function(touchstone1, touchstone2, disease, group1, group2,
                          scenario1, scenario2, country) {
+
   lookup <- function(touchstone, disease, group, scenario, country, res = NULL) {
     if ((is.null(touchstone)) || (is.null(group)) || (is.null(scenario))) {
       return(res)
     }
-    path <- file.path(data_dir, touchstone, paste(disease, group, sep = "_"))
-    thefile <- sprintf("%s_%s_%s.pq", group, scenario, country)
-    tbl <- arrow::read_parquet(file.path(path, thefile), col_select = NULL)
-    cols <- names(tbl)
-    sort(cols[!cols %in% c("disease", "run_id", "year", "age",
-                           "country", "cohort_size")])
+    outs <- meta$outcomes[(meta$touchstone %in% touchstone) &
+                          (meta$disease %in% disease) &
+                          (meta$group %in% group) &
+                          (meta$scenario %in% scenario)]
+    sort(unique(strsplit(outs, ";")[[1]]))
   }
+
   res <- lookup(touchstone1, disease, group1, scenario1, country)
   res <- res[res %in% lookup(touchstone2, disease, group1, scenario1, country, res)]
   res <- res[res %in% lookup(touchstone1, disease, group2, scenario1, country, res)]
@@ -96,7 +87,8 @@ get_outcomes <- function(touchstone1, touchstone2, disease, group1, group2,
   res <- res[res %in% lookup(touchstone1, disease, group1, scenario2, country, res)]
   res <- res[res %in% lookup(touchstone2, disease, group1, scenario2, country, res)]
   res <- res[res %in% lookup(touchstone1, disease, group2, scenario2, country, res)]
-  sort(unique(res[res %in% lookup(touchstone2, disease, group2, scenario2, country, res)]))
+  res <- sort(unique(res[res %in% lookup(touchstone2, disease, group2, scenario2, country, res)]))
+  res
 }
 
 # GUI helpers.
@@ -177,4 +169,20 @@ update_country <- function(session, ts1, ts2, disease, g1, g2, s1, s2, country,
   o <- paste(prefix, "outcome", sep = "_")
   outcomes <- get_outcomes(ts1, ts2, disease, g1, g2, s1, s2, country)
   update_dropdown_keep(session, o, outcomes, input[[o]])
+}
+
+parse_filter <- function(s) {
+  if (tolower(s) == "all") return(NULL)
+  s <- gsub(" ", "", s)
+  s <- strsplit(s, ",")[[1]]
+  sel <- integer(0)
+  for (bit in s) {
+    if (!grepl("-", bit)) {
+      sel <- c(sel, as.integer(bit))
+    } else {
+      from_to <- strsplit(bit, "-")[[1]]
+      sel <- c(sel, from_to[1]:from_to[2])
+    }
+  }
+  sort(unique(sel))
 }

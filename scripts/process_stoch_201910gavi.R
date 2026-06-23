@@ -22,7 +22,7 @@ fetch_scenarios <- function(disease) {
 # Let's unleash the cow
 
 setwd("Q:/testcow")
-writeLines("vimc/stoner@VIMC-9230", "pkgdepends.txt")
+writeLines("vimc/stoner", "pkgdepends.txt")
 hipercow::hipercow_init(driver = "dide-windows")
 hipercow::hipercow_provision()
 # Network/memory might be too much for more than a job per node.
@@ -417,3 +417,5 @@ stoner::stone_stochastic_standardise(
   scenarios = scenarios,
   files = "stochastic_burden_est_YF_UND-Perkins_:scenario_:index.csv.xz",
   index = 1:200))
+
+stoner::stone_stochastic_make_meta(base_out_path)

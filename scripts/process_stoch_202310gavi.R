@@ -323,7 +323,7 @@ stoner::stone_stochastic_standardise(
 
 scenarios = c("malaria-no-vaccination",
               "malaria-rts3-default", "malaria-rts3-rts4-default",
-              "malaria-rts3-bluesky", "malaria-rts3-rts4-bluesky"),
+              "malaria-rts3-bluesky", "malaria-rts3-rts4-bluesky")
 
 stoner::stone_stochastic_standardise(
   group = "UAC-Kakai",
@@ -360,3 +360,5 @@ stoner::stone_stochastic_standardise(
              "stochastic_burden_est_malaria_:index_rtss_d3_bluesky Josephine Malinga.csv.xz",
              "stochastic_burden_est_malaria_:index_rtss_d4_bluesky Josephine Malinga.csv.xz"),
   index = 1:31)
+
+stoner::stone_stochastic_make_meta(base_out_path)
