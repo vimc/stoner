@@ -101,8 +101,6 @@ check_args <- function(base, touchstones, disease, groups, country,
       "Outcome {outcome} not found in {m$touchstone}, {m$group}, {m$scenario}")
   }
 
-
-
   if (!isTRUE(tolower(xaxis) %in% c("time", "age"))) {
     cli::cli_abort("`xaxis` must be either `time` or `age`.")
   }
@@ -345,7 +343,7 @@ get_graph_data <- function(base, touchstone, disease, group, country,
                   group, group, scenario, country)
 
     if (!file.exists(pq)) {
-      cli::cli_abort("Couldn't find file {pq} - check files or parameters")
+      cli::cli_abort("Couldn't find file {pq} - check files.")
     }
     d <- arrow::read_parquet(pq)
     d$year <- if (by_cohort) d$year - d$age else d$year

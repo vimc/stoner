@@ -270,7 +270,13 @@ test_that("Arguments are validated", {
     path, "T1", "D", "G1", "A", c("S1", "S2"), "X", xaxis = "potato"),
     "`xaxis` must be either `time` or `age`")
 
+  # File not found - because we haven't made it.
+
+  expect_error(get_graph_data(path, "T1", "D", "G1", "A", "S1", "X", FALSE),
+    "Couldn't find file(.*)")
+
 })
+
 
 
 test_that("Packit data is arranged correctly", {
