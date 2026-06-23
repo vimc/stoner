@@ -6,6 +6,108 @@ filter_string <- function(s, units) {
   } else sprintf("selected %s", units)
 }
 
+check_arg_counts <- function(touchstones, disease, groups, scenarios) {
+
+  if (!length(touchstones) %in% 1:2) {
+    cli::cli_abort("Only specify one or two touchstones.")
+  }
+
+  if (!length(groups) %in% 1:2) {
+    cli::cli_abort("Only specify one or two modelling groups.")
+  }
+
+  if ((length(touchstones) == 2) && (length(groups) ==2)) {
+    cli::cli_abort("Only one of `touchstones` or `groups` can be plural.")
+  }
+
+  if (!length(scenarios) %in% 1:2) {
+    cli::cli_abort("Only specify one or two scenarios.")
+  }
+
+  if (length(disease) != 1) {
+    cli::cli_abort("Only specify one disease")
+  }
+}
+
+
+check_args <- function(base, touchstones, disease, groups, country,
+                       scenarios, outcome, xaxis) {
+
+  # Check meta.csv exists.
+
+  if (!file.exists(file.path(base, "meta.csv"))) {
+    cli::cli_abort("Please call stone_stochastic_meta(path) first")
+  }
+  meta <- read.csv(file.path(base, "meta.csv"))
+
+  # Check all touchstones exist
+
+  missing_touchstones <- touchstones[!touchstones %in% meta$touchstone]
+  if (length(missing_touchstones) > 0) {
+    cli::cli_abort("Touchstone not found: {missing_touchstones}")
+  }
+  meta <- meta[meta$touchstone %in% touchstones, ]
+
+  # Check all diseases exist in all touchstones
+
+  for (touchstone in touchstones) {
+    if (!disease %in% meta$disease[meta$touchstone == touchstone]) {
+      cli::cli_abort("Disease {disease} not found in touchstone {touchstone}")
+    }
+  }
+
+  meta <- meta[meta$disease %in% disease, ]
+
+  # Modelling groups exist in all touchstones
+
+  for (touchstone in touchstones) {
+    missing_groups <- groups[
+      !groups %in% meta$group[meta$touchstone == touchstone]]
+    if (length(missing_groups) > 0) {
+      cli::cli_abort("Groups not found in {touchstone}: {missing_groups}")
+    }
+  }
+
+  meta <- meta[meta$group %in% groups, ]
+
+  for (scenario in scenarios) {
+    for (group in groups) {
+      for (touchstone in touchstones) {
+        if (nrow(meta[meta$touchstone == touchstone &
+                      meta$group == group &
+                      meta$scenario == scenario, ]) == 0) {
+          cli::cli_abort("Scenario {scenario} not found in {touchstone}, {group}")
+        }
+      }
+    }
+  }
+
+  meta <- meta[meta$scenario %in% scenarios, ]
+  countries <- strsplit(meta$countries, ";")
+  present <- unlist(lapply(countries, function(x) country %in% x))
+  if (any(!present)) {
+    present <- which(!present)[1]
+    m <- meta[present, ]
+    cli::cli_abort(
+      "Country {country} not found in {m$touchstone}, {m$group}, {m$scenario}")
+  }
+
+  outcomes <- strsplit(meta$outcomes, ";")
+  present <- unlist(lapply(outcomes, function(x) outcome %in% x))
+  if (any(!present)) {
+    present <- which(!present)[1]
+    m <- meta[present, ]
+    cli::cli_abort(
+      "Outcome {outcome} not found in {m$touchstone}, {m$group}, {m$scenario}")
+  }
+
+
+
+  if (!isTRUE(tolower(xaxis) %in% c("time", "age"))) {
+    cli::cli_abort("`xaxis` must be either `time` or `age`.")
+  }
+}
+
 ##' A feature-rich-ish graph plotting function, which can show the stochastic
 ##' line for an outcome for different runs, the mean, median and quantiles.
 ##' If two scenarios are specified, then the burden difference between
@@ -64,6 +166,10 @@ filter_string <- function(s, units) {
 ##' 5% and 95% quantile lines.
 ##' @param include_mean Default TRUE, select whether to plot the mean.
 ##' @param include_median Default TRUE, select whether to plot the median.
+##' @returns A list of either one or two graphs, depending on the parameters
+##' selected. The last (or only) graph will be the one displayed
+##' automatically in RStudio, so if you do use this function to plot
+##' multiple graphs, call `plot` on each one to see it.
 
 stone_stochastic_graph <- function(base,
                                    touchstones, disease, groups, country,
@@ -77,29 +183,9 @@ stone_stochastic_graph <- function(base,
                                    include_mean = TRUE,
                                    include_median = TRUE) {
 
-  # Forbid multi-touchstone AND multi-group for now - which means we will
-  # only produce 2 graphs. We could do more - for example, 3 groups that
-  # model a disease, but for now, we'll stick with two.
-
-  if (!length(touchstones) %in% 1:2) {
-    cli::cli_abort("Only specify one or two touchstones.")
-  }
-
-  if (!length(groups) %in% 1:2) {
-    cli::cli_abort("Only specify one or two modelling groups.")
-  }
-
-  if (!length(scenarios) %in% 1:2) {
-    cli::cli_abort("Only specify one or two scenarios.")
-  }
-
-  if ((length(touchstones) == 2) && (length(groups) ==2)) {
-    cli::cli_abort("Only one of `touchstones` or `groups` can be plural.")
-  }
-
-  if (!isTRUE(tolower(xaxis) %in% c("time", "age"))) {
-    cli::cli_abort("`xaxis` must be either `time` or `age`.")
-  }
+  check_arg_counts(touchstones, disease, groups, scenarios)
+  check_args(base, touchstones, disease, groups, country, scenarios, outcome,
+             xaxis)
 
   xaxis <- tolower(xaxis)
   outcome <- tolower(outcome)
@@ -177,8 +263,7 @@ stone_stochastic_graph <- function(base,
 
   # Plot the one or two graphs
 
-  res <- list()
-  for (i in 1:n_graphs) {
+  lapply(1:n_graphs, function(i) {
     touchstone_title <- touchstones[min(i, length(touchstones))]
     group_title <- groups[min(i, length(groups))]
     title <- sprintf("%s, %s, %s, %s\n%s, %s\n",
@@ -237,9 +322,8 @@ stone_stochastic_graph <- function(base,
             col = "#2020ff", lwd = 2)
     }
 
-    res[[i]] <- recordPlot()
-  }
-  res
+    recordPlot()
+  })
 }
 
 get_burden_difference <- function(data, outcome) {
@@ -256,21 +340,18 @@ get_burden_difference <- function(data, outcome) {
 get_graph_data <- function(base, touchstone, disease, group, country,
                            scenarios, outcome, by_cohort) {
 
-  data <- list()
-  for (s in seq_along(scenarios)) {
+  data <- lapply(scenarios, function(scenario) {
     pq <- sprintf("%s/%s/%s_%s/%s_%s_%s.pq", base, touchstone, disease,
-                  group, group, scenarios[s], country)
+                  group, group, scenario, country)
 
     if (!file.exists(pq)) {
       cli::cli_abort("Couldn't find file {pq} - check files or parameters")
     }
     d <- arrow::read_parquet(pq)
-    if (by_cohort) {
-      d$year <- d$year - d$age
-    }
+    d$year <- if (by_cohort) d$year - d$age else d$year
     d <- d[order(d$year ,d$age, d$run_id), ]
-    data[[s]] <- d[, c("run_id", "year", "age", outcome)]
-  }
+    d[, c("run_id", "year", "age", outcome)]
+  })
   get_burden_difference(data, outcome)
 }
 
@@ -301,16 +382,13 @@ get_packit_data <- function(packit_id, packit_file,
   central <- central[central$country == country, ]
   central <- central[central$burden_outcome == outcome, ]
 
-  data <- list()
-  for (s in seq_along(scenarios)) {
-    d <- central[central$scenario == scenarios[s], ]
-    if (by_cohort) {
-      d$year <- d$year - d$age
-    }
+  data <- lapply(scenarios, function(scenario) {
+    d <- central[central$scenario == scenario, ]
+    d$year <- if (by_cohort) d$year - d$age else d$year
     names(d)[names(d) == "value"] <- outcome
-    d <- d[order(d$year, d$age), ]
-    data[[s]] <- d
-  }
+    d[order(d$year, d$age), ]
+  })
+
   d <- get_burden_difference(data, outcome)
   d <- as.data.frame(d[, c("year", "age", outcome)])
   d$run_id <- 1

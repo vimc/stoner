@@ -288,11 +288,24 @@ stone_stochastic_central <- function(base, touchstone, disease, group,
 ##' @importFrom data.table rbindlist
 ##' @importFrom utils write.csv
 ##' @param path The root folder of the stochastic data.
+##' @returns Nothing - called for side-effect of writing meta.csv.
 
 stone_stochastic_make_meta <- function(path) {
 
+  # Only called from within stone_stochastic_make_meta.
+  # Here are looking at all the files within a group's
+  # folder, to calculate the per-scenario lists of
+  # outcomes and scenarios; each scenario produces
+  # one line of meta-data for the final csv.
+
   explore_files <- function(touchstone, folder, disease, group) {
     files <- list.files(file.path(path, touchstone, folder))
+
+    # outcomes are assumed to be the same in all scenarios for
+    # a given touchstone/modelling group/disease. Pick the
+    # first file we find, read the header, and exclude the
+    # mandatory columns, to leave the outcomes.
+
     first <- file.path(path, touchstone, folder, files[1])
     ds <- arrow::open_dataset(first)
     outcomes <- ds$schema$names
@@ -300,32 +313,59 @@ stone_stochastic_make_meta <- function(path) {
                                           "country", "cohort_size")]
     outcomes <- sort(unique(tolower(outcomes)))
 
-    files <- strsplit(list.files(file.path(path, touchstone, folder)), "_")
+    # Filenames are in the format Group_Scenario_Country.pq -
+    # split by the underscore to get scenarios
 
+    files <- strsplit(list.files(file.path(path, touchstone, folder)), "_")
     scenarios <- unique(unlist(lapply(files, `[[`, 2)))
-    df <- data.frame()
-    for (scenario in scenarios) {
+
+    # Countries can (rarely) be different for different scenarios.
+    # For each scenario, find all the files in that scenario, then
+    # select the "Country.pq" and remove the ".pq". Then build
+    # a single-row data-frame, to be bound together at the end.
+
+    data.table::rbindlist(lapply(scenarios, function(scenario) {
       matches <- files[unlist(lapply(files, `[[`, 2)) == scenario]
       countries <- unique(unlist(lapply(matches, `[[`, 3)))
       countries <- gsub(".pq", "", countries)
-      df <- rbind(df, data.frame(
+      data.frame(
         touchstone = touchstone,
         disease = disease,
         group = group,
         scenario = scenario,
         countries = paste0(countries, collapse = ";"),
         outcomes = paste0(outcomes, collapse = ";")
-      ))
-    }
-    df
+      )
+    }))
   }
+
+  # For a given touchstone (ie, a folder name inside the
+  # stochastic file share), look in that folder and find
+  # all the internal folder names. They will be in the form
+  # Disease_Group, so split by "_", explore the files in
+  # each folder, and bind all the results together.
 
   touchstone_meta <- function(touchstone) {
     entries <- list.files(file.path(path, touchstone))
     data.table::rbindlist(lapply(entries, function(x) {
       xs <- strsplit(x, "_")[[1]]
-      explore_files(touchstone, x, xs[1], xs[2])
+      explore_files(touchstone = touchstone,
+                    folder = x,
+                    disease = xs[1],
+                    group = xs[2])
     }))
+  }
+
+  # Start here. Check the path exists and is writeable. If ok, it contains one
+  # folder per touchstone; the resulting meta.csv is the rbind of
+  # all the rows we get by calling touchstone_meta for each touchstone.
+
+  if (!dir.exists(path)) {
+    cli::cli_abort("Path {path} not found")
+  }
+
+  if (!checkmate::test_path_for_output(file.path(path, "not_exist.csv"))) {
+    cli::cli_abort("Path {path} seems non-writable")
   }
 
   touchstones <- basename(list.dirs(paste0(path, "/"), recursive = FALSE))

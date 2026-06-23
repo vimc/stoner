@@ -5,7 +5,8 @@ context("stochastic_graphs")
 
 test_that("stochastic_graph data transforms", {
 
-  base <- tempdir()
+  base <- file.path(tempdir(), "root")
+  dir.create(base, showWarnings = FALSE, recursive = TRUE)
   touchstone <- "t"
   disease <- "d"
   group <- "elf"
@@ -80,6 +81,8 @@ test_that("stochastic_graph data transforms", {
 
   # Test graph - we can't really, but just check it doesn't crash; we've
   # already tested the functions being called.
+
+  stone_stochastic_make_meta(base)
 
   expect_no_error(stone_stochastic_graph(
     base, touchstone, disease, group, country,
@@ -158,7 +161,7 @@ test_that("Filter formats are reasonable", {
   expect_equal(filter_string(c(2,4,6,8), "potatoes"), "selected potatoes")
 })
 
-test_that("Arguments are tested", {
+test_that("Argument counts are tested", {
 
   expect_error(stone_stochastic_graph(
     "b", c("T1", "T2", "T3"), "d", "g", "c", "s", "o"),
@@ -167,6 +170,14 @@ test_that("Arguments are tested", {
   expect_error(stone_stochastic_graph(
     "b", NULL, "d", "g", "c", "s", "o"),
     "Only specify one or two touchstones")
+
+  expect_error(stone_stochastic_graph(
+    "b", "T1", NULL, "g", "c", "s", "o"),
+    "Only specify one disease")
+
+  expect_error(stone_stochastic_graph(
+    "b", "T1", c("D1", "D2"), "g", "c", "s", "o"),
+    "Only specify one disease")
 
   expect_error(stone_stochastic_graph(
     "b", "t", "d", NULL, "c", "s", "o"),
@@ -192,13 +203,73 @@ test_that("Arguments are tested", {
     "b", c("T1", "T2"), "d", c("g1", "g2"), "c", c("s1", "s2"), "o"),
     "Only one of `touchstones` or `groups` can be plural")
 
-  expect_error(stone_stochastic_graph(
-    "b", c("T1", "T2"), "d", "g", "c", c("s1", "s2"), "o", xaxis = "potato"),
-    "`xaxis` must be either `time` or `age`")
+})
+
+test_that("Arguments are validated", {
 
   expect_error(stone_stochastic_graph(
     "b", c("T1", "T2"), "d", "g", "c", c("s1", "s2"), "o", xaxis = "age"),
-    "Couldn't find file")
+    "Please call stone_stochastic_meta")
+
+  path <- file.path(tempdir(), "root2")
+  dir.create(path, showWarnings = FALSE, recursive = TRUE)
+  meta <- data.frame(
+    touchstone = c("T1", "T1", "T1", "T1", "T2", "T2", "T2", "T2"),
+       disease = rep("D", 8),
+         group = c("G1", "G1", "G2", "G2", "G1", "G1", "G4", "G4"),
+      scenario = c("S1", "S2", "S1", "S2", "S3", "S4", "S3", "S4"),
+      countries = c("A;B;C", "A;B", "A;B;C", "A;B;C", "A;B", "A;B;C", "A;B", "A;B;C"),
+      outcomes = c("X:Y", "X:Y", "X;Y;Z", "X;Y;Z", "X;Y", "X;Y", "X;Y", "X;Y"))
+  write.csv(meta, file.path(path, "meta.csv"), row.names = FALSE, quote = FALSE)
+
+  # Touchstone not found
+
+  expect_error(stone_stochastic_graph(path, "T3", "D", "G1", "A", "S1", "X"),
+               "Touchstone not found: T3")
+
+  expect_error(stone_stochastic_graph(path, c("T1", "T3"), "D", "G1", "A", "S1", "X"),
+               "Touchstone not found: T3")
+
+  # Disease not found
+
+  expect_error(stone_stochastic_graph(path, "T1", "X", "G1", "A", "S1", "X"),
+               "Disease X not found in touchstone T1")
+
+  # Modelling group not found
+
+  expect_error(stone_stochastic_graph(path, "T1", "D", "G3", "A", "S1", "X"),
+               "Groups not found in T1: G3")
+
+  expect_error(stone_stochastic_graph(path, c("T1", "T2"), "D", "G2", "A", "S1", "X"),
+               "Groups not found in T2: G2")
+
+  # Scenario(s) not found
+
+  expect_error(stone_stochastic_graph(path, "T1", "D", "G1", "A", "S3", "X"),
+               "Scenario S3 not found in T1, G1")
+
+  expect_error(stone_stochastic_graph(path, "T1", "D", "G1", "A", c("S1", "S3"), "X"),
+               "Scenario S3 not found in T1, G1")
+
+  expect_error(stone_stochastic_graph(path, c("T1", "T2"), "D", "G1", "A", c("S1", "S3"), "X"),
+               "Scenario S1 not found in T2, G1")
+
+  # Country not found
+
+  expect_error(stone_stochastic_graph(path, "T2", "D", "G1", "C", c("S3", "S4"), "X"),
+               "Country C not found in T2, G1, S3")
+
+  # Outcome(s) not found
+
+  expect_error(stone_stochastic_graph(path, "T1", "D", c("G2", "G1"), "A", "S2", "Z"),
+               "Outcome Z not found in T1, G1, S2")
+
+  # X-axis wrong
+
+  expect_error(stone_stochastic_graph(
+    path, "T1", "D", "G1", "A", c("S1", "S2"), "X", xaxis = "potato"),
+    "`xaxis` must be either `time` or `age`")
+
 })
 
 

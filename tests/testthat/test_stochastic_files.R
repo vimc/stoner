@@ -362,3 +362,15 @@ test_that("Can produce metadata", {
   expect_equal(t2$outcomes, "cases;dalys;deaths;potatoes")
 })
 
+test_that("Meta - incorrect path", {
+  tmpout <- file.path(tempdir(), "potato", "potato", "potato")
+  expect_error(stone_stochastic_make_meta(tmpout),
+               "Path(.*)not found")
+})
+
+test_that("Meta - writeable", {
+  tmpout <- file.path(tempdir())
+  write.csv(mtcars, file.path(tmpout, "not_exist.csv"))
+  expect_error(stone_stochastic_make_meta(tmpout),
+               "Path(.*)seems non-writable")
+})

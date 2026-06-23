@@ -49,30 +49,29 @@ destination where we want to write our standardised files. These I'll call
 `in_path` and `out_path`. The `out_path` folders I am assuming will be only
 written to by stoner; paths and filenames will adhere to the following format:-
 
--   Within the root of the share we will have the **touchstone**, without a
-    version. At time of writing, we have `202310gavi` and `202409malaria`. I am
-    not anticipating having separate stochastics for separate versions of the
-    stochastics at this point.
+- Within the root of the share we will have the **touchstone**, without a
+  version. At time of writing, we have `202310gavi` and `202409malaria`. I am
+  not anticipating having separate stochastics for separate versions of the
+  stochastics at this point.
 
--   Within those touchstone folders, we have more folders in the form
-    `Disease_Modelling-Group` - such as `COVID_IC-Ghani` or `YF_IC-Garske`. The
-    groups and diseases set up here copy the historic contents of the Montagu
-    database.
+- Within those touchstone folders, we have more folders in the form
+  `Disease_Modelling-Group` - such as `COVID_IC-Ghani` or `YF_IC-Garske`. The
+  groups and diseases set up here copy the historic contents of the Montagu
+  database.
 
--   Within each of these folders, we will be writing a file per country per
-    scenario, containing all run_ids, named in the format
-    `Modelling-Group_scenario_country.pq` - for example,
-    `IC-Garske_yf-routine-ia2030_KEN.pq`. If we also create a average (central)
-    of the stochastics (see later), that will be called
-    `IC-Garske_yf-routine-ia2030_central.pq`, containing all the countries, and
-    no run_id.
+- Within each of these folders, we will be writing a file per country per
+  scenario, containing all run_ids, named in the format
+  `Modelling-Group_scenario_country.pq` - for example,
+  `IC-Garske_yf-routine-ia2030_KEN.pq`. If we also create a average (central) of
+  the stochastics (see later), that will be called
+  `IC-Garske_yf-routine-ia2030_central.pq`, containing all the countries, and no
+  run_id.
 
--   Finally, in the root of the standardised folder, we'll keep a file
-    `meta.csv` to describe in one file the range of stochastic data we have by
-    touchstone, disease, group and scenario, and for each the outcomes and
-    countries provided. This is useful for speeding up the stochastic explorer
-    shiny app, but also may be a useful quick reference of our inventory in
-    general.
+- Finally, in the root of the standardised folder, we'll keep a file `meta.csv`
+  to describe in one file the range of stochastic data we have by touchstone,
+  disease, group and scenario, and for each the outcomes and countries provided.
+  This is useful for speeding up the stochastic explorer shiny app, but also may
+  be a useful quick reference of our inventory in general.
 
 #### Example Usage - One file per scenario
 
@@ -193,15 +192,15 @@ to allow processing to be done normally.
 
 ### Other Considerations:
 
--   Stoner rounds of all the outcomes, (deaths, cases, dalys, yll and
-    cohort_size) to be integer-like, which can create some confusion with small
-    countries with a very small number of cases, but we expect those confusions.
-    Some groups still provide us with 16 decimal places, which creates some
-    problems, and the integer-like rounding is in the guidance.
+- Stoner rounds of all the outcomes, (deaths, cases, dalys, yll and cohort_size)
+  to be integer-like, which can create some confusion with small countries with
+  a very small number of cases, but we expect those confusions. Some groups
+  still provide us with 16 decimal places, which creates some problems, and the
+  integer-like rounding is in the guidance.
 
--   Note that for some groups with very large files (especially those with 16
-    decimal places), the processing takes **a lot of memory** - towards 128Gb.
-    So run these on a large machine or perhaps a cluster node.
+- Note that for some groups with very large files (especially those with 16
+  decimal places), the processing takes **a lot of memory** - towards 128Gb. So
+  run these on a large machine or perhaps a cluster node.
 
 ### More about the paths
 
@@ -458,14 +457,14 @@ stoner::stochastic_explorer(path)
 The features in the GUI closely map onto the parameters for `stochastic_graph`
 in the following ways:
 
--   The tabs along the top let you choose a single graph, a comparison by
-    touchstone, or a comparison by modelling group, firstly for simply burdens,
-    and secondly for differences between scenarios. Different tabs therefore
-    cause different components in the sidebar to be available.
--   One or two touchstones, groups, or scenarios will be available depending on
-    the tab.
--   Whether the x-axis is time or age, and whether by cohort, are all selected
-    in the x-axis dropdown.
--   The filter text, whether for time or for age, is a comma-separated list of
-    numbers or dash-separated ranges. So in a contrived example, `0-5,50,95-100`
-    would select the very young, very old, and exactly 50-year olds.
+- The tabs along the top let you choose a single graph, a comparison by
+  touchstone, or a comparison by modelling group, firstly for simply burdens,
+  and secondly for differences between scenarios. Different tabs therefore cause
+  different components in the sidebar to be available.
+- One or two touchstones, groups, or scenarios will be available depending on
+  the tab.
+- Whether the x-axis is time or age, and whether by cohort, are all selected in
+  the x-axis dropdown.
+- The filter text, whether for time or for age, is a comma-separated list of
+  numbers or dash-separated ranges. So in a contrived example, `0-5,50,95-100`
+  would select the very young, very old, and exactly 50-year olds.
