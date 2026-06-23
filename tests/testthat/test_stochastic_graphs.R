@@ -219,7 +219,7 @@ test_that("Arguments are validated", {
          group = c("G1", "G1", "G2", "G2", "G1", "G1", "G4", "G4"),
       scenario = c("S1", "S2", "S1", "S2", "S3", "S4", "S3", "S4"),
       countries = c("A;B;C", "A;B", "A;B;C", "A;B;C", "A;B", "A;B;C", "A;B", "A;B;C"),
-      outcomes = c("X:Y", "X:Y", "X;Y;Z", "X;Y;Z", "X;Y", "X;Y", "X;Y", "X;Y"))
+      outcomes = c("X;Y", "X;Y", "X;Y;Z", "X;Y;Z", "X;Y", "X;Y", "X;Y", "X;Y"))
   write.csv(meta, file.path(path, "meta.csv"), row.names = FALSE, quote = FALSE)
 
   # Touchstone not found
