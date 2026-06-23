@@ -363,7 +363,7 @@ test_that("Can produce metadata", {
 })
 
 test_that("Meta - incorrect path", {
-  tmpout <- file.path(tempdir(), "potato", "potato", "potato")
+  tmpout <- file.path(tempdir(), "incorrect")
   expect_error(stone_stochastic_make_meta(tmpout),
                "Path(.*)not found")
 })
