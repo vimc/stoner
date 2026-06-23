@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Stochastics • stoner</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="Stochastics">
@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">stoner</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@
                         <h4 data-toc-skip class="author">Wes
 Hinsley</h4>
             
-            <h4 data-toc-skip class="date">2026-04-15</h4>
+            <h4 data-toc-skip class="date">2026-06-23</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/vimc/stoner/blob/master/vignettes/Stochastics.Rmd" class="external-link"><code>vignettes/Stochastics.Rmd</code></a></small>
       <div class="d-none name"><code>Stochastics.Rmd</code></div>
@@ -84,12 +84,13 @@ make the files more predictable to work with. For a good compromise
 between ease-of-use, performance and compression, we have used the
 <code>Parquet</code> format and the <code>arrow</code> package. This
 vignette covers how to process the data, how to create a central from a
-set of stochastics, and how to see a graph of the stochastics for quick
-diagnosis.</p>
+set of stochastics, how to produce some graphs of the stochastics for
+quick diagnosis, and also how to use the stochastic explorer, a local
+shiny app for exploring and comparing stochastic datasets.</p>
 <div class="section level3">
 <h3 id="creating-standard-stochastic-files">Creating standard stochastic files<a class="anchor" aria-label="anchor" href="#creating-standard-stochastic-files"></a>
 </h3>
-<p>This has superceded <code>stoner_stochastic_process</code>, which
+<p>This has superseded <code>stoner_stochastic_process</code>, which
 will be removed and undocumented soon.</p>
 <p>Here, we are mostly likely working with two folders or network
 shares, one of which contains the stochastics that groups have uploaded,
@@ -115,6 +116,12 @@ country per scenario, containing all run_ids, named in the format
 average (central) of the stochastics (see later), that will be called
 <code>IC-Garske_yf-routine-ia2030_central.pq</code>, containing all the
 countries, and no run_id.</p></li>
+<li><p>Finally, in the root of the standardised folder, we’ll keep a
+file <code>meta.csv</code> to describe in one file the range of
+stochastic data we have by touchstone, disease, group and scenario, and
+for each the outcomes and countries provided. This is useful for
+speeding up the stochastic explorer shiny app, but also may be a useful
+quick reference of our inventory in general.</p></li>
 </ul>
 <div class="section level4">
 <h4 id="example-usage---one-file-per-scenario">Example Usage - One file per scenario<a class="anchor" aria-label="anchor" href="#example-usage---one-file-per-scenario"></a>
@@ -136,10 +143,13 @@ Yellow Fever standardisation:-</p>
 <span>  files <span class="op">=</span> <span class="st">"burden_results_stochastic_202310gavi-3_:scenario Keith Fraser.csv.xz"</span><span class="op">)</span></span></code></pre>
 <p><code>base_in_path</code> and <code>base_out_path</code> are defined
 elsewhere, and are my drive mappings to the incoming, and destination
-network shares. We provide the group name, the paths to the uploaded
-files (note the original dropbox path was a little incorrect with its
-dashes instead of underscores!) - and the destination path in the format
-described above.</p>
+network shares. We’ll briefly talk about those later.</p>
+<p>We provide the group name, the paths to the uploaded files and the
+destination we want to write files to. Note that the
+<code>in_path</code> is not managed, and might be arbitrary - here it
+has dashes instead of underscores; but the <code>out_path</code>, we
+need to be careful to get right, in the format <code>disease</code> then
+underscore then the modelling group.</p>
 <p>We then provide the vector of scenarios, and because this group
 follow the guidance very well, they have included the exact scenario in
 the filenames. We can therefore use the <code>:scenario</code> glob in
@@ -186,6 +196,19 @@ number their files using the <code>index</code> method above, rather
 than having country names or ISO codes in the filename. We could do
 better if this proves to be a popular method.</p>
 </div>
+</div>
+<div class="section level3">
+<h3 id="updating-the-meta-data">Updating the meta-data<a class="anchor" aria-label="anchor" href="#updating-the-meta-data"></a>
+</h3>
+<p>Having run <code>stone_stochastic_standardise</code> and made changes
+to the structure, to enable the stochastic explorer shiny app to use the
+data (and to keep a useful file up-to-date), we need to run a command to
+update the metadata.</p>
+<pre><code><span><span class="fu">stoner</span><span class="fu">::</span><span class="fu"><a href="../reference/stone_stochastic_make_meta.html">stone_stochastic_make_meta</a></span><span class="op">(</span><span class="va">out_path</span><span class="op">)</span></span></code></pre>
+<p>which will run for a few seconds, recreating the entire file. The
+columns are touchstone, disease, group, scenario, countries and
+outcomes; the first four will be single elements, whereas countries and
+outcomes will be semi-colon separated lists.</p>
 </div>
 <div class="section level3">
 <h3 id="advanced-usage">Advanced Usage<a class="anchor" aria-label="anchor" href="#advanced-usage"></a>
@@ -238,6 +261,29 @@ memory</strong> - towards 128Gb. So run these on a large machine or
 perhaps a cluster node.</p></li>
 </ul>
 </div>
+<div class="section level3">
+<h3 id="more-about-the-paths">More about the paths<a class="anchor" aria-label="anchor" href="#more-about-the-paths"></a>
+</h3>
+<p>If at all possible, you should perform Stoner tasks on a computer
+within DIDE, connected with a cable. Stochastic processing involves
+large volumes of data, and ZScaler from outside, or even WiFi from
+inside may not copy that well with these tasks.</p>
+<p>On a DIDE Windows machine, <code>in_path</code> and
+<code>out_path</code> can be fully-qualified paths to DIDE network
+shares, which only members of the VIMC team have access to. This is
+probably the easiest case.</p>
+<p>On Linux or Mac, you have to mount the DIDE network shares, providing
+your DIDE details, and it is up to you what you call your local
+mountpoints. On linux, they may start with <code>/mnt/</code> and on Mac
+<code>/Volume/</code>. Talk to IT, if you need help setting up those
+mounts.</p>
+<p>And lastly, if you’re on a windows machine but for some reason need
+to work externally, then use ZScaler, map drive letters to the network
+shares, and pass those in, but as we said, this is not recommended as
+it’s not particularly stable. If at all possible, use an internal
+machine to do the heavy data work, and remote desktop into that if you
+need to be external.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="creating-a-central-estimate">Creating a central estimate<a class="anchor" aria-label="anchor" href="#creating-a-central-estimate"></a>
@@ -260,30 +306,193 @@ matches the other standardised filenames, except for the country; this
 one central file will contain all countries.</p>
 <p>The default averaging function is <code>mean</code> - if we really
 want the <code>median</code> of the stochastics, then add the argument
-<code>avg_method = mean</code> to the function call.</p>
+<code>avg_method = mean</code> to the function call. Note the lack of
+quotes - we are sending a function, not the name of a function.</p>
 </div>
 <div class="section level2">
 <h2 id="creating-stochastic-graphs">Creating stochastic graphs<a class="anchor" aria-label="anchor" href="#creating-stochastic-graphs"></a>
 </h2>
-<p>It can be useful to quickly dig out a graph showing all the
-stochastic lines together, to see what sort of spread they have. Again,
-with <code>base</code> set to the root of the share where we are putting
-our standardised outputs, here is an example function call, and the
-graph that it produces.</p>
+<p>The <code>stone_stochastuc_graph</code> function can dig out a range
+of different graphs. If you want to explore the stochastics
+interactively, then try the shiny app (below) - but for programmatic
+plotting, read on.</p>
+<div class="section level3">
+<h3 id="basic-burdens-">Basic burdens.<a class="anchor" aria-label="anchor" href="#basic-burdens-"></a>
+</h3>
+<p>With <code>base</code> set to the root of the share where we are
+putting our standardised outputs, here is an example function call, and
+the graph that it produces.</p>
 <pre><code><span><span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202310gavi"</span>, <span class="st">"YF"</span>, <span class="st">"IC-Garske"</span>,</span>
-<span>                       <span class="st">"KEN"</span>, <span class="st">"yf-routine-campaign-ia2030"</span>,</span>
+<span>                       <span class="st">"KEN"</span>, <span class="st">"yf-no-vaccination"</span>,</span>
 <span>                       <span class="st">"deaths"</span><span class="op">)</span></span></code></pre>
-<div class="float">
-<img src="figures/stoch_example_1.png" alt="Stochastic graph of IC-Garske, YF, Kenya, 202310gavi deaths."><div class="figcaption">Stochastic graph of IC-Garske, YF, Kenya,
-202310gavi deaths.</div>
+<p><img src="figures/stoch_example_1.png"></p>
+<p>The grey lines are each and every stochastic run. Red is the mean,
+and green is the median of the stochastics. The thicker black lines are
+the 5% and 95% quantiles. We can toggle the presence of each of those
+line types with the optional arguments <code>include_stochastics</code>,
+<code>include_quantiles</code>, <code>include_mean</code> and
+<code>include_median</code>, which can be set to <code>FALSE</code>, or
+left as the default <code>TRUE</code>.</p>
 </div>
-<p>Red is the mean, and green is the median of the stochastics, and the
-thicker black lines are the 5% and 95% quantiles. Other useful arguments
-for graphs are <code>by_cohort</code> which plots a graph with birth
-cohort on the x-axis instead of calendar year, <code>log</code> which
-causes the y-axis to be log-scale, and <code>ages</code> can be a vector
-of ages to filter to, for example <code>0:4</code> to plot stochastics
-of under 5s.</p>
+<div class="section level3">
+<h3 id="burden-differences">Burden Differences<a class="anchor" aria-label="anchor" href="#burden-differences"></a>
+</h3>
+<p>If we specify two scenarios instead of one, then the plot will be the
+burden of the first scenario, subtract the burden of the second - i.e.,
+the difference made by applying a scenario. Below is an example - I’ll
+also add the <code>log = TRUE</code> argument to get a logged
+y-axis.</p>
+<pre><code><span><span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202310gavi"</span>, <span class="st">"YF"</span>, <span class="st">"IC-Garske"</span>,</span>
+<span>                       <span class="st">"KEN"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-routine-campaign-ia2030"</span><span class="op">)</span>,</span>
+<span>                       <span class="st">"deaths"</span>, log <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre>
+<p><img src="figures/stoch_burden_diff.png"></p>
+<p>The y-axis now reads “deaths averted” instead of just deaths.</p>
+</div>
+<div class="section level3">
+<h3 id="comparing-touchstones">Comparing touchstones<a class="anchor" aria-label="anchor" href="#comparing-touchstones"></a>
+</h3>
+<p>You may have noticed that <code>stone_stochastic_graph</code> when
+you run it causes a plot to appear, but is actually returning you a list
+of plots - one so far. If we specify two touchstones, then stoner will
+instead return us a list of two graphs - assuming that the same disease,
+group and scenarios are present in both touchstones. The y-axis will be
+matched between the two, so we can see the pair of graphs for
+comparison.</p>
+<p>Below is an example returning to just a single scenario, although you
+can provide two and compare burden differences across two touchstones
+too. Here I am collecting both resulting graphs, and then plotting them
+one by one.</p>
+<pre><code><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"202110gavi"</span>, <span class="st">"202310gavi"</span><span class="op">)</span>, <span class="st">"YF"</span>, <span class="st">"IC-Garske"</span>,</span>
+<span>                       <span class="st">"ETH"</span>, <span class="st">"yf-no-vaccination"</span>,</span>
+<span>                       <span class="st">"deaths"</span>, log <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">res</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">res</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></code></pre>
+<div style="display: flex; gap: 10px;">
+<p><img src="figures/stoch_compare_ts_1.png" width="49%"><img src="figures/stoch_compare_ts_2.png" width="49%"></p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="comparing-modelling-groups">Comparing modelling groups<a class="anchor" aria-label="anchor" href="#comparing-modelling-groups"></a>
+</h3>
+<p>Similarly, within the same touchstone, we can compare two modelling
+groups, with either a single scenario, or pair of scenarios. The
+disease, scenarios and outcomes must be compatible between the two
+groups. Here’s a comparison of burden difference:</p>
+<pre><code><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202310gavi"</span>, <span class="st">"YF"</span>, </span>
+<span>                              <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"IC-Garske"</span>, <span class="st">"UND-Perkins"</span><span class="op">)</span>,</span>
+<span>                              <span class="st">"UGA"</span>, </span>
+<span>                              <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yf-no-vaccination"</span>, <span class="st">"yf-routine-default"</span><span class="op">)</span>,</span>
+<span>                              <span class="st">"cases"</span><span class="op">)</span></span>
+<span><span class="va">res</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">res</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></code></pre>
+<div style="display: flex; gap: 10px;">
+<p><img src="figures/stoch_compare_mg_1.png" width="49%"><img src="figures/stoch_compare_mg_2.png" width="49%"></p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="filtering-by-age">Filtering by age<a class="anchor" aria-label="anchor" href="#filtering-by-age"></a>
+</h3>
+<p>The stochastic data contains both years and ages. Our plots so far
+have been using time on the x-axis, and all the ages have been summed
+together for each calendar year. We can also filter by age before
+plotting. The example below filters to ages between 0 and 4 inclusive
+(ie, under 5 year-olds).</p>
+<pre><code><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202310gavi"</span>, <span class="st">"YF"</span>, <span class="st">"IC-Garske"</span>, <span class="st">"UGA"</span>,</span>
+<span><span class="st">"yf-no-vaccination"</span>, <span class="st">"deaths"</span>, filter <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">4</span><span class="op">)</span></span></code></pre>
+<p><img src="figures/stoch_u5.png"></p>
+</div>
+<div class="section level3">
+<h3 id="plotting-by-birth-cohort">Plotting by birth cohort<a class="anchor" aria-label="anchor" href="#plotting-by-birth-cohort"></a>
+</h3>
+<p>The <code>by_cohort</code> parameter lets us subtract age from year
+before plotting, so we can see burden specific to people who were born
+in a certain year, rather than the previous plots, which have all
+treated the x-axis as calendar year.</p>
+<pre><code><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202310gavi"</span>, <span class="st">"YF"</span>, <span class="st">"IC-Garske"</span>, <span class="st">"UGA"</span>,</span>
+<span>                              <span class="st">"yf-no-vaccination"</span>, <span class="st">"deaths"</span>, by_cohort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre>
+<p><img src="figures/stoch_cohort.png"></p>
+</div>
+<div class="section level3">
+<h3 id="age-on-the-x-axis">Age on the x-axis<a class="anchor" aria-label="anchor" href="#age-on-the-x-axis"></a>
+</h3>
+<p>If instead we want to see how burden affects people of different ages
+throughout the time series, we can set <code>xaxis</code> to
+<code>age</code> (its default is <code>time</code>).</p>
+<pre><code><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202602yf"</span>, <span class="st">"YF"</span>, <span class="st">"IC-Gaythorpe"</span>, <span class="st">"UGA"</span>,</span>
+<span>                              <span class="st">"yf-no-vaccination"</span>, <span class="st">"deaths"</span>, xaxis <span class="op">=</span> <span class="st">"age"</span><span class="op">)</span></span></code></pre>
+<p><img src="figures/stoch_byage.png"></p>
+<p>This sums over the entire range of years. If <code>xaxis</code> is
+age, then the <code>filter</code> argument will let you select which
+years are to be included. This example shows the burden by age in the
+years 2040-2050.</p>
+<pre><code><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202602yf"</span>, <span class="st">"YF"</span>, <span class="st">"IC-Gaythorpe"</span>, <span class="st">"UGA"</span>,</span>
+<span>                              <span class="st">"yf-no-vaccination"</span>, <span class="st">"deaths"</span>, xaxis <span class="op">=</span> <span class="st">"age"</span>,</span>
+<span>                              filter <span class="op">=</span> <span class="fl">2040</span><span class="op">:</span><span class="fl">2050</span><span class="op">)</span></span></code></pre>
+<p><img src="figures/stoch_byage_filter.png"></p>
+<p>And if we additionally set the <code>by_cohort</code> flag, then we
+are asking for the burden breakdown by age, for people who were born
+within the filtered range, rather than selecting a calendar year
+range.</p>
+<pre><code><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stone_stochastic_graph.html">stone_stochastic_graph</a></span><span class="op">(</span><span class="va">base</span>, <span class="st">"202602yf"</span>, <span class="st">"YF"</span>, <span class="st">"IC-Gaythorpe"</span>, <span class="st">"UGA"</span>,</span>
+<span>                              <span class="st">"yf-no-vaccination"</span>, <span class="st">"deaths"</span>, xaxis <span class="op">=</span> <span class="st">"age"</span>,</span>
+<span>                              filter <span class="op">=</span> <span class="fl">2040</span><span class="op">:</span><span class="fl">2050</span>, by_cohort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre>
+<p><img src="figures/stoch_byage_filter_cohort.png"> The graph has
+this shape because the stochastics here only continue until 2100, hence
+the last 60-year olds will be born in 2040.</p>
+</div>
+<div class="section level3">
+<h3 id="including-data-from-packit-">Including data from packit.<a class="anchor" aria-label="anchor" href="#including-data-from-packit-"></a>
+</h3>
+<p>Lastly, if a central burden estimate has been included in a packit in
+Montagu’s reporting portal, we can include that on a graph by specifying
+the id, and the name of the file within that packit. For example, this
+graph shows both the stochastics from the file share, and the central
+from a packit, which is drawn in blue.</p>
+<pre><code>res &lt;- stone_stochastic_graph(base, "202602yf", "YF", "IC-Gaythorpe", "UGA",
+                              "yf-no-vaccination", "deaths", 
+                              packit_id = "20260421-090519-e4a90228",
+                              packit_file = "burden-estimates-disaggregated.rds")
+
+Visit &lt;https://montagu.vaccineimpact.org/packit/device&gt; and enter code DNLH-NMRL
+
+✔ Waiting for response from server [10.6s]</code></pre>
+<p><img src="figures/stoch_packit.png"></p>
+<p>And here’s an example of a burden difference graph, showing how much
+difference the <code>yf-routine-default</code> scenario makes in both
+the stochastics, and the central from packit.</p>
+<pre><code>res &lt;- stone_stochastic_graph(base, "202602yf", "YF", "IC-Gaythorpe", "UGA",
+                               c("yf-no-vaccination", "yf-routine-default"), "deaths", 
+                               packit_id = "20260421-090519-e4a90228",
+                               packit_file = "burden-estimates-disaggregated.rds")
+
+Visit &lt;https://montagu.vaccineimpact.org/packit/device&gt; and enter code MBWV-NBBC
+✔ Waiting for response from server [10.9s]</code></pre>
+<p><img src="figures/stoch_packit_diff.png"> ## The stochastic
+explorer shiny app</p>
+<p>All of the graphs above (except currently the packit graphs) can be
+visualised interactively using a shiny app that is part of stoner. We
+call it providing the path to the root of the standardised stochastic
+data, where the <code>meta.csv</code> file should also be found.</p>
+<pre><code><span><span class="fu">stoner</span><span class="fu">::</span><span class="fu"><a href="../reference/stochastic_explorer.html">stochastic_explorer</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span></code></pre>
+<p><img src="figures/stoch_explorer.png"></p>
+<p>The features in the GUI closely map onto the parameters for
+<code>stochastic_graph</code> in the following ways:</p>
+<ul>
+<li>The tabs along the top let you choose a single graph, a comparison
+by touchstone, or a comparison by modelling group, firstly for simply
+burdens, and secondly for differences between scenarios. Different tabs
+therefore cause different components in the sidebar to be
+available.</li>
+<li>One or two touchstones, groups, or scenarios will be available
+depending on the tab.</li>
+<li>Whether the x-axis is time or age, and whether by cohort, are all
+selected in the x-axis dropdown.</li>
+<li>The filter text, whether for time or for age, is a comma-separated
+list of numbers or dash-separated ranges. So in a contrived example,
+<code>0-5,50,95-100</code> would select the very young, very old, and
+exactly 50-year olds.</li>
+</ul>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

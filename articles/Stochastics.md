@@ -11,12 +11,14 @@ Stoner can process these stochastic files into a standard format to make
 the files more predictable to work with. For a good compromise between
 ease-of-use, performance and compression, we have used the `Parquet`
 format and the `arrow` package. This vignette covers how to process the
-data, how to create a central from a set of stochastics, and how to see
-a graph of the stochastics for quick diagnosis.
+data, how to create a central from a set of stochastics, how to produce
+some graphs of the stochastics for quick diagnosis, and also how to use
+the stochastic explorer, a local shiny app for exploring and comparing
+stochastic datasets.
 
 ### Creating standard stochastic files
 
-This has superceded `stoner_stochastic_process`, which will be removed
+This has superseded `stoner_stochastic_process`, which will be removed
 and undocumented soon.
 
 Here, we are mostly likely working with two folders or network shares,
@@ -44,6 +46,13 @@ adhere to the following format:-
   `IC-Garske_yf-routine-ia2030_central.pq`, containing all the
   countries, and no run_id.
 
+- Finally, in the root of the standardised folder, we’ll keep a file
+  `meta.csv` to describe in one file the range of stochastic data we
+  have by touchstone, disease, group and scenario, and for each the
+  outcomes and countries provided. This is useful for speeding up the
+  stochastic explorer shiny app, but also may be a useful quick
+  reference of our inventory in general.
+
 #### Example Usage - One file per scenario
 
 Examples used so far are in the `scripts` folder in the root of the
@@ -63,10 +72,14 @@ example of the Yellow Fever standardisation:-
       files = "burden_results_stochastic_202310gavi-3_:scenario Keith Fraser.csv.xz")
 
 `base_in_path` and `base_out_path` are defined elsewhere, and are my
-drive mappings to the incoming, and destination network shares. We
-provide the group name, the paths to the uploaded files (note the
-original dropbox path was a little incorrect with its dashes instead of
-underscores!) - and the destination path in the format described above.
+drive mappings to the incoming, and destination network shares. We’ll
+briefly talk about those later.
+
+We provide the group name, the paths to the uploaded files and the
+destination we want to write files to. Note that the `in_path` is not
+managed, and might be arbitrary - here it has dashes instead of
+underscores; but the `out_path`, we need to be careful to get right, in
+the format `disease` then underscore then the modelling group.
 
 We then provide the vector of scenarios, and because this group follow
 the guidance very well, they have included the exact scenario in the
@@ -112,6 +125,20 @@ number their files using the `index` method above, rather than having
 country names or ISO codes in the filename. We could do better if this
 proves to be a popular method.
 
+### Updating the meta-data
+
+Having run `stone_stochastic_standardise` and made changes to the
+structure, to enable the stochastic explorer shiny app to use the data
+(and to keep a useful file up-to-date), we need to run a command to
+update the metadata.
+
+    stoner::stone_stochastic_make_meta(out_path)
+
+which will run for a few seconds, recreating the entire file. The
+columns are touchstone, disease, group, scenario, countries and
+outcomes; the first four will be single elements, whereas countries and
+outcomes will be semi-colon separated lists.
+
 ### Advanced Usage
 
 You shouldn’t have to worry about these things, but this is just so that
@@ -156,6 +183,29 @@ done normally.
   16 decimal places), the processing takes **a lot of memory** - towards
   128Gb. So run these on a large machine or perhaps a cluster node.
 
+### More about the paths
+
+If at all possible, you should perform Stoner tasks on a computer within
+DIDE, connected with a cable. Stochastic processing involves large
+volumes of data, and ZScaler from outside, or even WiFi from inside may
+not copy that well with these tasks.
+
+On a DIDE Windows machine, `in_path` and `out_path` can be
+fully-qualified paths to DIDE network shares, which only members of the
+VIMC team have access to. This is probably the easiest case.
+
+On Linux or Mac, you have to mount the DIDE network shares, providing
+your DIDE details, and it is up to you what you call your local
+mountpoints. On linux, they may start with `/mnt/` and on Mac
+`/Volume/`. Talk to IT, if you need help setting up those mounts.
+
+And lastly, if you’re on a windows machine but for some reason need to
+work externally, then use ZScaler, map drive letters to the network
+shares, and pass those in, but as we said, this is not recommended as
+it’s not particularly stable. If at all possible, use an internal
+machine to do the heavy data work, and remote desktop into that if you
+need to be external.
+
 ## Creating a central estimate
 
 For many groups, their central estimates are the average of their
@@ -179,28 +229,202 @@ one central file will contain all countries.
 
 The default averaging function is `mean` - if we really want the
 `median` of the stochastics, then add the argument `avg_method = mean`
-to the function call.
+to the function call. Note the lack of quotes - we are sending a
+function, not the name of a function.
 
 ## Creating stochastic graphs
 
-It can be useful to quickly dig out a graph showing all the stochastic
-lines together, to see what sort of spread they have. Again, with `base`
-set to the root of the share where we are putting our standardised
-outputs, here is an example function call, and the graph that it
-produces.
+The `stone_stochastuc_graph` function can dig out a range of different
+graphs. If you want to explore the stochastics interactively, then try
+the shiny app (below) - but for programmatic plotting, read on.
+
+### Basic burdens.
+
+With `base` set to the root of the share where we are putting our
+standardised outputs, here is an example function call, and the graph
+that it produces.
 
     stone_stochastic_graph(base, "202310gavi", "YF", "IC-Garske",
-                           "KEN", "yf-routine-campaign-ia2030",
+                           "KEN", "yf-no-vaccination",
                            "deaths")
 
-![Stochastic graph of IC-Garske, YF, Kenya, 202310gavi
-deaths.](figures/stoch_example_1.png)
+![](figures/stoch_example_1.png)
 
-Stochastic graph of IC-Garske, YF, Kenya, 202310gavi deaths.
+The grey lines are each and every stochastic run. Red is the mean, and
+green is the median of the stochastics. The thicker black lines are the
+5% and 95% quantiles. We can toggle the presence of each of those line
+types with the optional arguments `include_stochastics`,
+`include_quantiles`, `include_mean` and `include_median`, which can be
+set to `FALSE`, or left as the default `TRUE`.
 
-Red is the mean, and green is the median of the stochastics, and the
-thicker black lines are the 5% and 95% quantiles. Other useful arguments
-for graphs are `by_cohort` which plots a graph with birth cohort on the
-x-axis instead of calendar year, `log` which causes the y-axis to be
-log-scale, and `ages` can be a vector of ages to filter to, for example
-`0:4` to plot stochastics of under 5s.
+### Burden Differences
+
+If we specify two scenarios instead of one, then the plot will be the
+burden of the first scenario, subtract the burden of the second - i.e.,
+the difference made by applying a scenario. Below is an example - I’ll
+also add the `log = TRUE` argument to get a logged y-axis.
+
+    stone_stochastic_graph(base, "202310gavi", "YF", "IC-Garske",
+                           "KEN", c("yf-no-vaccination", "yf-routine-campaign-ia2030"),
+                           "deaths", log = TRUE)
+
+![](figures/stoch_burden_diff.png)
+
+The y-axis now reads “deaths averted” instead of just deaths.
+
+### Comparing touchstones
+
+You may have noticed that `stone_stochastic_graph` when you run it
+causes a plot to appear, but is actually returning you a list of plots -
+one so far. If we specify two touchstones, then stoner will instead
+return us a list of two graphs - assuming that the same disease, group
+and scenarios are present in both touchstones. The y-axis will be
+matched between the two, so we can see the pair of graphs for
+comparison.
+
+Below is an example returning to just a single scenario, although you
+can provide two and compare burden differences across two touchstones
+too. Here I am collecting both resulting graphs, and then plotting them
+one by one.
+
+    res <- stone_stochastic_graph(base, c("202110gavi", "202310gavi"), "YF", "IC-Garske",
+                           "ETH", "yf-no-vaccination",
+                           "deaths", log = TRUE)
+    res[[1]]
+    res[[2]]
+
+![](figures/stoch_compare_ts_1.png)![](figures/stoch_compare_ts_2.png)
+
+### Comparing modelling groups
+
+Similarly, within the same touchstone, we can compare two modelling
+groups, with either a single scenario, or pair of scenarios. The
+disease, scenarios and outcomes must be compatible between the two
+groups. Here’s a comparison of burden difference:
+
+    res <- stone_stochastic_graph(base, "202310gavi", "YF", 
+                                  c("IC-Garske", "UND-Perkins"),
+                                  "UGA", 
+                                  c("yf-no-vaccination", "yf-routine-default"),
+                                  "cases")
+    res[[1]]
+    res[[2]]
+
+![](figures/stoch_compare_mg_1.png)![](figures/stoch_compare_mg_2.png)
+
+### Filtering by age
+
+The stochastic data contains both years and ages. Our plots so far have
+been using time on the x-axis, and all the ages have been summed
+together for each calendar year. We can also filter by age before
+plotting. The example below filters to ages between 0 and 4 inclusive
+(ie, under 5 year-olds).
+
+    res <- stone_stochastic_graph(base, "202310gavi", "YF", "IC-Garske", "UGA",
+    "yf-no-vaccination", "deaths", filter = 0:4)
+
+![](figures/stoch_u5.png)
+
+### Plotting by birth cohort
+
+The `by_cohort` parameter lets us subtract age from year before
+plotting, so we can see burden specific to people who were born in a
+certain year, rather than the previous plots, which have all treated the
+x-axis as calendar year.
+
+    res <- stone_stochastic_graph(base, "202310gavi", "YF", "IC-Garske", "UGA",
+                                  "yf-no-vaccination", "deaths", by_cohort = TRUE)
+
+![](figures/stoch_cohort.png)
+
+### Age on the x-axis
+
+If instead we want to see how burden affects people of different ages
+throughout the time series, we can set `xaxis` to `age` (its default is
+`time`).
+
+    res <- stone_stochastic_graph(base, "202602yf", "YF", "IC-Gaythorpe", "UGA",
+                                  "yf-no-vaccination", "deaths", xaxis = "age")
+
+![](figures/stoch_byage.png)
+
+This sums over the entire range of years. If `xaxis` is age, then the
+`filter` argument will let you select which years are to be included.
+This example shows the burden by age in the years 2040-2050.
+
+    res <- stone_stochastic_graph(base, "202602yf", "YF", "IC-Gaythorpe", "UGA",
+                                  "yf-no-vaccination", "deaths", xaxis = "age",
+                                  filter = 2040:2050)
+
+![](figures/stoch_byage_filter.png)
+
+And if we additionally set the `by_cohort` flag, then we are asking for
+the burden breakdown by age, for people who were born within the
+filtered range, rather than selecting a calendar year range.
+
+    res <- stone_stochastic_graph(base, "202602yf", "YF", "IC-Gaythorpe", "UGA",
+                                  "yf-no-vaccination", "deaths", xaxis = "age",
+                                  filter = 2040:2050, by_cohort = TRUE)
+
+![](figures/stoch_byage_filter_cohort.png) The graph has this shape
+because the stochastics here only continue until 2100, hence the last
+60-year olds will be born in 2040.
+
+### Including data from packit.
+
+Lastly, if a central burden estimate has been included in a packit in
+Montagu’s reporting portal, we can include that on a graph by specifying
+the id, and the name of the file within that packit. For example, this
+graph shows both the stochastics from the file share, and the central
+from a packit, which is drawn in blue.
+
+    res <- stone_stochastic_graph(base, "202602yf", "YF", "IC-Gaythorpe", "UGA",
+                                  "yf-no-vaccination", "deaths", 
+                                  packit_id = "20260421-090519-e4a90228",
+                                  packit_file = "burden-estimates-disaggregated.rds")
+
+    Visit <https://montagu.vaccineimpact.org/packit/device> and enter code DNLH-NMRL
+
+    ✔ Waiting for response from server [10.6s]
+
+![](figures/stoch_packit.png)
+
+And here’s an example of a burden difference graph, showing how much
+difference the `yf-routine-default` scenario makes in both the
+stochastics, and the central from packit.
+
+    res <- stone_stochastic_graph(base, "202602yf", "YF", "IC-Gaythorpe", "UGA",
+                                   c("yf-no-vaccination", "yf-routine-default"), "deaths", 
+                                   packit_id = "20260421-090519-e4a90228",
+                                   packit_file = "burden-estimates-disaggregated.rds")
+
+    Visit <https://montagu.vaccineimpact.org/packit/device> and enter code MBWV-NBBC
+    ✔ Waiting for response from server [10.9s]
+
+![](figures/stoch_packit_diff.png) \## The stochastic explorer shiny app
+
+All of the graphs above (except currently the packit graphs) can be
+visualised interactively using a shiny app that is part of stoner. We
+call it providing the path to the root of the standardised stochastic
+data, where the `meta.csv` file should also be found.
+
+    stoner::stochastic_explorer(path)
+
+![](figures/stoch_explorer.png)
+
+The features in the GUI closely map onto the parameters for
+`stochastic_graph` in the following ways:
+
+- The tabs along the top let you choose a single graph, a comparison by
+  touchstone, or a comparison by modelling group, firstly for simply
+  burdens, and secondly for differences between scenarios. Different
+  tabs therefore cause different components in the sidebar to be
+  available.
+- One or two touchstones, groups, or scenarios will be available
+  depending on the tab.
+- Whether the x-axis is time or age, and whether by cohort, are all
+  selected in the x-axis dropdown.
+- The filter text, whether for time or for age, is a comma-separated
+  list of numbers or dash-separated ranges. So in a contrived example,
+  `0-5,50,95-100` would select the very young, very old, and exactly
+  50-year olds.

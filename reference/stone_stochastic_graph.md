@@ -1,28 +1,33 @@
 # Stochastic plot
 
-Draw a stochastic plot showing all the different runs, with the mean,
-median, 5% and 95% quantiles shown.
+A feature-rich-ish graph plotting function, which can show the
+stochastic line for an outcome for different runs, the mean, median and
+quantiles. If two scenarios are specified, then the burden difference
+between scenarios is plotted. Additionally, if multiple groups or
+multiple touchstones are specified, then separate graphs with the same
+scaling are plotted to allow comparison.
 
 ## Usage
 
 ``` r
 stone_stochastic_graph(
   base,
-  touchstone,
+  touchstones,
   disease,
-  group,
+  groups,
   country,
-  scenario,
+  scenarios,
   outcome,
-  ages = NULL,
+  xaxis = "time",
+  filter = NULL,
   by_cohort = FALSE,
   log = FALSE,
   packit_id = NULL,
   packit_file = NULL,
+  include_stochastics = TRUE,
   include_quantiles = TRUE,
   include_mean = TRUE,
-  include_median = TRUE,
-  scenario2 = NULL
+  include_median = TRUE
 )
 ```
 
@@ -30,42 +35,57 @@ stone_stochastic_graph(
 
 - base:
 
-  The folder in which the standardised stochastic files are found.
+  The root folder in which the standardised stochastic files are found.
+  Within it should be folders with touchstone names.
 
-- touchstone:
+- touchstones:
 
-  The touchstone name (for the graph title)
+  A touchstone to plot, or a pair of touchstones to compare. If a pair,
+  then only one modelling group can be specified below.
 
 - disease:
 
-  The disease, used for building the filename and graph title.
+  The disease to display.
 
-- group:
+- groups:
 
-  The modelling group, used in the filename and graph title.
+  The modelling group to plot, or a pair of modelling groups to be
+  compared, in which case, only one touchstone can be specified.
 
 - country:
 
   The country to plot.
 
-- scenario:
+- scenarios:
 
-  The scenario to plot.
+  A scenario to plot data for, or a pair of scenarios in which case we
+  plot the outcome for the first scenario, subtract the second.
 
 - outcome:
 
   The outcome to plot, for example `deaths`, `cases`, `dalys` or since
   2023, `yll`.
 
-- ages:
+- xaxis:
 
-  A vector of one or more ages to be selected and aggregated, or if left
-  as NULL, then all ages are used and aggregated.
+  The default is "time", meaning the x-axis is either calendar year, or
+  birth cohort, depending on the `by_cohort` parameter. This means and
+  age gets filtered by the `filter` parameter, and then aggregated.
+  Alternatively, if set to "age", then age will be on the x-axis, and
+  the `filter` parameter specifies either the years, or the birth
+  cohorts to select (depending on the `by_cohort` parameter), before
+  aggregation.
+
+- filter:
+
+  Filter either ages, years, or birth cohort years to a range - see the
+  comments above on the `xaxis` parametern. The filter is a vector of
+  ages, or years, or can be NULL to do no filtering.
 
 - by_cohort:
 
   If TRUE, then age is subtracted from year to convert it to year of
-  birth before aggregating.
+  birth before aggregating. See the `xaxis` and `filter` parameters.
 
 - log:
 
@@ -82,6 +102,10 @@ stone_stochastic_graph(
   burden estimates. We expect to find scenario, year, age, country,
   burden_outcome and value fields in the table.
 
+- include_stochastics:
+
+  Default TRUE, select whether to draw the individual stochastic lines.
+
 - include_quantiles:
 
   Default TRUE, select whether to plot the 5% and 95% quantile lines.
@@ -94,9 +118,13 @@ stone_stochastic_graph(
 
   Default TRUE, select whether to plot the median.
 
-- scenario2:
+## Details
 
-  Default NULL; if set, then the burdens from this scenario will be
-  subtracted from those in `scenario` - ie, this plots an impact graph
-  of applying the second scenario. For many graphs that use this, the
-  result will be positive numbers, representing cases or deaths averted.
+Graphs can have calendar year or birth cohort on the y-axis for
+time-series plots, in which case age is aggregated and the ages to be
+included can be specified. Alternatively, the x-axis can be age
+aggregated over time, where the calendar years to be aggregated can be
+specified.
+
+Finally, it can also include a central estimate provided as a file
+within a packit, from the montagu reporting portal.

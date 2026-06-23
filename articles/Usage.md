@@ -35,13 +35,13 @@ extract and load. So we create a dettl import as usual (see
 Dettl requires us to write various functions, which we can satisfy with
 single line functions for a start.
 
-| Dettl.function                   | Stoner.call                                    |
-|:---------------------------------|:-----------------------------------------------|
-| extract(con)                     | stoner::stone_extract(‘.’, con)                |
-| test-extract(extracted_data)     | stoner::stone_test_extract(extracted_data)     |
-| transform(extracted_data)        | stoner::stone_transform(extracted_data)        |
+| Dettl.function | Stoner.call |
+|:---|:---|
+| extract(con) | stoner::stone_extract(‘.’, con) |
+| test-extract(extracted_data) | stoner::stone_test_extract(extracted_data) |
+| transform(extracted_data) | stoner::stone_transform(extracted_data) |
 | test-transform(transformed_data) | stoner::stone_test_transform(transformed_data) |
-| load(transformed_data, con)      | stoner::stone_load(transformed_data, con)      |
+| load(transformed_data, con) | stoner::stone_load(transformed_data, con) |
 
 So for the minimal example, when writing the dettl import, delegate each
 of dettl’s functions to the stoner handlers, passing the same arguments.
@@ -683,10 +683,10 @@ section of each.
 ##### IC-Garske_YF_calendar.csv
 
 | run_id | year | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
-|-------:|-----:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
-|      1 | 2000 |      24 |        1219 |       21388 |          452 |           1165 |          20219 |             432 |
-|      1 | 2001 |      24 |        1269 |       22884 |          471 |           1199 |          21353 |             444 |
-|      1 | 2002 |      24 |        1319 |       24129 |          494 |           1235 |          22207 |             461 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 2000 | 24 | 1219 | 21388 | 452 | 1165 | 20219 | 432 |
+| 1 | 2001 | 24 | 1269 | 22884 | 471 | 1199 | 21353 | 444 |
+| 1 | 2002 | 24 | 1319 | 24129 | 494 | 1235 | 22207 | 461 |
 
 So here, we have in each row, the cases, deaths and dalys summed over
 age for a country and calendar year, for each scenario.
@@ -694,10 +694,10 @@ age for a country and calendar year, for each scenario.
 ##### IC-Garske_YF_calendar_u5.csv
 
 | run_id | year | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
-|-------:|-----:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
-|      1 | 2000 |      24 |         269 |        5710 |          100 |            215 |           4541 |              80 |
-|      1 | 2001 |      24 |         280 |        6220 |          105 |            210 |           4689 |              78 |
-|      1 | 2002 |      24 |         290 |        6564 |          110 |            213 |           4849 |              80 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 2000 | 24 | 269 | 5710 | 100 | 215 | 4541 | 80 |
+| 1 | 2001 | 24 | 280 | 6220 | 105 | 210 | 4689 | 78 |
+| 1 | 2002 | 24 | 290 | 6564 | 110 | 213 | 4849 | 80 |
 
 This is similar to the calendar year, but ages five and above are
 ignored, when summing over age, so the numbers are all smaller.
@@ -705,13 +705,13 @@ ignored, when summing over age, so the numbers are all smaller.
 ##### IC-Garske_YF_cohort.csv
 
 | run_id | cohort | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
-|-------:|-------:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
-|      1 |   1900 |      24 |           0 |           0 |            0 |              0 |              0 |               0 |
-|      1 |   1901 |      24 |           0 |           0 |            0 |              0 |              0 |               0 |
-|      1 |   1902 |      24 |           0 |           0 |            0 |              0 |              0 |               0 |
-|      1 |   2000 |      24 |        3149 |       44542 |         1184 |            774 |          15763 |             280 |
-|      1 |   2001 |      24 |        3261 |       47051 |         1222 |            809 |          16902 |             284 |
-|      1 |   2002 |      24 |        3384 |       51399 |         1269 |            799 |          17573 |             283 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1900 | 24 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1 | 1901 | 24 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1 | 1902 | 24 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1 | 2000 | 24 | 3149 | 44542 | 1184 | 774 | 15763 | 280 |
+| 1 | 2001 | 24 | 3261 | 47051 | 1222 | 809 | 16902 | 284 |
+| 1 | 2002 | 24 | 3384 | 51399 | 1269 | 799 | 17573 | 283 |
 
 The `cohort` is calculated by subtracting `age` from `year`; it asks the
 question when were people of a certain age in a certain calendar year
@@ -723,14 +723,14 @@ recorded for that birth cohort.
 ##### IC-Garske_YF_cohort_u5.csv
 
 | run_id | cohort | country | cases_novac | dalys_novac | deaths_novac | cases_prevbest | dalys_prevbest | deaths_prevbest |
-|-------:|-------:|--------:|------------:|------------:|-------------:|---------------:|---------------:|----------------:|
-|      1 |   1996 |      24 |          49 |        1010 |           18 |             49 |           1010 |              18 |
-|      1 |   1997 |      24 |         102 |        2196 |           38 |             86 |           1854 |              32 |
-|      1 |   1998 |      24 |         160 |        3626 |           60 |            122 |           2778 |              45 |
-|      1 |   1999 |      24 |         221 |        4483 |           83 |            152 |           3086 |              57 |
-|      1 |   2000 |      24 |         289 |        6057 |          108 |            207 |           4346 |              78 |
-|      1 |   2001 |      24 |         297 |        6915 |          112 |            225 |           5232 |              84 |
-|      1 |   2002 |     234 |         310 |        7223 |          116 |            234 |           5464 |              87 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1996 | 24 | 49 | 1010 | 18 | 49 | 1010 | 18 |
+| 1 | 1997 | 24 | 102 | 2196 | 38 | 86 | 1854 | 32 |
+| 1 | 1998 | 24 | 160 | 3626 | 60 | 122 | 2778 | 45 |
+| 1 | 1999 | 24 | 221 | 4483 | 83 | 152 | 3086 | 57 |
+| 1 | 2000 | 24 | 289 | 6057 | 108 | 207 | 4346 | 78 |
+| 1 | 2001 | 24 | 297 | 6915 | 112 | 225 | 5232 | 84 |
+| 1 | 2002 | 234 | 310 | 7223 | 116 | 234 | 5464 | 87 |
 
 This is similar to birth cohort, but only considering those age 4 or
 less. Hence, the oldest age group in the year 2000 (where calendar years
@@ -940,12 +940,12 @@ typically, this will be left as `FALSE`.
 The result of uploading is that four new rows will be added to the
 `stochastic_file` table, for <example:->
 
-|  id | touchstone   | modelling_group | disease | is_cohort | is_under5 | version | creation_date |
-|----:|:-------------|:----------------|:--------|:----------|:----------|--------:|:--------------|
-|   1 | 201910gavi-4 | IC-Garske       | YF      | FALSE     | TRUE      |       1 | 2020-08-06    |
-|   2 | 201910gavi-4 | IC-Garske       | YF      | TRUE      | TRUE      |       1 | 2020-08-06    |
-|   3 | 201910gavi-4 | IC-Garske       | YF      | FALSE     | FALSE     |       1 | 2020-08-06    |
-|   4 | 201910gavi-4 | IC-Garske       | YF      | TRUE      | FALSE     |       1 | 2020-08-06    |
+| id | touchstone | modelling_group | disease | is_cohort | is_under5 | version | creation_date |
+|---:|:---|:---|:---|:---|:---|---:|:---|
+| 1 | 201910gavi-4 | IC-Garske | YF | FALSE | TRUE | 1 | 2020-08-06 |
+| 2 | 201910gavi-4 | IC-Garske | YF | TRUE | TRUE | 1 | 2020-08-06 |
+| 3 | 201910gavi-4 | IC-Garske | YF | FALSE | FALSE | 1 | 2020-08-06 |
+| 4 | 201910gavi-4 | IC-Garske | YF | TRUE | FALSE | 1 | 2020-08-06 |
 
 Four new tables named in the form `stochastic_` followed by the `id`
 field listed in the table above will also have been made, which are
@@ -995,6 +995,7 @@ the outcomes and countries against those in a group’s expectations. To
 get the connection to production:-
 
 ``` r
+
   vault <- vaultr::vault_client(login = "github")
   password <- vault$read("/secret/vimc/database/production/users/readonly")$password
   con <- DBI::dbConnect(RPostgres::Postgres(),
@@ -1007,6 +1008,7 @@ get the connection to production:-
 To get a connection to annex:-
 
 ``` r
+
   password <- vault$read("/secret/vimc/annex/users/vimc")$password
   annex <- DBI::dbConnect(RPostgres::Postgres(),
                           dbname = "montagu",

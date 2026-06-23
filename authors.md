@@ -15,13 +15,13 @@ Source:
 [`DESCRIPTION`](https://github.com/vimc/stoner/blob/master/DESCRIPTION)
 
 Hinsley W, Fitzjohn R, Ashton R (2026). *stoner: Support for Building
-VIMC Montagu Touchstones, using Dettl*. R package version 0.1.21,
+VIMC Montagu Touchstones, using Dettl*. R package version 0.1.22,
 <https://github.com/vimc/stoner>.
 
     @Manual{,
       title = {stoner: Support for Building VIMC Montagu Touchstones, using Dettl},
       author = {Wes Hinsley and Rich Fitzjohn and Robert Ashton},
       year = {2026},
-      note = {R package version 0.1.21},
+      note = {R package version 0.1.22},
       url = {https://github.com/vimc/stoner},
     }
